@@ -68,7 +68,7 @@ function SignupPageInner() {
       ? `${window.location.origin}/join/${encodeURIComponent(inviteToken)}`
       : undefined;
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -85,6 +85,21 @@ function SignupPageInner() {
       return;
     }
 
+    // With auto-confirmed signups (GOTRUE_MAILER_AUTOCONFIRM on the
+    // self-host stack — no SMTP configured) signUp returns a live
+    // session: no verification email is coming, so waiting on one would
+    // strand the user. Sign them straight in. Full-page navigation for
+    // the same cookie-race reason as /login (issue #365).
+    if (data.session) {
+      const destination = inviteToken
+        ? `/join/${encodeURIComponent(inviteToken)}`
+        : "/dashboard";
+      window.location.href = destination;
+      return;
+    }
+
+    // No session means confirmation emails are enabled — show the
+    // "check your inbox" card as before.
     setSuccess(true);
     setLoading(false);
   };
