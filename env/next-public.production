@@ -1,0 +1,6 @@
+# Browser-facing Next.js values. These are inlined at `next build`
+# (including Docker). They are not secrets.
+NEXT_PUBLIC_SUPABASE_URL=http://157.10.99.50:8000
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzU1NTYxNjAwLCJleHAiOjIwNzA5MjE2MDB9.jL8PQMrHF1lyNIthj3a0tkuKxXixIDi7l2sw6DfrTvg
+NEXT_PUBLIC_SITE_URL=http://157.10.99.50:3000
+NEXT_PUBLIC_APP_LOCALE=en

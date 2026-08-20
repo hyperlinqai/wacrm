@@ -58,20 +58,15 @@ values below go into each service's **Environment** tab in Dokploy.
 
 - **Create → Application**, same repo, **Build type: Dockerfile**
   (the `Dockerfile` at the repo root).
-- `NEXT_PUBLIC_*` values are **inlined at build time** — the Dockerfile
-  declares them as `ARG`s, and Dokploy passes environment variables to
-  Dockerfile builds as build args. Changing any of them requires a
-  rebuild, not just a restart.
-- **Environment:**
+- `NEXT_PUBLIC_*` values are **inlined at build time** and Dokploy does
+  not pass its environment variables to Dockerfile builds — so they live
+  in-repo in **`env/next-public.production`** (they are browser-facing,
+  not secrets; the anon key is public by design). The Dockerfile copies
+  that file to `.env.production` before `next build`. To change any of
+  them: edit the file, commit, push, redeploy — a restart is not enough.
+- **Environment** (runtime, server-only — never baked into the image):
 
   ```
-  # build-time (inlined into the client bundle)
-  NEXT_PUBLIC_SUPABASE_URL=https://supabase.your-domain.com   # the gateway URL, reachable from BROWSERS
-  NEXT_PUBLIC_SUPABASE_ANON_KEY=<ANON_KEY>
-  NEXT_PUBLIC_SITE_URL=https://crm.your-domain.com
-  NEXT_PUBLIC_APP_LOCALE=en
-
-  # runtime (server-only — never baked into the image)
   SUPABASE_SERVICE_ROLE_KEY=<SERVICE_ROLE_KEY>
   ENCRYPTION_KEY=<64 hex chars>
   META_APP_SECRET=<from Meta for Developers>
