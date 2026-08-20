@@ -21,8 +21,22 @@ function errorJson(err: unknown, status = 500) {
     );
   }
   console.error('[auth] unexpected error', err);
+  // Deployment-config problems are the overwhelming cause of 500s here;
+  // surface them plainly instead of a mute "Internal error" (none of
+  // these messages contain secrets).
+  const msg = err instanceof Error ? err.message : '';
+  let message = 'Internal error';
+  if (msg.includes('DATABASE_URL')) {
+    message = 'Server misconfigured: DATABASE_URL is not set';
+  } else if (msg.includes('JWT_SECRET')) {
+    message = 'Server misconfigured: JWT_SECRET is not set';
+  } else if (/ECONNREFUSED|ETIMEDOUT|ENOTFOUND|EHOSTUNREACH|timeout/i.test(msg)) {
+    message = 'Server cannot reach the database';
+  } else if (/password authentication failed|no pg_hba/i.test(msg)) {
+    message = 'Database rejected the server connection (check DATABASE_URL credentials)';
+  }
   return NextResponse.json(
-    { data: { user: null, session: null }, error: { message: 'Internal error', status } },
+    { data: { user: null, session: null }, error: { message, status } },
     { status },
   );
 }
