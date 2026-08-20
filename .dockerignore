@@ -9,6 +9,7 @@ supabase
 !README.md
 .env*
 !.env.local.example
+!.env.production
 Dockerfile
 docker-compose*.yml
 .dockerignore

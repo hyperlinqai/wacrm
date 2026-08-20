@@ -22,17 +22,34 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Optional build-args (docker compose --env-file …). Do NOT `ENV` them
+# unconditionally: an empty ARG would override `.env.production` and
+# make `next build` prerender /forgot-password without a Supabase URL.
 ARG NEXT_PUBLIC_SUPABASE_URL
 ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
 ARG NEXT_PUBLIC_SITE_URL
 ARG NEXT_PUBLIC_APP_LOCALE=en
-ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL \
-    NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY \
-    NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
-    NEXT_PUBLIC_APP_LOCALE=$NEXT_PUBLIC_APP_LOCALE \
-    NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_TELEMETRY_DISABLED=1 \
+    NODE_ENV=production
 
-RUN npm run build
+RUN set -e; \
+    if [ -n "$NEXT_PUBLIC_SUPABASE_URL" ]; then \
+      printf '%s\n' \
+        "NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}" \
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}" \
+        "NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}" \
+        "NEXT_PUBLIC_APP_LOCALE=${NEXT_PUBLIC_APP_LOCALE:-en}" \
+        > .env.production.local; \
+    fi; \
+    has_url=0; \
+    for f in .env.production .env.production.local; do \
+      if [ -f "$f" ] && grep -qE '^NEXT_PUBLIC_SUPABASE_URL=.+' "$f"; then has_url=1; fi; \
+    done; \
+    if [ "$has_url" != 1 ]; then \
+      echo "NEXT_PUBLIC_SUPABASE_URL is missing. Add .env.production or pass --build-arg NEXT_PUBLIC_SUPABASE_URL=..." >&2; \
+      exit 1; \
+    fi; \
+    npm run build
 
 # ---------------------------------------------------------------
 # Stage 3 — minimal runtime (standalone output)

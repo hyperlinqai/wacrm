@@ -12,10 +12,14 @@ services:
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-}
         NEXT_PUBLIC_APP_LOCALE: ${NEXT_PUBLIC_APP_LOCALE:-en}
-    # Runtime (server-only) secrets come from .env.local; they are
-    # never baked into the image.
+    # Runtime secrets. Later files override earlier ones. A production
+    # host typically has only .env.production; local docker still
+    # prefers .env.local when both exist.
     env_file:
-      - .env.local
+      - path: .env.production
+        required: false
+      - path: .env.local
+        required: false
     # The server always listens on 3000 inside the container. Pinned
     # here because `environment` wins over `env_file`, so a stray PORT
     # in .env.local can't desync the app from the mapping and the
