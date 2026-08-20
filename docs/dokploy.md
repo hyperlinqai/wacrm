@@ -1,98 +1,69 @@
 # Deploying WA-CRM on Dokploy
 
-Two Dokploy services on the same VPS, plus the Postgres database you
-already run there:
+One Dokploy service and your Postgres — nothing else. The app talks to
+Postgres directly (auth, data with row-level security, file storage on a
+volume, live updates via LISTEN/NOTIFY + SSE).
 
 ```
-┌─ Dokploy ───────────────────────────────────────────┐
-│  ① Compose service: supabase/self-host  (:8000)     │──► Postgres
-│  ② Application:     WA-CRM app (Dockerfile, :3000)  │    (VPS, :5432)
-└─────────────────────────────────────────────────────┘
+┌─ Dokploy ────────────────────────────────┐
+│  Application: WA-CRM (Dockerfile, :3000) │──► Postgres (VPS, :5432)
+│  └── volume: /var/lib/wacrm-storage      │
+└──────────────────────────────────────────┘
 ```
 
-## 0. Prerequisites (one-time, already done for the current VPS)
-
-The database must be migrated and the service roles created:
+## 0. Database (one-time, already done for the current VPS)
 
 ```bash
-DATABASE_URL=postgres://user:pass@host:5432/wa-crm \
-SVC_PASSWORD=<service-role password> \
+DATABASE_URL=postgres://<superuser>@host:5432/wa-crm \
+SVC_PASSWORD=<password for the app's DB roles> \
   ./scripts/apply-postgres.sh
 ```
 
-Push this repository (including `supabase/`) to the Git remote Dokploy
-will pull from. The two `.env` files are gitignored by design — all
-values below go into each service's **Environment** tab in Dokploy.
+This applies every migration and creates the `authenticator` login role
+the app connects with (least privilege: it can only assume the
+anon/authenticated/service_role RLS roles).
 
-## 1. Supabase stack (Compose service)
+## 1. The app
 
-- **Create → Compose**, point it at this repo.
-- **Compose path:** `supabase/self-host/docker-compose.yml`
-- **Environment** (same keys as `supabase/self-host/.env.example`):
-
-  ```
-  POSTGRES_HOST=<postgres host — the VPS itself>
-  POSTGRES_PORT=5432
-  POSTGRES_DB=wa-crm
-  SVC_PASSWORD=<same one given to apply-postgres.sh>
-  JWT_SECRET=…            # node scripts/generate-supabase-keys.mjs
-  ANON_KEY=…
-  SERVICE_ROLE_KEY=…
-  SECRET_KEY_BASE=…
-  GATEWAY_PORT=8000
-  API_EXTERNAL_URL=https://supabase.your-domain.com   # or http://<vps-ip>:8000
-  SITE_URL=https://crm.your-domain.com                # where the app lives
-  ```
-
-- Expose the gateway: either keep the `8000:8000` port mapping (reach it
-  as `http://<vps-ip>:8000`), or attach a Dokploy **domain** to the
-  `gateway` service on container port 8000 for TLS. The gateway reflects
-  the request origin in its CORS headers, so no per-domain CORS config
-  is needed.
-- **First deploy only:** if the `storage` container crash-loops with
-  `cannot drop function foldername`, run
-  `supabase/self-host/first-boot-storage-fix.sh` once against the
-  database (see that script's header), then redeploy.
-
-## 2. The app (Application service)
-
-- **Create → Application**, same repo, **Build type: Dockerfile**
-  (the `Dockerfile` at the repo root).
-- `NEXT_PUBLIC_*` values are **inlined at build time** and Dokploy does
-  not pass its environment variables to Dockerfile builds — so they live
-  in-repo in **`env/next-public.production`** (they are browser-facing,
-  not secrets; the anon key is public by design). The Dockerfile copies
-  that file to `.env.production` before `next build`. To change any of
-  them: edit the file, commit, push, redeploy — a restart is not enough.
-- **Environment** (runtime, server-only — never baked into the image):
+- **Create → Application**, this repo, **Build type: Dockerfile**.
+- `NEXT_PUBLIC_*` values are inlined at build time from the in-repo
+  `env/next-public.production` (they are not secrets). To change them:
+  edit that file, commit, push, redeploy.
+- **Environment** (runtime secrets):
 
   ```
-  SUPABASE_SERVICE_ROLE_KEY=<SERVICE_ROLE_KEY>
+  DATABASE_URL=postgresql://authenticator:<SVC_PASSWORD>@<postgres-host>:5432/wa-crm
+  JWT_SECRET=<openssl rand -hex 32>
   ENCRYPTION_KEY=<64 hex chars>
   META_APP_SECRET=<from Meta for Developers>
   AUTOMATION_CRON_SECRET=<random hex>
+  STORAGE_DIR=/var/lib/wacrm-storage
   # optional: META_APP_ID, WHATSAPP_TEMPLATES_DRY_RUN, ALLOWED_INVITE_HOSTS…
   ```
 
+- **Mount a volume** at `/var/lib/wacrm-storage` (Dokploy → Advanced →
+  Volumes) — uploaded media lives there. Without it, uploads vanish on
+  every redeploy.
 - Attach your **domain** to container port **3000**.
 
-## 3. After the first deploy
+## 2. After the first deploy
 
-- Log in with the seed user `demo@wacrm.local` / `Demo123!` (or register —
-  signups are currently auto-confirmed since no SMTP is configured).
-- Live inbox updates need `wal_level = logical` on Postgres; it is already
-  set via `ALTER SYSTEM` but requires one Postgres restart on the host.
+- Log in with the seed user `demo@wacrm.local` / `Demo123!` or register
+  (signups are auto-confirmed; there is no email verification step).
+- Live inbox updates need nothing special — no logical replication, no
+  extra services. The LISTEN/NOTIFY triggers ship with migration 040.
 - Point the Meta webhook at
-  `https://crm.your-domain.com/api/whatsapp/webhook` once WhatsApp is
-  configured in Settings.
+  `https://your-domain/api/whatsapp/webhook` once WhatsApp is configured
+  in Settings.
 
 ## Gotchas
 
-- `NEXT_PUBLIC_SUPABASE_URL` must be reachable from users' browsers, not
-  just from inside the VPS — never use `localhost` or a Docker-internal
-  hostname here.
-- If the app is served over **https**, the Supabase gateway must be too
-  (browsers block mixed content). Give both services domains behind
-  Dokploy's Traefik rather than exposing the gateway on a bare port.
-- Keep `SITE_URL` (stack) and `NEXT_PUBLIC_SITE_URL` (app) identical;
-  GoTrue uses it for redirect allow-listing.
+- `NEXT_PUBLIC_SITE_URL` (in `env/next-public.production`) must be the
+  URL users' browsers reach the app on — it is also the base for public
+  media URLs Meta fetches. Changing it requires a rebuild.
+- Password-reset emails are not available (there is no mail service);
+  a workspace owner changes passwords from Settings instead.
+- Back up two things: the Postgres database and the
+  `/var/lib/wacrm-storage` volume.
+- Restrict Postgres (port 5432) to the app host — the database no longer
+  needs to be reachable from anywhere else.

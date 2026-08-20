@@ -1,28 +1,27 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { cookies } from 'next/headers';
+import { makeServerClient } from '@/lib/db/server-client';
+import { SESSION_COOKIE, sessionCookieOptions } from '@/lib/db/jwt';
+import type { SupabaseClient } from '@/lib/db';
 
-export async function createClient() {
-  const cookieStore = await cookies()
-
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {
-            // The `setAll` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing sessions.
-          }
-        },
-      },
-    }
-  )
+// Server data client — direct Postgres under the session's RLS context.
+// The session JWT lives in an httpOnly cookie.
+export async function createClient(): Promise<SupabaseClient> {
+  const cookieStore = await cookies();
+  return makeServerClient({
+    getToken: () => cookieStore.get(SESSION_COOKIE)?.value,
+    setToken: (token) => {
+      try {
+        cookieStore.set(SESSION_COOKIE, token, sessionCookieOptions());
+      } catch {
+        // Called from a Server Component — the proxy handles renewal there.
+      }
+    },
+    clearToken: () => {
+      try {
+        cookieStore.set(SESSION_COOKIE, '', { ...sessionCookieOptions(), maxAge: 0 });
+      } catch {
+        /* same as above */
+      }
+    },
+  });
 }

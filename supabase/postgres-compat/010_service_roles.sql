@@ -102,6 +102,26 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
 GRANT ALL ON ALL TABLES IN SCHEMA storage TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION storage.foldername(text) TO anon, authenticated, service_role;
 
+-- The app's own auth layer reads/writes auth.users through the
+-- authenticator login role. auth.users may carry RLS (GoTrue's legacy
+-- migrations enable it with no policies), which would hide every row.
+GRANT SELECT, INSERT, UPDATE ON auth.users TO authenticator;
+GRANT SELECT ON storage.buckets TO authenticator;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_class WHERE oid = 'auth.users'::regclass AND relrowsecurity) THEN
+    DROP POLICY IF EXISTS wacrm_app_auth_users ON auth.users;
+    CREATE POLICY wacrm_app_auth_users ON auth.users
+      FOR ALL TO authenticator USING (true) WITH CHECK (true);
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_class WHERE oid = 'storage.buckets'::regclass AND relrowsecurity) THEN
+    DROP POLICY IF EXISTS wacrm_app_buckets ON storage.buckets;
+    CREATE POLICY wacrm_app_buckets ON storage.buckets
+      FOR SELECT TO authenticator USING (true);
+  END IF;
+END
+$$;
+
 -- Realtime's postgres_changes needs logical WAL. Takes effect only after
 -- a Postgres restart (presence/broadcast channels work regardless).
 ALTER SYSTEM SET wal_level = 'logical';

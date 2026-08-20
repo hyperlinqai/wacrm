@@ -1,8 +1,17 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
+
+const root = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   resolve: {
     tsconfigPaths: true,
+    alias: {
+      // The db layer guards its server modules with `import 'server-only'`;
+      // vitest has no React server/client boundary, so stub it out.
+      "server-only": path.join(root, "src/test-support/server-only-stub.ts"),
+    },
   },
   test: {
     environment: "node",

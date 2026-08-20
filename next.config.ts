@@ -49,13 +49,14 @@ const SECURITY_HEADERS = [
       // https URLs paste-able from the UI), OG images, data URLs for
       // tiny inline assets.
       "img-src 'self' data: blob: https:",
-      // Outbound media previews (blob: from MediaRecorder + file picker)
-      // and Supabase public-bucket audio/video the inbox renders.
-      "media-src 'self' blob: https://*.supabase.co",
+      // Outbound media previews (blob: from MediaRecorder + file picker);
+      // uploaded media is served same-origin from /api/storage.
+      "media-src 'self' blob:",
       "font-src 'self' data:",
-      // Supabase REST + realtime (WSS). All Meta API calls happen
-      // server-side, so graph.facebook.com does not belong here.
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+      // Data, auth, storage and realtime (SSE) are all same-origin now.
+      // All Meta API calls happen server-side, so graph.facebook.com
+      // does not belong here.
+      "connect-src 'self'",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",

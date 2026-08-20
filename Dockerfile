@@ -38,7 +38,10 @@ ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0
 
-RUN addgroup -S nextjs && adduser -S nextjs -G nextjs
+RUN addgroup -S nextjs && adduser -S nextjs -G nextjs \
+    # Media volume mount point (STORAGE_DIR) — pre-owned by the app user
+    # so the named volume inherits writable permissions on first use.
+    && mkdir -p /var/lib/wacrm-storage && chown nextjs:nextjs /var/lib/wacrm-storage
 
 COPY --from=builder --chown=nextjs:nextjs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nextjs /app/.next/static ./.next/static

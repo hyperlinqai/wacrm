@@ -19,14 +19,15 @@ PSQL=(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q)
 echo "Bootstrapping auth / storage / roles…"
 "${PSQL[@]}" -f "$ROOT/supabase/postgres-compat/000_bootstrap.sql"
 
-# Login roles for the self-hosted Supabase services (supabase/self-host).
-# SVC_PASSWORD must match the one in supabase/self-host/.env.
+# DB roles the app connects with (authenticator + the RLS roles it can
+# assume). SVC_PASSWORD becomes the authenticator password — put it in
+# the app's DATABASE_URL.
 if [[ -n "${SVC_PASSWORD:-}" ]]; then
-  echo "Configuring Supabase service roles…"
+  echo "Configuring app service roles…"
   "${PSQL[@]}" -v svc_password="$SVC_PASSWORD" \
     -f "$ROOT/supabase/postgres-compat/010_service_roles.sql"
 else
-  echo "  skip service roles (set SVC_PASSWORD to enable the self-host stack)"
+  echo "  skip service roles (set SVC_PASSWORD to create the app's DB login)"
 fi
 
 apply_sql() {

@@ -1,18 +1,15 @@
-import { createBrowserClient } from '@supabase/ssr'
-import type { SupabaseClient } from '@supabase/supabase-js'
+'use client';
 
-// Singleton instance — one client shared across the whole browser session.
-// Creating multiple clients causes auth-lock contention ("Lock was released
-// because another request stole it") and intermittent fetch failures.
-let browserClient: SupabaseClient | undefined
+import { makeBrowserClient } from '@/lib/db/browser-client';
+import type { SupabaseClient } from '@/lib/db';
 
-export function createClient() {
-  if (browserClient) return browserClient
+// Browser data client — direct-Postgres adapter (queries run server-side
+// under RLS via /api/db; auth, storage and realtime ride app routes).
+// Singleton so auth listeners and channels share one instance, as before.
+let browserClient: SupabaseClient | undefined;
 
-  browserClient = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-
-  return browserClient
+export function createClient(): SupabaseClient {
+  if (browserClient) return browserClient;
+  browserClient = makeBrowserClient();
+  return browserClient;
 }

@@ -18,6 +18,10 @@ services:
     # healthcheck below.
     environment:
       PORT: 3000
+      # Uploaded media (avatars, chat/flow media) lives on this volume.
+      STORAGE_DIR: /var/lib/wacrm-storage
+    volumes:
+      - storage-data:/var/lib/wacrm-storage
     # Host side only — HOST_PORT=8080 publishes the app on :8080.
     ports:
       - '${HOST_PORT:-3000}:3000'
@@ -34,3 +38,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+
+volumes:
+  storage-data:
