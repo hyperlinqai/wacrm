@@ -16,6 +16,7 @@
 // ============================================================
 
 import { supabaseAdmin } from '@/lib/web-forms/admin-client'
+import { getBaseUrl } from '@/lib/http/base-url'
 
 interface LeadFormField {
   id: string
@@ -72,7 +73,8 @@ export async function GET(
   const fields = (form.fields as LeadFormField[] | null) ?? []
   const style = (form.style as LeadFormStyle | null) ?? {}
   const honeypotName = randomFieldName()
-  const submitUrl = `${new URL(_request.url).origin}/api/public/lead-forms/${formId}/submit`
+  const baseUrl = getBaseUrl(_request, { logPrefix: '[widget.js]' })
+  const submitUrl = `${baseUrl}/api/public/lead-forms/${formId}/submit`
 
   const script = `
 (function () {

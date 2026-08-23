@@ -1,4 +1,4 @@
 # Browser-facing Next.js values. These are inlined at `next build`
 # (including Docker). They are not secrets.
-NEXT_PUBLIC_SITE_URL=http://157.10.99.50:3000
+NEXT_PUBLIC_SITE_URL=https://crm.hyperlinq.in
 NEXT_PUBLIC_APP_LOCALE=en
