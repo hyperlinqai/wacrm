@@ -42,6 +42,21 @@ BEGIN
     RAISE EXCEPTION 'public.accounts is missing — migration 017 did not apply';
   END IF;
 
+  -- Organization/tenant layer (042) — the sync triggers are the part a
+  -- silent no-op would hide (the tables themselves would still exist
+  -- even if the trigger CREATE was skipped by a stale DROP TRIGGER IF
+  -- EXISTS guard), so check the trigger, not just the table.
+  IF to_regclass('public.organizations') IS NULL THEN
+    RAISE EXCEPTION 'public.organizations is missing — migration 042 did not apply';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgname = 'sync_organization_member_from_profile_trigger'
+      AND tgrelid = 'public.profiles'::regclass
+  ) THEN
+    RAISE EXCEPTION 'sync_organization_member_from_profile_trigger is missing — migration 042 did not apply';
+  END IF;
+
   RAISE NOTICE 'schema verification passed';
 END
 $$;
