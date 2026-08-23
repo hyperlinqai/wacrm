@@ -3,6 +3,8 @@
 import { Moon, Sun } from "lucide-react";
 
 import { useTheme } from "@/hooks/use-theme";
+import { useIsClient } from "@/hooks/use-is-client";
+import { DEFAULT_MODE } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 
 import { useTranslations } from "next-intl";
@@ -13,14 +15,18 @@ import { useTranslations } from "next-intl";
  * moon shows in dark mode (click → go light); the label always names
  * the destination so screen-reader users hear what the click does.
  *
- * 40×40 hit target to match the header's other touch controls.
+ * The icon is gated on `useIsClient` so a stored dark-mode choice
+ * (applied by the theme boot script) cannot diverge from the
+ * server-rendered default during hydration.
  */
 export function ModeToggle({ className }: { className?: string }) {
   const t = useTranslations("ModeToggle");
   const { mode, toggleMode } = useTheme();
-  const goingTo = mode === "dark" ? "light" : "dark";
+  const isClient = useIsClient();
+  const resolved = isClient ? mode : DEFAULT_MODE;
+  const goingTo = resolved === "dark" ? "light" : "dark";
   const switchLabel = t("switchMode", { mode: goingTo });
-  
+
   return (
     <button
       type="button"
@@ -32,7 +38,7 @@ export function ModeToggle({ className }: { className?: string }) {
         className,
       )}
     >
-      {mode === "dark" ? (
+      {resolved === "dark" ? (
         <Moon className="h-5 w-5" />
       ) : (
         <Sun className="h-5 w-5" />

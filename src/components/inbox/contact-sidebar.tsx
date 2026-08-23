@@ -159,7 +159,7 @@ export function ContactSidebar({ contact }: ContactSidebarProps) {
           <div className="mt-4 space-y-2">
             <button
               onClick={handleCopyPhone}
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted"
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted"
             >
               <Phone className="h-4 w-4 text-muted-foreground" />
               <span className="flex-1 text-left">{contact.phone}</span>
@@ -171,7 +171,7 @@ export function ContactSidebar({ contact }: ContactSidebarProps) {
             </button>
 
             {contact.email && (
-              <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground">
                 <Mail className="h-4 w-4 text-muted-foreground" />
                 <span className="truncate">{contact.email}</span>
               </div>
@@ -183,7 +183,7 @@ export function ContactSidebar({ contact }: ContactSidebarProps) {
 
           {/* Tags */}
           <div>
-            <div className="flex items-center gap-2 px-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <div className="section-label flex items-center gap-2 px-1">
               <TagIcon className="h-3 w-3" />
               {tSidebar("tags")}
             </div>
@@ -212,7 +212,7 @@ export function ContactSidebar({ contact }: ContactSidebarProps) {
 
           {/* Active Deals */}
           <div>
-            <div className="flex items-center gap-2 px-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <div className="section-label flex items-center gap-2 px-1">
               <DollarSign className="h-3 w-3" />
               {tSidebar("deals")}
             </div>
@@ -256,7 +256,7 @@ export function ContactSidebar({ contact }: ContactSidebarProps) {
 
           {/* Notes */}
           <div>
-            <div className="flex items-center gap-2 px-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <div className="section-label flex items-center gap-2 px-1">
               <StickyNote className="h-3 w-3" />
               {tSidebar("notes")}
             </div>

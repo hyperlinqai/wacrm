@@ -21,7 +21,6 @@
 
 import type {
   CollectInputNodeConfig,
-  ConditionNodeConfig,
   HandoffNodeConfig,
   KeywordTriggerConfig,
   SendButtonsNodeConfig,
@@ -29,47 +28,15 @@ import type {
   SendMessageNodeConfig,
   StartNodeConfig,
 } from "./types";
+import type { FlowTemplate } from "./template-types";
+import { INDUSTRY_FLOW_TEMPLATES } from "./industry-templates";
 
-export type FlowTemplateNodeType =
-  | "start"
-  | "send_message"
-  | "send_buttons"
-  | "send_list"
-  | "collect_input"
-  | "condition"
-  | "set_tag"
-  | "handoff"
-  | "end";
+export type {
+  FlowTemplate,
+  FlowTemplateNode,
+  FlowTemplateNodeType,
+} from "./template-types";
 
-export interface FlowTemplateNode {
-  node_key: string;
-  node_type: FlowTemplateNodeType;
-  config:
-    | StartNodeConfig
-    | SendMessageNodeConfig
-    | SendButtonsNodeConfig
-    | SendListNodeConfig
-    | CollectInputNodeConfig
-    | ConditionNodeConfig
-    | HandoffNodeConfig
-    | Record<string, unknown>;
-}
-
-export interface FlowTemplate {
-  slug: string;
-  name: string;
-  description: string;
-  /** Used by the gallery to surface a relevant icon. lucide-react name. */
-  icon: "MessageSquare" | "HelpCircle" | "UserPlus";
-  trigger_type: "keyword" | "first_inbound_message" | "manual";
-  trigger_config: KeywordTriggerConfig | Record<string, unknown>;
-  entry_node_id: string;
-  nodes: FlowTemplateNode[];
-}
-
-// ============================================================
-// 1. Welcome menu — the example from the owner's brief
-// ============================================================
 const WELCOME_MENU: FlowTemplate = {
   slug: "welcome_menu",
   name: "Welcome menu",
@@ -79,6 +46,11 @@ const WELCOME_MENU: FlowTemplate = {
   trigger_type: "keyword",
   trigger_config: { keywords: ["support", "help", "hi"], match_type: "contains" },
   entry_node_id: "start",
+  goals: ["support", "engage"],
+  triggerKind: "keyword",
+  badges: ["popular"],
+  recommended: true,
+  industry: "Customer support",
   nodes: [
     {
       node_key: "start",
@@ -137,6 +109,11 @@ const FAQ_BOT: FlowTemplate = {
     match_type: "contains",
   },
   entry_node_id: "start",
+  goals: ["support"],
+  triggerKind: "keyword",
+  badges: ["popular"],
+  recommended: true,
+  industry: "Customer support",
   nodes: [
     {
       node_key: "start",
@@ -234,6 +211,11 @@ const LEAD_CAPTURE: FlowTemplate = {
   trigger_type: "first_inbound_message",
   trigger_config: {},
   entry_node_id: "start",
+  goals: ["leads"],
+  triggerKind: "first_inbound",
+  badges: ["popular"],
+  recommended: true,
+  industry: "Sales",
   nodes: [
     {
       node_key: "start",
@@ -293,6 +275,7 @@ const TEMPLATES: Record<string, FlowTemplate> = {
   welcome_menu: WELCOME_MENU,
   faq_bot: FAQ_BOT,
   lead_capture: LEAD_CAPTURE,
+  ...Object.fromEntries(INDUSTRY_FLOW_TEMPLATES.map((t) => [t.slug, t])),
 };
 
 export function getFlowTemplate(slug: string): FlowTemplate | null {

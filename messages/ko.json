@@ -14,9 +14,47 @@
     "noAccount": "계정이 없으신가요?",
     "createAccount": "계정 만들기"
   },
+  "TemplateLibrary": {
+    "title": "템플릿",
+    "scratch": "처음부터 만들기",
+    "scratchTitle": "처음부터 만들기",
+    "scratchDesc": "대화 플로우 또는 빠른 자동화를 선택하세요.",
+    "close": "닫기",
+    "search": "템플릿 검색...",
+    "byGoal": "목표별",
+    "byTrigger": "트리거별",
+    "allTemplates": "모든 템플릿",
+    "anyTrigger": "모든 트리거",
+    "recommended": "추천",
+    "discover": "더 많은 템플릿 둘러보기",
+    "results": "템플릿 {count}개",
+    "empty": "검색과 맞는 템플릿이 없습니다.",
+    "badgeAi": "AI",
+    "badgePopular": "인기",
+    "badgeNew": "신규",
+    "kindFlow": "대화 플로우",
+    "kindAutomation": "빠른 자동화",
+    "goals": {
+      "leads": "리드 확보",
+      "support": "고객 지원",
+      "sales": "판매",
+      "engage": "고객 참여",
+      "bookings": "예약·방문",
+      "ops": "운영"
+    },
+    "triggers": {
+      "keyword": "WhatsApp 키워드",
+      "first_inbound": "첫 메시지",
+      "new_message": "모든 수신 메시지"
+    }
+  },
   "Sidebar": {
-    "title": "WhatsApp용 CRM 템플릿",
-    "dashboard": "대시보드",
+    "title": "HQ Intelligence",
+    "dashboard": "콕핏",
+    "groupWork": "업무",
+    "groupChannels": "채널",
+    "groupCommerce": "커머스",
+    "groupSystem": "시스템",
     "inbox": "인박스",
     "notifications": "알림",
     "contacts": "연락처",
@@ -24,6 +62,7 @@
     "broadcasts": "브로드캐스트",
     "automations": "자동화",
     "flows": "플로우",
+    "templates": "템플릿",
     "aiAgents": "AI 에이전트",
     "settings": "설정",
     "beta": "베타",
@@ -41,7 +80,7 @@
     "menuSignOut": "로그아웃"
   },
   "Header": {
-    "dashboard": "대시보드",
+    "dashboard": "콕핏",
     "inbox": "인박스",
     "notifications": "알림",
     "contacts": "연락처",
@@ -49,6 +88,9 @@
     "broadcasts": "브로드캐스트",
     "automations": "자동화",
     "settings": "설정",
+    "searchPlaceholder": "연락처 검색…",
+    "aiShortcut": "AI 에이전트",
+    "support": "WhatsApp 설정",
     "openMenu": "메뉴 열기",
     "openAccountMenu": "계정 메뉴 열기",
     "defaultUser": "사용자",
@@ -69,16 +111,23 @@
   },
   "Dashboard": {
     "page": {
-      "title": "대시보드",
+      "title": "콕핏",
       "description": "대화, 연락처, 딜, 브로드캐스트, 자동화 전반의 실시간 분석입니다.",
+      "totalContacts": "전체 연락처",
+      "messagesSent": "보낸 메시지",
+      "activeAutomations": "활성 자동화",
+      "workflows": "워크플로",
       "activeConversations": "진행 중인 대화",
       "newContactsToday": "오늘의 신규 연락처",
-      "openDealsValue": "진행 중인 딜 금액",
+      "openDealsValue": "파이프라인 금액",
       "messagesSentToday": "오늘 보낸 메시지",
       "newTodayVsYesterday": "어제 대비 신규",
       "vsYesterday": "어제 대비",
       "openDeals": "진행 중인 딜 {count}건",
-      "noChange": "변동 없음 {suffix}"
+      "noChange": "변동 없음 {suffix}",
+      "attentionBanner": "주의가 필요한 서비스 {count}건",
+      "attentionWhatsapp": "WhatsApp이 연결되어 있지 않습니다",
+      "attentionBroadcasts": "실패한 브로드캐스트 {count}건"
     },
     "quickActions": {
       "newContact": "새 연락처",
@@ -99,8 +148,8 @@
       "timeD": "{day}일 전"
     },
     "conversationsChart": {
-      "title": "기간별 대화 추이",
-      "description": "방향별 일일 메시지 볼륨",
+      "title": "메시징 펄스",
+      "description": "일별 수신/발신 볼륨",
       "days": "{count}일",
       "noActivity": "이 기간에는 메시지 활동이 없습니다",
       "noActivityHint": "메시지를 주고받으면 이 차트가 채워지기 시작합니다.",
@@ -130,6 +179,13 @@
     },
     "emptyState": {
       "title": "아직 데이터가 충분하지 않습니다"
+    },
+    "channels": {
+      "whatsapp": "WhatsApp",
+      "inbox": "인박스",
+      "broadcasts": "브로드캐스트",
+      "automations": "자동화",
+      "count": "기간 내 {count}건"
     }
   },
   "Inbox": {
@@ -356,7 +412,7 @@
       "emailLabel": "이메일",
       "emailPlaceholder": "jane@example.com",
       "companyLabel": "회사",
-      "companyPlaceholder": "Acme Corp",
+      "companyPlaceholder": "회사",
       "tagsLabel": "태그",
       "tagsPlaceholder": "태그 선택...",
       "noTagsFound": "태그를 찾을 수 없습니다.",
@@ -810,6 +866,7 @@
       "create": "자동화 만들기",
       "retry": "다시 시도",
       "templatesTitle": "빠른 시작 템플릿",
+      "browseAll": "모든 템플릿 보기",
       "emptyTitle": "아직 자동화가 없습니다",
       "emptyDesc": "위의 템플릿을 선택하거나 처음부터 새로 만드세요.",
       "runs": "실행 {count}회",
@@ -1313,7 +1370,7 @@
       "labelTooLong": "라벨은 {max}자 이하여야 합니다",
       "copied": "초대 링크가 복사되었습니다",
       "clipboardBlocked": "클립보드 접근이 차단되었습니다 — 링크를 직접 복사하세요",
-      "whatsappMessage": "이 링크(유효 기간 {expiresInDays}일)로 wacrm의 {accountName}에 참여하세요: {url}"
+      "whatsappMessage": "이 링크(유효 기간 {expiresInDays}일)로 HQ Intelligence의 {accountName}에 참여하세요: {url}"
     },
     "tagsAndFields": {
       "title": "필드 & 태그",
@@ -1357,8 +1414,36 @@
       "syncing": "동기화 중…",
       "syncTitle": "Meta WhatsApp 비즈니스 계정에서 승인된 템플릿 가져오기",
       "newTemplate": "새 템플릿",
-      "noTemplates": "아직 템플릿이 없습니다.",
-      "createFirst": "시작할 첫 메시지 템플릿을 만드세요.",
+      "createTemplate": "템플릿 만들기",
+      "connected": "연결됨",
+      "notConnected": "연결 안 됨",
+      "tabLibrary": "템플릿 라이브러리",
+      "tabActive": "사용 중",
+      "tabDeleted": "삭제됨",
+      "libraryHint": "업종별로 묶여 있습니다. 카드를 눌러 내용을 맞춘 뒤 Meta에 제출하세요.",
+      "industryAll": "모든 업종",
+      "columns": {
+        "marketing_agency": "마케팅 에이전시",
+        "automation": "자동화",
+        "real_estate": "부동산",
+        "service_business": "서비스업",
+        "restaurant": "레스토랑",
+        "ecommerce": "이커머스",
+        "clinic": "클리닉"
+      },
+      "activeEmpty": "제출된 템플릿이 없습니다. 라이브러리를 쓰거나 새로 만드세요.",
+      "deletedEmpty": "삭제된 항목이 없습니다. Meta에서 비활성화되거나 삭제 대기 중인 템플릿이 여기에 보입니다.",
+      "toastCannotEdit": "이 템플릿은 {status} 상태라 Meta 검토가 끝나기 전에는 수정할 수 없습니다.",
+      "metaColumns": {
+        "Marketing": "프로모션",
+        "Utility": "안내",
+        "Authentication": "인증"
+      },
+      "noTemplates": "아직 Meta 메시지 템플릿이 없습니다.",
+      "createFirst": "템플릿을 만들어 Meta에 제출하거나, WhatsApp 비즈니스 계정에서 이미 승인된 템플릿을 동기화하세요.",
+      "playbooksTitle": "대화 템플릿 (환영 메시지, FAQ, 장바구니 복구)",
+      "playbooksHint": "이런 템플릿은 여기가 아니라 템플릿 라이브러리에 있습니다. 이 화면은 브로드캐스트와 24시간 창에 쓰는 Meta 승인 WhatsApp 메시지 템플릿만 다룹니다.",
+      "playbooksLink": "템플릿 라이브러리 열기",
       "editTitle": "수정하면 Meta 재검토가 트리거되어 상태가 대기 중으로 바뀝니다.",
       "editLabel": "템플릿 수정",
       "edit": "수정",
@@ -1433,8 +1518,8 @@
       "submitApproval": "승인 요청",
 
       "deleteDialogTitle": "템플릿을 삭제하시겠습니까?",
-      "deleteMetaDesc": "\"{name}\"이(가) Meta와 wacrm에서 삭제됩니다. 이 템플릿을 사용하는 활성 브로드캐스트는 다음 전송부터 실패하기 시작합니다. 되돌릴 수 없습니다.",
-      "deleteLocalDesc": "\"{name}\"이(가) wacrm에서 삭제됩니다. Meta에 제출된 적이 없으므로 별도의 원격 정리가 필요하지 않습니다.",
+      "deleteMetaDesc": "\"{name}\"이(가) Meta와 HQ Intelligence에서 삭제됩니다. 이 템플릿을 사용하는 활성 브로드캐스트는 다음 전송부터 실패하기 시작합니다. 되돌릴 수 없습니다.",
+      "deleteLocalDesc": "\"{name}\"이(가) HQ Intelligence에서 삭제됩니다. Meta에 제출된 적이 없으므로 별도의 원격 정리가 필요하지 않습니다.",
       "deleting": "삭제 중…",
       "delete": "삭제",
 
@@ -1476,7 +1561,7 @@
       "notConnected": "연결되지 않음",
       "connectedDesc": "액세스 토큰으로 Meta 인증이 완료되었습니다. 웹훅이 실제로 연결되었는지는 아래 등록 상태를 확인하세요.",
       "notConnectedDesc": "아래에서 Meta API 자격 증명을 설정해 WhatsApp 비즈니스 계정을 연결하세요.",
-      "registered": "등록됨 — Meta가 wacrm으로 이벤트를 전달합니다",
+      "registered": "등록됨 — Meta가 HQ Intelligence로 이벤트를 전달합니다",
       "notRegistered": "등록되지 않음 — Meta가 이벤트를 전달하지 않습니다",
       "verifyWithMeta": "Meta로 확인",
       "subscribedSince": "{date}부터 구독 중입니다. 이벤트가 더 이상 도착하지 않으면 Meta로 확인을 클릭하세요.",
@@ -1500,7 +1585,7 @@
       "twoStepPin": "2단계 인증 PIN",
       "optional": "(선택)",
       "pinPlaceholder": "Meta WhatsApp 관리자에서 발급받은 6자리 PIN",
-      "pinHint": "프로덕션 번호의 수신 메시지를 연결하려면 필요합니다. Meta 비즈니스 관리자 → WhatsApp 계정 → 전화번호 → 2단계 인증에서 설정한 뒤 여기에 붙여넣으면 wacrm이 해당 번호를 구독할 수 있습니다 — 그렇지 않으면 Meta는 마지막으로 이 번호를 등록한 앱으로 수신 이벤트를 보냅니다(공유 WABA 하의 두 번째 번호에서 흔히 발생하는 증상입니다). Meta 테스트 번호는 PIN이 없고 이미 등록되어 있으므로 이 필드를 비워두세요. 비워두면 기존 등록도 그대로 유지됩니다.",
+      "pinHint": "프로덕션 번호의 수신 메시지를 연결하려면 필요합니다. Meta 비즈니스 관리자 → WhatsApp 계정 → 전화번호 → 2단계 인증에서 설정한 뒤 여기에 붙여넣으면 HQ Intelligence가 해당 번호를 구독할 수 있습니다 — 그렇지 않으면 Meta는 마지막으로 이 번호를 등록한 앱으로 수신 이벤트를 보냅니다(공유 WABA 하의 두 번째 번호에서 흔히 발생하는 증상입니다). Meta 테스트 번호는 PIN이 없고 이미 등록되어 있으므로 이 필드를 비워두세요. 비워두면 기존 등록도 그대로 유지됩니다.",
       "webhookTitle": "웹훅 설정",
       "webhookDesc": "Meta 앱 대시보드의 웹훅 콜백으로 이 URL을 사용하세요.",
       "webhookUrl": "웹훅 콜백 URL",
@@ -1544,7 +1629,7 @@
       "security": "로그인 & 보안",
       "appearance": "화면 설정",
       "whatsapp": "WhatsApp",
-      "templates": "템플릿",
+      "templates": "메시지 템플릿",
       "quick-replies": "빠른 답장",
       "fields": "필드 & 태그",
       "deals": "딜 & 통화",
@@ -1673,7 +1758,7 @@
     },
     "aiConfig": {
       "title": "에이전트 설정",
-      "description": "직접 발급받은 OpenAI 또는 Anthropic 키를 사용하세요. wacrm은 회원님의 키로 공급자에 직접 요청하므로 좌석당 AI 비용이 없고 데이터도 온전히 회원님의 것입니다. 인박스의 AI 답장 초안, 자동 응답 봇, 플레이그라운드에 사용됩니다.",
+      "description": "직접 발급받은 OpenAI 또는 Anthropic 키를 사용하세요. HQ Intelligence는 회원님의 키로 공급자에 직접 요청하므로 좌석당 AI 비용이 없고 데이터도 온전히 회원님의 것입니다. 인박스의 AI 답장 초안, 자동 응답 봇, 플레이그라운드에 사용됩니다.",
       "adminOnlyConfig": "관리자와 소유자만 AI 설정을 변경할 수 있습니다.",
       "loadFailed": "AI 설정을 불러오지 못했습니다",
       "providerAndKey": "공급자 & 키",
@@ -1692,7 +1777,7 @@
       "behaviour": "동작 방식",
       "behaviourDesc": "비즈니스에 대해 어시스턴트에게 알려주세요 — 제품, 어조, 약속해도 되는 것과 안 되는 것. 이 맥락은 초안 작성과 자동 응답 모두에 반영됩니다.",
       "businessContext": "비즈니스 맥락 & 지침",
-      "promptPlaceholder": "예: 저희는 커피 장비 매장 Acme입니다. 따뜻하고 간결하게 응대해주세요. 가격이나 배송일은 절대 언급하지 말고 사람에게 인계하세요.",
+      "promptPlaceholder": "예: 산업 장비를 판매합니다. 명확하고 간결하게 응대해주세요. 가격이나 배송일은 절대 언급하지 말고 사람에게 인계하세요.",
       "enableAssistant": "AI 어시스턴트 활성화",
       "enableAssistantDesc": "마스터 스위치입니다. 인박스의 \"AI로 초안 작성\" 버튼을 켭니다.",
       "autoReply": "수신 메시지 자동 응답",

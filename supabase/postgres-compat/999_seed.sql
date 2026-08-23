@@ -36,7 +36,7 @@ BEGIN
     'demo@wacrm.local',
     crypt('Demo123!', gen_salt('bf')),
     now(),
-    jsonb_build_object('full_name', 'Demo Owner'),
+    jsonb_build_object('full_name', 'Administrator'),
     '{"provider":"email","providers":["email"]}'::jsonb,
     'authenticated',
     'authenticated'
@@ -75,13 +75,13 @@ BEGIN
   END IF;
 
   UPDATE profiles
-  SET full_name = 'Demo Owner',
+  SET full_name = 'Administrator',
       email = 'demo@wacrm.local',
       beta_features = ARRAY['flows', 'ai_replies']
   WHERE user_id = v_user_id;
 
   UPDATE accounts
-  SET name = 'WA-CRM Demo',
+  SET name = 'HQ Intelligence',
       default_currency = 'USD'
   WHERE id = v_account_id;
 

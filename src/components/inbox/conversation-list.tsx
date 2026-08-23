@@ -454,8 +454,10 @@ function ConversationItem({
     <button
       onClick={handleClick}
       className={cn(
-        "flex w-full items-start gap-3 px-3 py-3 text-left transition-colors hover:bg-muted/50",
-        isActive && "border-l-2 border-primary bg-muted/70"
+        "flex w-full items-start gap-3 border-l-2 px-3 py-3 text-left transition-colors hover:bg-muted/60",
+        isActive
+          ? "border-primary bg-primary/8"
+          : "border-transparent",
       )}
     >
       {/* Avatar */}
@@ -477,10 +479,10 @@ function ConversationItem({
           <span className="truncate text-sm font-medium text-foreground">
             {displayName}
           </span>
-          <span className="shrink-0 text-[10px] text-muted-foreground">{timeAgo}</span>
+          <span className="shrink-0 text-[11px] font-medium text-muted-foreground">{timeAgo}</span>
         </div>
         <div className="mt-0.5 flex items-center justify-between gap-2">
-          <p className="truncate text-xs text-muted-foreground">
+          <p className="truncate text-[13px] text-foreground/75">
             {conversation.last_message_text || t("noMessagesYet")}
           </p>
           <div className="flex shrink-0 items-center gap-1.5">

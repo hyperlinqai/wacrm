@@ -9,6 +9,8 @@ import {
 } from './date-utils'
 import type {
   ActivityItem,
+  ChannelSlice,
+  CockpitChannels,
   ConversationsSeriesPoint,
   MetricsBundle,
   PipelineDonutData,
@@ -42,6 +44,11 @@ export async function loadMetrics(db: DB): Promise<MetricsBundle> {
     openDeals,
     messagesToday,
     messagesYesterday,
+    totalContacts,
+    contactsPrevWindow,
+    automations,
+    waConfig,
+    failedBroadcasts,
   ] = await Promise.all([
     db.from('conversations').select('id', { count: 'exact', head: true }).eq('status', 'open'),
     db
@@ -73,10 +80,22 @@ export async function loadMetrics(db: DB): Promise<MetricsBundle> {
       .eq('sender_type', 'agent')
       .gte('created_at', yesterdayStart)
       .lt('created_at', todayStart),
+    db.from('contacts').select('id', { count: 'exact', head: true }),
+    db
+      .from('contacts')
+      .select('id', { count: 'exact', head: true })
+      .lt('created_at', daysAgoStart(7).toISOString()),
+    db.from('automations').select('is_active'),
+    db.from('whatsapp_config').select('id').maybeSingle(),
+    db
+      .from('broadcasts')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'failed'),
   ])
 
   const openDealsRows = (openDeals.data ?? []) as { value: number | null }[]
   const openDealsValue = openDealsRows.reduce((sum, d) => sum + (d.value ?? 0), 0)
+  const autoRows = (automations.data ?? []) as { is_active: boolean }[]
 
   return {
     activeConversations: {
@@ -96,6 +115,12 @@ export async function loadMetrics(db: DB): Promise<MetricsBundle> {
       current: messagesToday.count ?? 0,
       previous: messagesYesterday.count ?? 0,
     },
+    totalContacts: totalContacts.count ?? 0,
+    contactsPreviousWindow: contactsPrevWindow.count ?? 0,
+    automationsActive: autoRows.filter((a) => a.is_active).length,
+    automationsTotal: autoRows.length,
+    whatsappConnected: Boolean(waConfig.data),
+    failedBroadcasts: failedBroadcasts.count ?? 0,
   }
 }
 
@@ -126,6 +151,97 @@ export async function loadConversationsSeries(
   }
 
   return keys.map((day) => ({ day, ...(buckets.get(day) ?? { incoming: 0, outgoing: 0 }) }))
+}
+
+export async function loadContactSpark(
+  db: DB,
+  rangeDays: number,
+): Promise<number[]> {
+  const start = daysAgoStart(rangeDays - 1).toISOString()
+  const { data, error } = await db
+    .from('contacts')
+    .select('created_at')
+    .gte('created_at', start)
+  if (error) throw error
+
+  const keys = lastNDayKeys(rangeDays)
+  const buckets = new Map<string, number>()
+  for (const k of keys) buckets.set(k, 0)
+  for (const row of (data ?? []) as { created_at: string }[]) {
+    const key = localDayKey(row.created_at)
+    if (buckets.has(key)) buckets.set(key, (buckets.get(key) ?? 0) + 1)
+  }
+  return keys.map((k) => buckets.get(k) ?? 0)
+}
+
+export async function loadChannelBreakdown(
+  db: DB,
+  rangeDays: number,
+): Promise<CockpitChannels> {
+  const start = daysAgoStart(rangeDays - 1).toISOString()
+  const [msgs, broadcasts, autoLogs] = await Promise.all([
+    db
+      .from('messages')
+      .select('sender_type, status')
+      .gte('created_at', start),
+    db
+      .from('broadcasts')
+      .select('sent_count, delivered_count, total_recipients, status')
+      .gte('created_at', start),
+    db
+      .from('automation_logs')
+      .select('status')
+      .gte('created_at', start),
+  ])
+
+  const messageRows = (msgs.data ?? []) as {
+    sender_type: string
+    status: string | null
+  }[]
+  const outgoing = messageRows.filter((m) => m.sender_type !== 'customer')
+  const incoming = messageRows.filter((m) => m.sender_type === 'customer')
+  const deliveredish = outgoing.filter(
+    (m) => m.status === 'delivered' || m.status === 'read',
+  ).length
+
+  const bRows = (broadcasts.data ?? []) as {
+    sent_count: number | null
+    delivered_count: number | null
+    total_recipients: number | null
+  }[]
+  const bSent = bRows.reduce((s, r) => s + (r.sent_count ?? 0), 0)
+  const bDelivered = bRows.reduce((s, r) => s + (r.delivered_count ?? 0), 0)
+
+  const aRows = (autoLogs.data ?? []) as { status: string }[]
+  const aOk = aRows.filter((r) => r.status === 'success').length
+
+  const slices: ChannelSlice[] = [
+    {
+      id: 'whatsapp',
+      count: outgoing.length,
+      rate: outgoing.length === 0 ? null : deliveredish / outgoing.length,
+    },
+    {
+      id: 'inbox',
+      count: incoming.length,
+      rate: messageRows.length === 0 ? null : incoming.length / messageRows.length,
+    },
+    {
+      id: 'broadcasts',
+      count: bSent,
+      rate: bSent === 0 ? null : bDelivered / bSent,
+    },
+    {
+      id: 'automations',
+      count: aRows.length,
+      rate: aRows.length === 0 ? null : aOk / aRows.length,
+    },
+  ]
+
+  return {
+    slices,
+    total: slices.reduce((s, x) => s + x.count, 0),
+  }
 }
 
 // --- 3. Pipeline donut -------------------------------------------------

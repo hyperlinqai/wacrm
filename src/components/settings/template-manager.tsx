@@ -9,8 +9,6 @@ import {
   RefreshCw,
   AlertCircle,
   X,
-  Pencil,
-  RotateCcw,
   Upload,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
@@ -23,10 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { useTranslations } from 'next-intl';
-import { Card, CardContent } from '@/components/ui/card';
-import { SettingsPanelHead } from './settings-panel-head';
 import {
   Dialog,
   DialogContent,
@@ -47,21 +42,19 @@ import type {
   TemplateButton,
   TemplateSampleValues,
 } from '@/types';
-import { templateStatusConfig } from '@/lib/template-status';
 import {
   extractVariableIndices,
   TEMPLATE_LIMITS,
 } from '@/lib/whatsapp/template-validators';
+import type { StarterTemplate } from '@/lib/whatsapp/starter-templates';
+import {
+  TemplateBoard,
+  type TemplateBoardTab,
+} from '@/components/settings/template-board';
 
 const CATEGORIES = ['Marketing', 'Utility', 'Authentication'] as const;
 type HeaderFormat = 'none' | 'text' | 'image' | 'video' | 'document';
 const HEADER_FORMATS: HeaderFormat[] = ['none', 'text', 'image', 'video', 'document'];
-
-const categoryColors: Record<string, string> = {
-  Marketing: 'bg-purple-600/20 text-purple-400 border-purple-600/30',
-  Utility: 'bg-blue-600/20 text-blue-400 border-blue-600/30',
-  Authentication: 'bg-amber-600/20 text-amber-400 border-amber-600/30',
-};
 
 interface TemplateFormData {
   name: string;
@@ -127,10 +120,12 @@ function emptyButton(type: TemplateButton['type']): TemplateButton {
 export function TemplateManager() {
   const t = useTranslations('Settings.templates');
   const supabase = createClient();
-  const { user, loading: authLoading } = useAuth();
+  const { user, accountId, loading: authLoading } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
+  const [boardTab, setBoardTab] = useState<TemplateBoardTab>('library');
+  const [waConnected, setWaConnected] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -179,21 +174,33 @@ export function TemplateManager() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) {
+    if (!user || !accountId) {
       setLoading(false);
       return;
     }
-    fetchTemplates(user.id);
+    void fetchTemplates();
+    void fetchConnection();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authLoading, user?.id]);
+  }, [authLoading, user?.id, accountId]);
 
-  async function fetchTemplates(userId: string) {
+  async function fetchConnection() {
+    if (!accountId) return;
+    const { data } = await supabase
+      .from('whatsapp_config')
+      .select('phone_number_id')
+      .eq('account_id', accountId)
+      .maybeSingle();
+    setWaConnected(!!data?.phone_number_id);
+  }
+
+  async function fetchTemplates() {
+    if (!accountId) return;
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('message_templates')
         .select('*')
-        .eq('user_id', userId)
+        .eq('account_id', accountId)
         .order('created_at', { ascending: false });
       if (error) throw error;
       setTemplates(data || []);
@@ -257,6 +264,38 @@ export function TemplateManager() {
     setDialogOpen(true);
   }
 
+  function openFromStarter(starter: StarterTemplate) {
+    setEditingId(null);
+    setForm({
+      ...emptyForm,
+      name: starter.name,
+      category: starter.category,
+      language: starter.language,
+      body_text: starter.body_text,
+      body_samples: starter.body_samples,
+      footer_text: starter.footer_text ?? '',
+      buttons: starter.buttons,
+    });
+    setDialogOpen(true);
+  }
+
+  function openBoardTemplate(template: MessageTemplate) {
+    const status = template.status || 'DRAFT';
+    if (status === 'PENDING_DELETION' || status === 'DISABLED') {
+      setTemplateToDelete(template);
+      return;
+    }
+    if (
+      status === 'APPROVED' ||
+      status === 'REJECTED' ||
+      status === 'PAUSED'
+    ) {
+      openEdit(template);
+      return;
+    }
+    toast.error(t('toastCannotEdit', { status }));
+  }
+
   async function handleSubmit() {
     // AUTHENTICATION is blocked by the persistent banner + disabled
     // submit button; this is a defensive second line of defense.
@@ -280,7 +319,7 @@ export function TemplateManager() {
       }
       // Refresh first, then close — re-opening the dialog
       // immediately should not show a stale list.
-      if (user) await fetchTemplates(user.id);
+      if (user) await fetchTemplates();
       toast.success(
         data.dry_run
           ? isEdit
@@ -290,6 +329,7 @@ export function TemplateManager() {
             ? t('toastSubmitEditSuccess')
             : t('toastSubmitNewSuccess'),
       );
+      setBoardTab('active');
       setDialogOpen(false);
       setForm(emptyForm);
       setEditingId(null);
@@ -334,7 +374,7 @@ export function TemplateManager() {
           { duration: 10000 },
         );
       }
-      await fetchTemplates(user.id);
+      await fetchTemplates();
     } catch (err) {
       console.error('Template sync error:', err);
       toast.error(err instanceof Error ? err.message : t('toastSyncError'));
@@ -482,151 +522,54 @@ export function TemplateManager() {
   }
 
   return (
-    <section className="animate-in fade-in-50 space-y-4 duration-200">
-      <SettingsPanelHead
-        title={t('title')}
-        description={t('description')}
-        action={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={handleSyncFromMeta}
-              disabled={syncing}
-              title={t('syncTitle')}
+    <section className="animate-in fade-in-50 space-y-5 duration-200">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+              {t('title')}
+            </h2>
+            <span
+              className={
+                waConnected
+                  ? 'inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-800 dark:text-emerald-200'
+                  : 'inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground'
+              }
             >
-              <RefreshCw className={`size-4 ${syncing ? 'animate-spin' : ''}`} />
-              {syncing ? t('syncing') : t('syncFromMeta')}
-            </Button>
-            <Button onClick={openCreate}>
-              <Plus className="size-4" />
-              {t('newTemplate')}
-            </Button>
+              {waConnected ? t('connected') : t('notConnected')}
+            </span>
           </div>
-        }
-      />
-
-      {templates.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <p className="text-muted-foreground text-sm">{t('noTemplates')}</p>
-            <p className="text-muted-foreground text-xs mt-1">
-              {t('createFirst')}
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-3 xl:grid-cols-2">
-          {templates.map((template) => {
-            const statusKey = template.status || 'DRAFT';
-            const status = templateStatusConfig[statusKey];
-            return (
-              <Card key={template.id}>
-                <CardContent className="flex items-start justify-between pt-4">
-                  <div className="space-y-2 min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-medium text-foreground">{template.name}</h3>
-                      <Badge
-                        className={`text-xs border ${categoryColors[template.category] || ''}`}
-                      >
-                        {template.category}
-                      </Badge>
-                      <Badge className={`text-xs border ${status.classes}`}>
-                        {status.label}
-                      </Badge>
-                      {template.language && (
-                        <span className="text-xs text-muted-foreground uppercase">
-                          {template.language}
-                        </span>
-                      )}
-                      {template.quality_score && (
-                        <span
-                          className={`text-[10px] uppercase font-medium ${
-                            template.quality_score === 'GREEN'
-                              ? 'text-emerald-400'
-                              : template.quality_score === 'YELLOW'
-                                ? 'text-yellow-400'
-                                : 'text-red-400'
-                          }`}
-                          title="Meta quality score"
-                        >
-                          {template.quality_score}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {template.body_text}
-                    </p>
-                    {template.footer_text && (
-                      <p className="text-xs text-muted-foreground italic">
-                        {template.footer_text}
-                      </p>
-                    )}
-                    {(template.rejection_reason || template.submission_error) && (
-                      <div className="flex items-start gap-1.5 text-xs text-red-400 bg-red-950/20 border border-red-900/40 rounded px-2 py-1.5">
-                        <AlertCircle className="size-3.5 mt-0.5 shrink-0" />
-                        <span>
-                          {template.rejection_reason || template.submission_error}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0 ml-2">
-                    {statusKey === 'APPROVED' && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openEdit(template)}
-                        title={t('editTitle')}
-                        aria-label={t('editLabel')}
-                        className="text-muted-foreground hover:text-primary hover:bg-primary/10 h-8 px-2"
-                      >
-                        <Pencil className="size-3.5" />
-                        {t('edit')}
-                      </Button>
-                    )}
-                    {(statusKey === 'REJECTED' || statusKey === 'PAUSED') && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openEdit(template)}
-                        title={t('resubmitTitle')}
-                        aria-label={t('resubmitLabel')}
-                        className="text-muted-foreground hover:text-primary hover:bg-primary/10 h-8 px-2"
-                      >
-                        <RotateCcw className="size-3.5" />
-                        {t('resubmit')}
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setTemplateToDelete(template)}
-                      disabled={deletingId === template.id}
-                      aria-label={
-                        template.meta_template_id
-                          ? t('deleteMetaLocallyAria')
-                          : t('deleteLocallyAria')
-                      }
-                      title={
-                        template.meta_template_id
-                          ? t('deleteMetaLocallyTitle')
-                          : t('deleteLocallyTitle')
-                      }
-                      className="text-muted-foreground hover:text-red-400 hover:bg-red-950/30 h-8 w-8"
-                    >
-                      {deletingId === template.id ? (
-                        <Loader2 className="size-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="size-4" />
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+          <p className="mt-1 max-w-[62ch] text-sm text-muted-foreground">
+            {t('description')}
+          </p>
         </div>
-      )}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleSyncFromMeta}
+            disabled={syncing}
+            title={t('syncTitle')}
+          >
+            <RefreshCw className={`size-4 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? t('syncing') : t('syncFromMeta')}
+          </Button>
+          <Button onClick={openCreate} className="bg-emerald-600 text-white hover:bg-emerald-700">
+            <Plus className="size-4" />
+            {t('createTemplate')}
+          </Button>
+        </div>
+      </div>
+
+      <TemplateBoard
+        tab={boardTab}
+        onTabChange={setBoardTab}
+        templates={templates}
+        loading={loading}
+        onUseStarter={openFromStarter}
+        onOpenTemplate={openBoardTemplate}
+        onDeleteTemplate={setTemplateToDelete}
+        deletingId={deletingId}
+      />
 
       <Dialog
         open={dialogOpen}

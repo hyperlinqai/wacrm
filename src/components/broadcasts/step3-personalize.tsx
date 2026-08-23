@@ -59,10 +59,10 @@ const SAMPLE_CONTACT: Contact = {
   id: 'sample',
   user_id: '',
   account_id: '',
-  name: 'John Doe',
+  name: 'Contact',
   phone: '+1234567890',
-  email: 'john@example.com',
-  company: 'Acme Corp',
+  email: 'contact@example.com',
+  company: 'Company',
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };

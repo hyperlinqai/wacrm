@@ -13,6 +13,23 @@ export interface MetricsBundle {
   openDealsValue: number
   openDealsCount: number
   messagesSentToday: MetricDelta
+  totalContacts: number
+  contactsPreviousWindow: number
+  automationsActive: number
+  automationsTotal: number
+  whatsappConnected: boolean
+  failedBroadcasts: number
+}
+
+export interface ChannelSlice {
+  id: 'whatsapp' | 'inbox' | 'broadcasts' | 'automations'
+  count: number
+  rate: number | null
+}
+
+export interface CockpitChannels {
+  slices: ChannelSlice[]
+  total: number
 }
 
 export interface ConversationsSeriesPoint {

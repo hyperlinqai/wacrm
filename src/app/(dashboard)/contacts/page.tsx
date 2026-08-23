@@ -57,6 +57,7 @@ import { CustomFieldsManager } from '@/components/contacts/custom-fields-manager
 import { useCan } from '@/hooks/use-can';
 import { GatedButton } from '@/components/ui/gated-button';
 import { useTranslations } from 'next-intl';
+import { deleteContacts } from '@/lib/contacts/delete-contacts';
 
 const PAGE_SIZE = 25;
 
@@ -102,6 +103,11 @@ export default function ContactsPage() {
   // results. Without this, rapidly toggling tag filters could let a slower
   // earlier request resolve last and render stale rows.
   const fetchSeq = useRef(0);
+
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('q');
+    if (q) setSearch(q);
+  }, []);
 
   const fetchTags = useCallback(async () => {
     const { data } = await supabase.from('tags').select('*');
@@ -253,13 +259,11 @@ export default function ContactsPage() {
     if (!deleteTarget) return;
     setDeleting(true);
 
-    const { error } = await supabase
-      .from('contacts')
-      .delete()
-      .eq('id', deleteTarget.id);
+    const { error } = await deleteContacts(supabase, [deleteTarget.id]);
 
     if (error) {
-      toast.error(t('toastFailedDelete'));
+      console.error('[contacts] delete failed:', error);
+      toast.error(error.message || t('toastFailedDelete'));
     } else {
       toast.success(t('toastDeleted'));
       fetchContacts();
@@ -300,10 +304,11 @@ export default function ContactsPage() {
     if (ids.length === 0) return;
     setDeleting(true);
 
-    const { error } = await supabase.from('contacts').delete().in('id', ids);
+    const { error } = await deleteContacts(supabase, ids);
 
     if (error) {
-      toast.error(t('toastBulkFailedDelete'));
+      console.error('[contacts] bulk delete failed:', error);
+      toast.error(error.message || t('toastBulkFailedDelete'));
     } else {
       toast.success(t('toastBulkDeleted', { count: ids.length }));
       setSelected(new Set());

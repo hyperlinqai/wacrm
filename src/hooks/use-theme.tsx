@@ -77,8 +77,18 @@ function readInitialMode(): Mode {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeId>(readInitialTheme);
-  const [mode, setModeState] = useState<Mode>(readInitialMode);
+  // Always start from the same defaults the server rendered. Reading
+  // localStorage / data-* here would make the first client render
+  // diverge (appearance chips, settings rail hints) and trip React's
+  // hydration check. The boot script already painted the right tokens
+  // on <html>; we sync React state after mount.
+  const [theme, setThemeState] = useState<ThemeId>(DEFAULT_THEME);
+  const [mode, setModeState] = useState<Mode>(DEFAULT_MODE);
+
+  useEffect(() => {
+    setThemeState(readInitialTheme());
+    setModeState(readInitialMode());
+  }, []);
 
   const setTheme = useCallback((next: ThemeId) => {
     setThemeState(next);

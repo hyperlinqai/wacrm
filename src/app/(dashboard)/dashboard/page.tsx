@@ -1,18 +1,17 @@
 "use client"
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { formatCurrency } from '@/lib/currency'
-import {
-  MessageSquare,
-  UserPlus,
-  DollarSign,
-  Send,
-} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { AlertTriangle } from 'lucide-react'
 
 import {
   loadActivity,
+  loadChannelBreakdown,
+  loadContactSpark,
   loadConversationsSeries,
   loadMetrics,
   loadPipelineDonut,
@@ -20,13 +19,15 @@ import {
 } from '@/lib/dashboard/queries'
 import type {
   ActivityItem,
+  CockpitChannels,
   ConversationsSeriesPoint,
   MetricsBundle,
   PipelineDonutData,
   ResponseTimeSummary,
 } from '@/lib/dashboard/types'
 
-import { MetricCard } from '@/components/dashboard/metric-card'
+import { KpiCard } from '@/components/dashboard/kpi-card'
+import { ChannelCard } from '@/components/dashboard/channel-card'
 import { SkeletonCard } from '@/components/dashboard/skeleton'
 import { QuickActions } from '@/components/dashboard/quick-actions'
 import { ConversationsChart } from '@/components/dashboard/conversations-chart'
@@ -34,21 +35,39 @@ import { PipelineDonut } from '@/components/dashboard/pipeline-donut'
 import { ResponseTimeChart } from '@/components/dashboard/response-time-chart'
 import { ActivityFeed } from '@/components/dashboard/activity-feed'
 
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
+import { useIsClient } from '@/hooks/use-is-client'
 
 type RangeDays = 7 | 30 | 90
 
+const CHANNEL_HREF = {
+  whatsapp: '/inbox',
+  inbox: '/inbox',
+  broadcasts: '/broadcasts',
+  automations: '/automations',
+} as const
+
 export default function DashboardPage() {
   const t = useTranslations('Dashboard.page')
+  const tRange = useTranslations('Dashboard.conversationsChart')
+  const locale = useLocale()
+  const isClient = useIsClient()
   const { defaultCurrency } = useAuth()
   const [metrics, setMetrics] = useState<MetricsBundle | null>(null)
   const [metricsLoading, setMetricsLoading] = useState(true)
 
   const [range, setRange] = useState<RangeDays>(30)
-  // Keep a cache per range so switching tabs doesn't re-fetch what we
-  // already have. Ranges the user hasn't opened yet stay null and
-  // trigger a fetch on first view.
   const [series, setSeries] = useState<Record<RangeDays, ConversationsSeriesPoint[] | null>>({
+    7: null,
+    30: null,
+    90: null,
+  })
+  const [contactSpark, setContactSpark] = useState<Record<RangeDays, number[] | null>>({
+    7: null,
+    30: null,
+    90: null,
+  })
+  const [channels, setChannels] = useState<Record<RangeDays, CockpitChannels | null>>({
     7: null,
     30: null,
     90: null,
@@ -67,16 +86,21 @@ export default function DashboardPage() {
   const loadAll = useCallback(() => {
     const db = createClient()
 
-    // Kick everything off in parallel. Each block has its own
-    // setState + finally so a slow query doesn't hold up faster
-    // sections — each widget shows its own skeleton independently.
     void loadMetrics(db)
       .then((m) => setMetrics(m))
       .catch((err) => console.error('[dashboard] metrics failed:', err))
       .finally(() => setMetricsLoading(false))
 
-    void loadConversationsSeries(db, 30)
-      .then((s) => setSeries((prev) => ({ ...prev, 30: s })))
+    void Promise.all([
+      loadConversationsSeries(db, 30),
+      loadContactSpark(db, 30),
+      loadChannelBreakdown(db, 30),
+    ])
+      .then(([s, spark, ch]) => {
+        setSeries((prev) => ({ ...prev, 30: s }))
+        setContactSpark((prev) => ({ ...prev, 30: spark }))
+        setChannels((prev) => ({ ...prev, 30: ch }))
+      })
       .catch((err) => console.error('[dashboard] series failed:', err))
       .finally(() => setSeriesLoading(false))
 
@@ -90,9 +114,6 @@ export default function DashboardPage() {
       .catch((err) => console.error('[dashboard] response time failed:', err))
       .finally(() => setResponseTimeLoading(false))
 
-    // Fetch up to 50 so the biggest page-size option in the feed
-    // (50 rows) is already in memory — switching sizes then becomes
-    // a pure client-side slice with no extra round trip.
     void loadActivity(db, 50)
       .then((a) => setActivity(a))
       .catch((err) => console.error('[dashboard] activity failed:', err))
@@ -103,109 +124,174 @@ export default function DashboardPage() {
     loadAll()
   }, [loadAll])
 
-  // Range switch handler — kept in an event callback (not an effect)
-  // so the setState calls stay out of the react-hooks/set-state-in-effect
-  // rule's way. The cached bucket check means switching back to a
-  // previously-viewed range is instant and doesn't re-fetch.
   const handleRangeChange = useCallback(
     (r: RangeDays) => {
       setRange(r)
-      if (series[r] !== null) return
+      if (series[r] !== null && contactSpark[r] !== null && channels[r] !== null) return
       setSeriesLoading(true)
       const db = createClient()
-      loadConversationsSeries(db, r)
-        .then((s) => setSeries((prev) => ({ ...prev, [r]: s })))
+      Promise.all([
+        loadConversationsSeries(db, r),
+        loadContactSpark(db, r),
+        loadChannelBreakdown(db, r),
+      ])
+        .then(([s, spark, ch]) => {
+          setSeries((prev) => ({ ...prev, [r]: s }))
+          setContactSpark((prev) => ({ ...prev, [r]: spark }))
+          setChannels((prev) => ({ ...prev, [r]: ch }))
+        })
         .catch((err) => console.error('[dashboard] series failed:', err))
         .finally(() => setSeriesLoading(false))
     },
-    [series],
+    [series, contactSpark, channels],
   )
+
+  const attention = useMemo(() => {
+    if (!metrics) return []
+    const items: { href: string; label: string }[] = []
+    if (!metrics.whatsappConnected) {
+      items.push({ href: '/settings?tab=whatsapp', label: t('attentionWhatsapp') })
+    }
+    if (metrics.failedBroadcasts > 0) {
+      items.push({
+        href: '/broadcasts',
+        label: t('attentionBroadcasts', { count: metrics.failedBroadcasts }),
+      })
+    }
+    return items
+  }, [metrics, t])
+
+  const todayLabel = isClient
+    ? new Date().toLocaleDateString(locale, {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+      })
+    : ''
+
+  const contactGrowth =
+    metrics && metrics.contactsPreviousWindow > 0
+      ? ((metrics.totalContacts - metrics.contactsPreviousWindow) /
+          metrics.contactsPreviousWindow) *
+        100
+      : metrics && metrics.totalContacts > 0
+        ? 100
+        : 0
+
+  const messagesSpark = (series[range] ?? []).map((p) => p.outgoing)
+  const messagesTotal = messagesSpark.reduce((s, n) => s + n, 0)
+  const prevHalf = messagesSpark.slice(0, Math.floor(messagesSpark.length / 2))
+  const nextHalf = messagesSpark.slice(Math.floor(messagesSpark.length / 2))
+  const prevSum = prevHalf.reduce((s, n) => s + n, 0)
+  const nextSum = nextHalf.reduce((s, n) => s + n, 0)
+  const messagesGrowth = prevSum === 0 ? (nextSum > 0 ? 100 : 0) : ((nextSum - prevSum) / prevSum) * 100
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">{t('title')}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t('description')}
-        </p>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h1 className="text-[28px] font-extrabold tracking-tight text-foreground">
+            {t('title')}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">{todayLabel}</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1 rounded-xl border border-border bg-card p-1">
+            {([7, 30, 90] as const).map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => handleRangeChange(r)}
+                className={cn(
+                  'rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors',
+                  range === r
+                    ? 'bg-foreground text-background'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {tRange('days', { count: r })}
+              </button>
+            ))}
+          </div>
+          {attention.length > 0 ? (
+            <Link
+              href={attention[0].href}
+              className="inline-flex items-center gap-2 rounded-xl border border-amber-300/80 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
+            >
+              <AlertTriangle className="size-3.5" />
+              {t('attentionBanner', { count: attention.length })}
+            </Link>
+          ) : null}
+        </div>
       </div>
 
-      {/* Metric cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {metricsLoading || !metrics ? (
           Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
         ) : (
           <>
-            <MetricCard
-              title={t('activeConversations')}
-              value={metrics.activeConversations.current.toLocaleString()}
-              icon={MessageSquare}
-              delta={{
-                sign: metrics.activeConversations.previous,
-                label: deltaLabel(
-                  metrics.activeConversations.previous, 
-                  t('newTodayVsYesterday'), 
-                  t('noChange', { suffix: t('newTodayVsYesterday') })
-                ),
+            <KpiCard
+              title={t('totalContacts')}
+              value={metrics.totalContacts.toLocaleString()}
+              deltaPct={contactGrowth}
+              spark={contactSpark[range] ?? undefined}
+              sparkColor="#3b82f6"
+            />
+            <KpiCard
+              title={t('messagesSent')}
+              value={messagesTotal.toLocaleString()}
+              deltaPct={messagesGrowth}
+              spark={messagesSpark}
+              sparkColor="var(--primary)"
+            />
+            <KpiCard
+              title={t('activeAutomations')}
+              value={`${metrics.automationsActive}/${metrics.automationsTotal}`}
+              hint={t('workflows')}
+              bar={{
+                current: metrics.automationsActive,
+                total: Math.max(metrics.automationsTotal, 1),
               }}
             />
-            <MetricCard
-              title={t('newContactsToday')}
-              value={metrics.newContactsToday.current.toLocaleString()}
-              icon={UserPlus}
-              delta={{
-                sign:
-                  metrics.newContactsToday.current - metrics.newContactsToday.previous,
-                label: deltaLabel(
-                  metrics.newContactsToday.current - metrics.newContactsToday.previous,
-                  t('vsYesterday'),
-                  t('noChange', { suffix: t('vsYesterday') })
-                ),
-              }}
-            />
-            <MetricCard
+            <KpiCard
               title={t('openDealsValue')}
               value={formatCurrency(metrics.openDealsValue, defaultCurrency)}
-              icon={DollarSign}
-              subtitle={t('openDeals', { count: metrics.openDealsCount })}
-            />
-            <MetricCard
-              title={t('messagesSentToday')}
-              value={metrics.messagesSentToday.current.toLocaleString()}
-              icon={Send}
-              delta={{
-                sign:
-                  metrics.messagesSentToday.current - metrics.messagesSentToday.previous,
-                label: deltaLabel(
-                  metrics.messagesSentToday.current - metrics.messagesSentToday.previous,
-                  t('vsYesterday'),
-                  t('noChange', { suffix: t('vsYesterday') })
-                ),
+              hint={t('openDeals', { count: metrics.openDealsCount })}
+              bar={{
+                current: metrics.openDealsCount,
+                total: Math.max(metrics.openDealsCount, 1),
+                tone: 'violet',
               }}
             />
           </>
         )}
       </div>
 
-      {/* Quick actions */}
       <QuickActions />
 
-      {/* Charts row */}
-      {/* items-stretch (the grid default) stretches the two columns to
-          match the tallest sibling; adding h-full on each wrapper and
-          on the inner panels makes both cards actually fill that
-          stretched height so their rounded borders line up. Without
-          this, the pipeline card rendered at its natural (shorter)
-          height while the line chart drove the row height. */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <div className="h-full lg:col-span-3">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
+        <div className="h-full xl:col-span-3">
           <ConversationsChart
             series={series}
             loading={seriesLoading}
             range={range}
             onRangeChange={handleRangeChange}
+            showRangeTabs={false}
           />
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:col-span-2 xl:grid-cols-1">
+          {(channels[range]?.slices ?? []).map((slice) => (
+            <ChannelCard key={slice.id} slice={slice} href={CHANNEL_HREF[slice.id]} />
+          ))}
+          {seriesLoading && !channels[range]
+            ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
+            : null}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+        <div className="h-full lg:col-span-3">
+          <ResponseTimeChart data={responseTime} loading={responseTimeLoading} />
         </div>
         <div className="h-full lg:col-span-2">
           <PipelineDonut
@@ -216,19 +302,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Response time */}
-      <ResponseTimeChart data={responseTime} loading={responseTimeLoading} />
-
-      {/* Activity feed */}
       <ActivityFeed items={activity} loading={activityLoading} />
     </div>
   )
-}
-
-// ------------------------------------------------------------
-
-function deltaLabel(delta: number, suffix: string, noChangeLabel: string): string {
-  if (delta === 0) return noChangeLabel
-  const sign = delta > 0 ? '+' : ''
-  return `${sign}${delta.toLocaleString()} ${suffix}`
 }

@@ -133,21 +133,14 @@ function groupMessagesByDate(messages: Message[]) {
 
 const STATUS_OPTIONS: { label: string; value: ConversationStatus; color: string }[] = [
   { label: "Open", value: "open", color: "text-primary" },
-  { label: "Pending", value: "pending", color: "text-amber-400" },
+  { label: "Pending", value: "pending", color: "text-amber-600 dark:text-amber-400" },
   { label: "Closed", value: "closed", color: "text-muted-foreground" },
 ];
 
 /**
- * WhatsApp-style doodle background applied to the chat area (both the
- * active thread and the empty state). The SVG tile lives at
- * `/public/inbox-doodle.svg`; the slate-950 colour sits underneath so
- * the doodles read as a subtle pattern rather than a stark grid.
- *
- * Defined once at module scope so the two render paths can't drift —
- * if we ever switch the asset, both spots update together.
+ * Quiet workspace background for the chat pane (empty and active).
  */
-const DOODLE_BG_CLASSES =
-  "bg-background bg-[url('/inbox-doodle.svg')] bg-repeat";
+const DOODLE_BG_CLASSES = "bg-muted/40";
 
 export function MessageThread({
   conversation,
@@ -869,10 +862,10 @@ export function MessageThread({
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
           <MessageSquare className="h-8 w-8 text-muted-foreground" />
         </div>
-        <h3 className="mt-4 text-sm font-medium text-muted-foreground">
+        <h3 className="mt-4 text-sm font-semibold text-foreground">
           {t("selectConversation")}
         </h3>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-1 max-w-xs text-center text-sm text-muted-foreground">
           {t("selectConversationHint")}
         </p>
       </div>
@@ -921,7 +914,7 @@ export function MessageThread({
           </div>
           <div className="min-w-0">
             <h2 className="truncate text-sm font-semibold text-foreground">{displayName}</h2>
-            <p className="truncate text-xs text-muted-foreground">{contact.phone}</p>
+            <p className="truncate text-xs font-medium text-foreground/80">{contact.phone}</p>
           </div>
           {/* Session timer badge — hidden on the narrowest phones so
               the name + back arrow keep their room. */}
@@ -929,7 +922,7 @@ export function MessageThread({
             variant="outline"
             className={cn(
               "ml-1 hidden gap-1 border-border text-[10px] sm:inline-flex sm:ml-2",
-              sessionInfo.expired ? "text-red-400" : "text-primary"
+              sessionInfo.expired ? "text-red-600 dark:text-red-400" : "text-primary"
             )}
           >
             <Clock className="h-3 w-3" />

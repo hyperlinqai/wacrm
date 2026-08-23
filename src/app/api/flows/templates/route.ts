@@ -29,6 +29,8 @@ export async function GET() {
     icon: t.icon,
     trigger_type: t.trigger_type,
     node_count: t.nodes.length,
+    goals: t.goals,
+    triggerKind: t.triggerKind,
   }))
   return NextResponse.json({ templates })
 }

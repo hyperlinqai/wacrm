@@ -314,7 +314,7 @@ export function MembersTab() {
                 <PresenceDot status="offline" />
                 {counts.offline} {t('offline')}
               </span>
-              <span className="text-muted-foreground/70">
+              <span className="text-muted-foreground">
                 · {t('memberCount', { count: members.length })}
               </span>
             </div>

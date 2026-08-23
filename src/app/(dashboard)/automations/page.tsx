@@ -40,18 +40,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { AUTOMATION_TEMPLATES, type TemplateSlug } from "@/lib/automations/templates"
+import { AUTOMATION_TEMPLATES } from "@/lib/automations/templates"
 import { triggerMeta, formatRelative } from "@/lib/automations/trigger-meta"
 import { cn } from "@/lib/utils"
+import { TemplateLibrary } from "@/components/templates/template-library"
+import type { CatalogEntry } from "@/lib/templates/catalog-types"
 
-const TEMPLATE_ORDER: TemplateSlug[] = [
+const TEMPLATE_ORDER = [
   "welcome_message",
   "out_of_office",
   "lead_qualifier",
   "follow_up_reminder",
-]
+] as const
 
-const TEMPLATE_ICON: Record<TemplateSlug, typeof Zap> = {
+const TEMPLATE_ICON: Record<(typeof TEMPLATE_ORDER)[number], typeof Zap> = {
   welcome_message: MessageCircle,
   out_of_office: Clock,
   lead_qualifier: Users,
@@ -66,6 +68,7 @@ export default function AutomationsPage() {
   const [error, setError] = useState<string | null>(null)
   const [pendingDelete, setPendingDelete] = useState<Automation | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [libraryOpen, setLibraryOpen] = useState(false)
 
   async function load() {
     try {
@@ -133,8 +136,24 @@ export default function AutomationsPage() {
     load()
   }
 
-  async function startFromTemplate(slug: TemplateSlug) {
-    router.push(`/automations/new?template=${slug}`)
+  async function startFromCatalog(entry: CatalogEntry) {
+    setLibraryOpen(false)
+    if (entry.kind === "flow") {
+      const res = await fetch("/api/flows", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ template_slug: entry.slug }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        toast.error(body?.error ?? t("toasts.updateError"))
+        return
+      }
+      const json = (await res.json()) as { flow: { id: string } }
+      router.push(`/flows/${json.flow.id}`)
+      return
+    }
+    router.push(`/automations/new?template=${entry.slug}`)
   }
 
   if (error) {
@@ -170,7 +189,7 @@ export default function AutomationsPage() {
         <GatedButton
           canAct={canCreate}
           gateReason="create automations"
-          onClick={() => router.push("/automations/new")}
+          onClick={() => setLibraryOpen(true)}
           className="bg-primary text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="h-4 w-4" />
@@ -180,22 +199,31 @@ export default function AutomationsPage() {
 
       {showTemplates && (
         <section>
-          <h2 className="mb-3 text-sm font-semibold text-muted-foreground">{t("templatesTitle")}</h2>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-foreground">{t("templatesTitle")}</h2>
+            <button
+              type="button"
+              onClick={() => setLibraryOpen(true)}
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              {t("browseAll")}
+            </button>
+          </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
             {TEMPLATE_ORDER.map((slug) => {
-              const t = AUTOMATION_TEMPLATES[slug]
+              const tmpl = AUTOMATION_TEMPLATES[slug]
               const Icon = TEMPLATE_ICON[slug]
               return (
                 <button
                   key={slug}
-                  onClick={() => startFromTemplate(slug)}
-                  className="group flex flex-col items-start rounded-xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/50 hover:bg-card/80"
+                  onClick={() => router.push(`/automations/new?template=${slug}`)}
+                  className="group flex flex-col items-start rounded-xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/50 hover:bg-card-2"
                 >
                   <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary/15">
                     <Icon className="h-5 w-5" />
                   </div>
-                  <div className="text-sm font-semibold text-foreground">{t.name}</div>
-                  <p className="mt-1 text-xs text-muted-foreground">{t.description}</p>
+                  <div className="text-sm font-semibold text-foreground">{tmpl.name}</div>
+                  <p className="mt-1 text-xs text-muted-foreground">{tmpl.description}</p>
                 </button>
               )
             })}
@@ -257,6 +285,16 @@ export default function AutomationsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <TemplateLibrary
+        open={libraryOpen}
+        onClose={() => setLibraryOpen(false)}
+        onUse={startFromCatalog}
+        onScratch={() => {
+          setLibraryOpen(false)
+          router.push("/automations/new")
+        }}
+      />
     </div>
   )
 }
