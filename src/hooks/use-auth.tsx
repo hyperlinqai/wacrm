@@ -19,6 +19,7 @@ import {
   canSendMessages as canSendMessagesFor,
   isAccountRole,
   type AccountRole,
+  type OrganizationRole,
 } from "@/lib/auth/roles";
 
 interface Profile {
@@ -130,6 +131,21 @@ interface AuthContextValue {
   canEditSettings: boolean;
   /** True if the caller can send messages and edit operational data (agent+). */
   canSendMessages: boolean;
+
+  // ----------------------------------------------------------
+  // Organization-layer identity (migration 042/043's tenant model —
+  // see docs/phase2-audit/account-id-usage.md). Best-effort mirrors
+  // of accountId/accountRole above, resolved from
+  // organization_members. Not used for authorization by any component
+  // yet — nothing must treat these as more reliable than accountId/
+  // accountRole this phase.
+  // ----------------------------------------------------------
+
+  /** Organization id the current user belongs to. Null while loading
+   *  or if the organization-layer lookup failed (best-effort). */
+  organizationId: string | null;
+  /** Role within that organization. Null while loading or on lookup failure. */
+  organizationRole: OrganizationRole | null;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -163,6 +179,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [account, setAccount] = useState<AccountSummary | null>(null);
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [organizationRole, setOrganizationRole] =
+    useState<OrganizationRole | null>(null);
   const [loading, setLoading] = useState(true);
   // Why the account/role couldn't be established, when it couldn't.
   // Null on the happy path.
@@ -256,6 +275,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               default_currency: account.default_currency ?? DEFAULT_CURRENCY,
             };
           }
+
+          // Organization-layer identity (migration 042/043). Best-
+          // effort — see the AuthContextValue doc comment. A failure
+          // here must not affect accountRow/accountRole above, so it
+          // gets its own try/catch-free error branch that only logs.
+          const { data: membership, error: membershipErr } = await supabase
+            .from("organization_members")
+            .select("organization_id, role")
+            .eq("user_id", userId)
+            .eq("status", "active")
+            .maybeSingle();
+          if (membershipErr) {
+            console.error("[AuthProvider] fetchOrganizationMembership error:", {
+              message: membershipErr.message,
+              details: membershipErr.details,
+              hint: membershipErr.hint,
+              code: membershipErr.code,
+            });
+            setOrganizationId(null);
+            setOrganizationRole(null);
+          } else if (membership) {
+            setOrganizationId(membership.organization_id);
+            setOrganizationRole(membership.role as OrganizationRole);
+          } else {
+            setOrganizationId(null);
+            setOrganizationRole(null);
+          }
+        } else {
+          setOrganizationId(null);
+          setOrganizationRole(null);
         }
 
         // Narrow the DB enum into our AccountRole union. The DB
@@ -367,6 +416,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         lastFetchedUserIdRef.current = null;
         setProfile(null);
         setAccount(null);
+        setOrganizationId(null);
+        setOrganizationRole(null);
         setProfileLoading(false);
       }
 
@@ -386,6 +437,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setProfile(null);
     setAccount(null);
+    setOrganizationId(null);
+    setOrganizationRole(null);
     window.location.href = "/login";
   }, []);
 
@@ -438,6 +491,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         defaultCurrency: account?.default_currency ?? DEFAULT_CURRENCY,
         accountStatus,
         accountStatusDetail: statusDetail,
+        organizationId,
+        organizationRole,
         ...derived,
       }}
     >
@@ -474,6 +529,8 @@ export function useAuth(): AuthContextValue {
       accountStatusDetail: null,
       accountId: null,
       accountRole: null,
+      organizationId: null,
+      organizationRole: null,
       isOwner: false,
       isAdmin: false,
       isAgent: false,

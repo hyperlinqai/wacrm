@@ -5,10 +5,26 @@ import type { ApiKeyRow } from "@/lib/api-keys/store";
 import { ApiError } from "@/lib/api/v1/respond";
 import { __resetRateLimitForTests, RATE_LIMITS } from "@/lib/rate-limit";
 
-// Mock the service-role client factory — requireApiKey only stashes
-// the returned client in the context; tests never call through it.
+// Mock the service-role client factory. requireApiKey now also uses it
+// for one best-effort organizations lookup (Phase 2 plumbing) — the
+// `from` handler defaults to returning no row (organizationId: null)
+// so existing tests that don't care about it are unaffected; the
+// dedicated organizationId tests below override it per-call.
+let organizationsLookupResult: { data: unknown; error: unknown } = {
+  data: null,
+  error: null,
+};
 vi.mock("@/lib/flows/admin-client", () => ({
-  supabaseAdmin: () => ({ __isMockAdminClient: true }),
+  supabaseAdmin: () => ({
+    __isMockAdminClient: true,
+    from: (_table: string) => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: () => Promise.resolve(organizationsLookupResult),
+        }),
+      }),
+    }),
+  }),
 }));
 
 // Mock the store so we control which row a hash resolves to.
@@ -47,6 +63,7 @@ beforeEach(() => {
   __resetRateLimitForTests();
   findActiveKeyByHash.mockReset();
   touchLastUsed.mockReset();
+  organizationsLookupResult = { data: null, error: null };
 });
 
 afterEach(() => {
@@ -115,6 +132,21 @@ describe("requireApiKey", () => {
     findActiveKeyByHash.mockResolvedValue(row({ scopes: ["messages:send"] }));
     const ctx = await requireApiKey(reqWith(`Bearer ${KEY}`), "messages:send");
     expect(ctx.accountId).toBe("acct-1");
+  });
+
+  it("resolves organizationId via organizations.legacy_account_id (Phase 2 plumbing)", async () => {
+    findActiveKeyByHash.mockResolvedValue(row());
+    organizationsLookupResult = { data: { id: "org-1" }, error: null };
+    const ctx = await requireApiKey(reqWith(`Bearer ${KEY}`));
+    expect(ctx.organizationId).toBe("org-1");
+  });
+
+  it("does not fail the request when the organizations lookup errors (best-effort, non-blocking)", async () => {
+    findActiveKeyByHash.mockResolvedValue(row());
+    organizationsLookupResult = { data: null, error: { code: "PGRST200" } };
+    const ctx = await requireApiKey(reqWith(`Bearer ${KEY}`));
+    expect(ctx.accountId).toBe("acct-1");
+    expect(ctx.organizationId).toBeNull();
   });
 
   it("429s once the per-key budget is exhausted", async () => {

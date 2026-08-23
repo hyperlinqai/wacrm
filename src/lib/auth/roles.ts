@@ -17,6 +17,19 @@
 
 export type AccountRole = "owner" | "admin" | "agent" | "viewer";
 
+/**
+ * Organization-layer role (`organization_role_enum`, migration 042).
+ * Not used for authorization anywhere yet — see
+ * docs/phase2-audit/account-id-usage.md. Exists only to type
+ * `AccountContext.organizationRole` (migration 043 / Phase 2 app
+ * plumbing) ahead of the gradual per-route cutover in a later phase.
+ */
+export type OrganizationRole =
+  | "organization_owner"
+  | "organization_admin"
+  | "agent"
+  | "viewer";
+
 /** Ordered list of every valid role, lowest privilege first. */
 export const ACCOUNT_ROLES: readonly AccountRole[] = [
   "viewer",

@@ -97,9 +97,14 @@ describe("getCurrentAccount", () => {
       account: { id: "acct-1", name: "Acme" },
     });
 
-    // Two queries: profiles by user_id, then accounts by id. Neither
-    // selects an embedded relationship — the regression guard.
-    expect(calls.map((c) => c.table)).toEqual(["profiles", "accounts"]);
+    // Three queries: profiles by user_id, accounts by id, then the
+    // Phase 2 organization_members lookup. None select an embedded
+    // relationship — the #294 regression guard.
+    expect(calls.map((c) => c.table)).toEqual([
+      "profiles",
+      "accounts",
+      "organization_members",
+    ]);
     expect(calls[0].columns).not.toMatch(/accounts!/);
     expect(calls[0].eqArgs).toEqual([["user_id", "user-1"]]);
     expect(calls[1].columns).not.toMatch(/accounts!/);
@@ -155,6 +160,60 @@ describe("getCurrentAccount", () => {
     await expect(getCurrentAccount()).rejects.toThrow(
       "Profile is not linked to an account",
     );
+  });
+
+  it("resolves organizationId/organizationRole from organization_members (Phase 2 plumbing)", async () => {
+    const { client, calls } = makeClient({
+      user: { id: "user-1" },
+      byTable: {
+        profiles: {
+          data: { account_id: "acct-1", account_role: "owner" },
+          error: null,
+        },
+        accounts: { data: { id: "acct-1", name: "Acme" }, error: null },
+        organization_members: {
+          data: { organization_id: "org-1", role: "organization_owner" },
+          error: null,
+        },
+      },
+    });
+    createClient.mockReturnValue(client);
+
+    const ctx = await getCurrentAccount();
+
+    expect(ctx.organizationId).toBe("org-1");
+    expect(ctx.organizationRole).toBe("organization_owner");
+    expect(calls.map((c) => c.table)).toEqual([
+      "profiles",
+      "accounts",
+      "organization_members",
+    ]);
+    expect(calls[2].eqArgs).toEqual([
+      ["user_id", "user-1"],
+      ["status", "active"],
+    ]);
+  });
+
+  it("does not fail the whole request when organization_members lookup errors (best-effort, non-blocking)", async () => {
+    const { client } = makeClient({
+      user: { id: "user-1" },
+      byTable: {
+        profiles: {
+          data: { account_id: "acct-1", account_role: "owner" },
+          error: null,
+        },
+        accounts: { data: { id: "acct-1", name: "Acme" }, error: null },
+        organization_members: { data: null, error: { code: "PGRST200" } },
+      },
+    });
+    createClient.mockReturnValue(client);
+
+    // Must still resolve — accountId/role are unaffected, existing
+    // callers must keep working even if the new lookup fails.
+    const ctx = await getCurrentAccount();
+    expect(ctx.accountId).toBe("acct-1");
+    expect(ctx.organizationId).toBeNull();
+    expect(ctx.organizationRole).toBeNull();
   });
 
   it("rejects an account_id that resolves to no readable account", async () => {

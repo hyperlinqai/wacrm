@@ -49,6 +49,17 @@ export interface ApiKeyContext {
   scopes: string[];
   /** Who minted the key (null if that user was later removed). */
   createdBy: string | null;
+  /**
+   * The key's organization_id (migration 042/043's tenant layer),
+   * resolved via `organizations.legacy_account_id = accountId` — a
+   * different resolution source than the cookie-session path
+   * (`getCurrentAccount`, which reads `organization_members` by
+   * user_id), since an API key has no user session to look up a
+   * membership for. Same best-effort-non-blocking contract as
+   * `AccountContext.organizationId`: `null` on a lookup failure
+   * rather than throwing — nothing depends on it yet.
+   */
+  organizationId: string | null;
 }
 
 /**
@@ -107,12 +118,29 @@ export async function requireApiKey(
 
   touchLastUsed(row.id);
 
+  const supabase = supabaseAdmin();
+
+  // Organization-layer identity (migration 042/043). Best-effort and
+  // non-blocking — see the doc comment on ApiKeyContext.organizationId.
+  let organizationId: string | null = null;
+  const { data: org, error: orgErr } = await supabase
+    .from('organizations')
+    .select('id')
+    .eq('legacy_account_id', row.account_id)
+    .maybeSingle();
+  if (orgErr) {
+    console.error('[requireApiKey] organizations fetch error:', orgErr);
+  } else if (org) {
+    organizationId = org.id;
+  }
+
   return {
     authType: 'api_key',
-    supabase: supabaseAdmin(),
+    supabase,
     accountId: row.account_id,
     keyId: row.id,
     scopes: row.scopes,
     createdBy: row.created_by,
+    organizationId,
   };
 }

@@ -29,7 +29,7 @@ import { NextResponse } from "next/server";
 import type { SupabaseClient } from '@/lib/db';
 
 import { createClient } from "@/lib/supabase/server";
-import { hasMinRole, isAccountRole, type AccountRole } from "./roles";
+import { hasMinRole, isAccountRole, type AccountRole, type OrganizationRole } from "./roles";
 
 // ------------------------------------------------------------
 // Errors
@@ -89,6 +89,24 @@ export interface AccountContext {
   role: AccountRole;
   /** Lightweight account meta — id + name. */
   account: { id: string; name: string };
+  /**
+   * Caller's organization_id (migration 042/043's tenant layer),
+   * resolved from `organization_members` — kept in sync with
+   * `accountId`/`role` above by migration 042's triggers, so this is
+   * always the same tenant as `accountId`, just the new identifier.
+   *
+   * Best-effort: `null` if it can't be resolved (e.g. a sync gap)
+   * rather than throwing, because nothing depends on it yet (Phase 2
+   * is plumbing-only — see docs/phase2-audit/account-id-usage.md) and
+   * every existing caller must keep working even if this lookup
+   * fails. Once routes start relying on it (a later phase), promote
+   * a resolution failure to a thrown error at that call site, not
+   * here — failing every route on a still-unused field would be a
+   * regression this phase explicitly must not cause.
+   */
+  organizationId: string | null;
+  /** Caller's role within `organizationId`. `null` iff it is. */
+  organizationRole: OrganizationRole | null;
 }
 
 /**
@@ -163,12 +181,31 @@ export async function getCurrentAccount(): Promise<AccountContext> {
     throw new ForbiddenError("Profile is not linked to an account");
   }
 
+  // Organization-layer identity (migration 042/043). Best-effort and
+  // non-blocking — see the doc comment on AccountContext.organizationId.
+  let organizationId: string | null = null;
+  let organizationRole: OrganizationRole | null = null;
+  const { data: membership, error: membershipErr } = await supabase
+    .from("organization_members")
+    .select("organization_id, role")
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .maybeSingle();
+  if (membershipErr) {
+    console.error("[getCurrentAccount] organization_members fetch error:", membershipErr);
+  } else if (membership) {
+    organizationId = membership.organization_id;
+    organizationRole = membership.role as OrganizationRole;
+  }
+
   return {
     supabase,
     userId: user.id,
     accountId: data.account_id,
     role: data.account_role,
     account: { id: account.id, name: account.name },
+    organizationId,
+    organizationRole,
   };
 }
 

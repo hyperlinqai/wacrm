@@ -57,6 +57,18 @@ BEGIN
     RAISE EXCEPTION 'sync_organization_member_from_profile_trigger is missing — migration 042 did not apply';
   END IF;
 
+  -- Tenant ownership columns (043) — check a landmark table's column
+  -- is both present and actually NOT NULL, since a NULL-able leftover
+  -- would mean the backfill/gate/SET NOT NULL sequence didn't
+  -- complete (silently passable if only checked for column presence).
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'contacts'
+      AND column_name = 'organization_id' AND is_nullable = 'NO'
+  ) THEN
+    RAISE EXCEPTION 'contacts.organization_id is missing or nullable — migration 043 did not fully apply';
+  END IF;
+
   RAISE NOTICE 'schema verification passed';
 END
 $$;
