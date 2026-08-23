@@ -83,12 +83,19 @@ in an afternoon and make yours.
 git clone https://github.com/<your-username>/wacrm.git
 cd wacrm
 npm install
-cp .env.local.example .env.local   # fill in database + Meta creds
+cp apps/web/.env.local.example apps/web/.env.local   # fill in database + Meta creds
 npm run dev
 ```
 
 Open <http://localhost:3000>. You'll be redirected to `/login` (or
 `/dashboard` if already signed in).
+
+This is an npm-workspaces monorepo: the Next.js app lives in
+[apps/web](./apps/web), the [MCP server](./apps/mcp-server) is a
+separate published package (`wacrm-mcp`), and shared code lives under
+`packages/*`. The root `npm run <script>` commands (`dev`, `build`,
+`typecheck`, `test`, …) delegate to [Turborepo](https://turbo.build/repo),
+which runs each workspace's own script.
 
 Prefer containers? See [docs/docker.md](./docs/docker.md) for the
 Dockerfile + Docker Compose setup.

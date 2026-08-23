@@ -8,9 +8,9 @@ services:
     # host typically has only .env.production; local docker still
     # prefers .env.local when both exist.
     env_file:
-      - path: .env.production
+      - path: apps/web/.env.production
         required: false
-      - path: .env.local
+      - path: apps/web/.env.local
         required: false
     # The server always listens on 3000 inside the container. Pinned
     # here because `environment` wins over `env_file`, so a stray PORT

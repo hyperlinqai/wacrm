@@ -27,7 +27,7 @@ anon/authenticated/service_role RLS roles).
 
 - **Create → Application**, this repo, **Build type: Dockerfile**.
 - `NEXT_PUBLIC_*` values are inlined at build time from the in-repo
-  `env/next-public.production` (they are not secrets). To change them:
+  `apps/web/env/next-public.production` (they are not secrets). To change them:
   edit that file, commit, push, redeploy.
 - **Environment** (runtime secrets):
 
@@ -58,7 +58,7 @@ anon/authenticated/service_role RLS roles).
 
 ## Gotchas
 
-- `NEXT_PUBLIC_SITE_URL` (in `env/next-public.production`) must be the
+- `NEXT_PUBLIC_SITE_URL` (in `apps/web/env/next-public.production`) must be the
   URL users' browsers reach the app on — it is also the base for public
   media URLs Meta fetches. Changing it requires a rebuild.
 - Password-reset emails are not available (there is no mail service);

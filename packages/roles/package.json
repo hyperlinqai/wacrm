@@ -1,0 +1,18 @@
+{
+  "name": "@wacrm/roles",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Account/organization role types and pure permission helpers, shared across wacrm apps.",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "typescript": "^6",
+    "vitest": "^4.1.10"
+  }
+}

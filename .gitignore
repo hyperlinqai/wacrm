@@ -1,7 +1,8 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
-/node_modules
+# dependencies — unanchored: this is a monorepo, workspaces under
+# apps/*, packages/* can each end up with their own node_modules
+node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -11,14 +12,17 @@
 !.yarn/versions
 
 # testing
-/coverage
+coverage
 
-# next.js
-/.next/
+# next.js — unanchored: apps/web/.next, not just a root-level .next
+.next/
 /out/
 
 # production
-/build
+build
+
+# turborepo
+.turbo
 
 # misc
 .DS_Store
@@ -43,5 +47,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# local media storage (direct-postgres data layer)
-/storage-data/
+# local media storage (direct-postgres data layer) — unanchored: now
+# lives at apps/web/storage-data
+storage-data/

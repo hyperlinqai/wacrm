@@ -11,19 +11,19 @@ container is included.
 1. Copy the env template and fill it in:
 
    ```bash
-   cp .env.local.example .env.local
+   cp apps/web/.env.local.example apps/web/.env.local
    ```
 
 2. Build and start (the `--env-file` flag is required — Compose only
    reads `.env` by default for `${VAR}` substitution, and this project
-   keeps its config in `.env.local`):
+   keeps its config in `apps/web/.env.local`):
 
    ```bash
-   docker compose --env-file .env.local up --build -d
+   docker compose --env-file apps/web/.env.local up --build -d
    ```
 
 3. The app is served on [http://localhost:3000](http://localhost:3000)
-   (publish it elsewhere with `HOST_PORT=8080` in `.env.local`).
+   (publish it elsewhere with `HOST_PORT=8080` in `apps/web/.env.local`).
 
 > Use `HOST_PORT`, not `PORT`, to move the published port. `PORT` is
 > what the server listens on _inside_ the container, and `env_file`
@@ -34,11 +34,11 @@ container is included.
 ## Build-time vs runtime variables
 
 - `NEXT_PUBLIC_*` variables are **inlined into the client bundle at
-  build time** from the in-repo `env/next-public.production` (they are
+  build time** from the in-repo `apps/web/env/next-public.production` (they are
   browser-facing, not secrets). If you change any of them, rebuild:
-  `docker compose --env-file .env.local up --build -d`.
+  `docker compose --env-file apps/web/.env.local up --build -d`.
 - Everything else (`DATABASE_URL`, `JWT_SECRET`, `ENCRYPTION_KEY`,
-  `META_APP_SECRET`, …) is read at **runtime** from `.env.local` via
+  `META_APP_SECRET`, …) is read at **runtime** from `apps/web/.env.local` via
   `env_file` and is never baked into the image — safe to change with
   just a container restart.
 
@@ -47,7 +47,7 @@ container is included.
 ```bash
 docker build -t wacrm .
 
-docker run -d --env-file .env.local -e PORT=3000 \
+docker run -d --env-file apps/web/.env.local -e PORT=3000 \
   -e STORAGE_DIR=/var/lib/wacrm-storage \
   -v wacrm-storage:/var/lib/wacrm-storage \
   -p 3000:3000 wacrm
@@ -71,5 +71,5 @@ docker run -d --env-file .env.local -e PORT=3000 \
   Wait steps or flows, point an external scheduler at
   `GET /api/automations/cron` and `GET /api/flows/cron` on this
   deployment, sending the shared secret in the `x-cron-secret` header
-  (`AUTOMATION_CRON_SECRET`, see `.env.local.example`). Both return
+  (`AUTOMATION_CRON_SECRET`, see `apps/web/.env.local.example`). Both return
   503 until that variable is set.

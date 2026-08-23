@@ -21,10 +21,16 @@ opinions become yours.
 git clone https://github.com/<your-username>/wacrm.git
 cd wacrm
 
-cp .env.local.example .env.local   # fill in Supabase + Meta creds
+cp apps/web/.env.local.example apps/web/.env.local   # fill in Supabase + Meta creds
 npm install
 npm run dev
 ```
+
+This is an npm-workspaces monorepo (root `package.json` has
+`workspaces: ["apps/*", "packages/*"]`, orchestrated by
+[Turborepo](https://turbo.build/repo)). The Next.js app lives in
+`apps/web/`; the commands below run from the repo root and Turborepo
+fans them out to the right workspace.
 
 Full setup (Supabase migrations, WhatsApp Business API, deploy) lives in
 [`docs/`](./docs/README.md).

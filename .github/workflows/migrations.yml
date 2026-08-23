@@ -69,3 +69,10 @@ jobs:
       # just the absence of an error.
       - name: Verify the resulting schema
         run: supabase db query --local --file supabase/ci/verify-schema.sql
+
+      # Phase 3: RLS now enforces tenant isolation via organization_id
+      # (migration 044). This seeds two real, unrelated organizations
+      # and proves — under the real `authenticated` role, not
+      # superuser — that one cannot read or write the other's rows.
+      - name: Verify tenant isolation
+        run: supabase db query --local --file supabase/ci/verify-tenant-isolation.sql

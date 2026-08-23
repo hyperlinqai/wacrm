@@ -3,7 +3,10 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-ENV_FILE="${ENV_FILE:-$ROOT/.env.local}"
+# apps/web/.env.local since the monorepo conversion (this script itself
+# stays at the repo root — supabase/ and scripts/ are shared infra, not
+# app code — but the app's own env file lives with the app).
+ENV_FILE="${ENV_FILE:-$ROOT/apps/web/.env.local}"
 
 if [[ -z "${DATABASE_URL:-}" && -f "$ENV_FILE" ]]; then
   DATABASE_URL="$(grep -E '^DATABASE_URL=' "$ENV_FILE" | tail -n1 | cut -d= -f2-)"
