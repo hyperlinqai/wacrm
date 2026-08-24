@@ -108,9 +108,18 @@ export default function ContactsPage() {
     // Deliberate: seeding search from the URL's ?q= is a browser-only
     // read (window.location doesn't exist during SSR), so it has to
     // happen post-mount — not an effect smell.
-    const q = new URLSearchParams(window.location.search).get('q');
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('q');
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (q) setSearch(q);
+    // ?contact=<id> deep-links straight into a contact's detail sheet —
+    // there is no /contacts/[id] page, so this is how other screens
+    // (e.g. a web-form submission row) hand off to a specific contact.
+    const contactId = params.get('contact');
+    if (contactId) {
+      setDetailContactId(contactId);
+      setDetailOpen(true);
+    }
   }, []);
 
   const fetchTags = useCallback(async () => {

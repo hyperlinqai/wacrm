@@ -131,7 +131,9 @@ export default function WebFormSubmissionsPage({
                   <TableCell>
                     {submission.contact_id ? (
                       <Link
-                        href={`/contacts/${submission.contact_id}`}
+                        // No /contacts/[id] page exists; the contacts list
+                        // opens the detail sheet for ?contact=<id>.
+                        href={`/contacts?contact=${encodeURIComponent(submission.contact_id)}`}
                         className="text-primary hover:underline"
                       >
                         {t("viewContact")}
