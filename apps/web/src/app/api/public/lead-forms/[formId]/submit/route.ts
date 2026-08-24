@@ -18,6 +18,7 @@
 import { NextResponse } from 'next/server'
 
 import { supabaseAdmin } from '@/lib/web-forms/admin-client'
+import { isOriginAllowed } from '@/lib/web-forms/domains'
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit'
 import { sanitizePhoneForMeta, isValidE164 } from '@/lib/whatsapp/phone-utils'
 import { resolveAuditUserId, findOrCreateContact, ContactError } from '@/lib/api/v1/contacts'
@@ -39,13 +40,15 @@ function getClientIp(request: Request): string {
 }
 
 /** CORS headers for this request: wildcard unless the form restricts
- *  origins, in which case only a matching Origin is echoed back. */
+ *  origins, in which case only a matching Origin is echoed back.
+ *  Matching is by normalized hostname (see lib/web-forms/domains.ts), so
+ *  "www." and the bare apex are the same site. */
 function corsHeaders(request: Request, allowedDomains: string[] | null): Record<string, string> {
   const origin = request.headers.get('origin')
   if (!allowedDomains || allowedDomains.length === 0) {
     return { 'Access-Control-Allow-Origin': '*' }
   }
-  if (origin && allowedDomains.some((d) => origin === d || origin.endsWith(`://${d}`))) {
+  if (origin && isOriginAllowed(origin, allowedDomains)) {
     return { 'Access-Control-Allow-Origin': origin, Vary: 'Origin' }
   }
   return {}

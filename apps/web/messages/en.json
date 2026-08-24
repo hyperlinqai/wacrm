@@ -1150,7 +1150,7 @@
       "successMessageLabel": "Success message",
       "successMessagePlaceholder": "Thanks! We'll be in touch shortly.",
       "domainsSectionTitle": "Allowed domains",
-      "allowedDomainsHint": "Leave empty to allow submissions from any website. Comma-separated (e.g. example.com, www.example.com).",
+      "allowedDomainsHint": "Leave empty to allow submissions from any website. Comma-separated domains (e.g. example.com, shop.example.com). \"www.\" and the bare domain are treated as the same site.",
       "cancel": "Cancel",
       "save": "Save",
       "saving": "Saving…",

@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { parseAllowedDomains } from "@/lib/web-forms/domains"
 import type { LeadForm, LeadFormField, LeadFormStatus, LeadFormStyle } from "@/types"
 import { EmbedCodeDialog } from "./embed-code-dialog"
 import { FieldListEditor } from "./field-list-editor"
@@ -96,16 +97,13 @@ export function LeadFormBuilder(props: LeadFormBuilderProps) {
     if (!canSave) return
     setSaving(true)
     try {
-      const allowedDomains = state.allowedDomainsText
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean)
-
       const payload: Record<string, unknown> = {
         name: state.name.trim(),
         fields: state.fields,
         style: state.style,
-        allowed_domains: allowedDomains.length > 0 ? allowedDomains : null,
+        // Normalized hostnames only (no scheme/path/"www.") — the same
+        // rule the submit route matches an Origin with.
+        allowed_domains: parseAllowedDomains(state.allowedDomainsText),
       }
       if (isEditing) payload.status = state.status
 
