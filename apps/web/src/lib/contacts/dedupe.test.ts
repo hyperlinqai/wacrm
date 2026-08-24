@@ -2,9 +2,13 @@ import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from '@/lib/db';
 import {
   dedupeByPhone,
+  findContactByEmail,
+  findDuplicateContacts,
   findExistingContact,
+  hasDuplicates,
   isExactMatch,
   isUniqueViolation,
+  normalizeEmailKey,
   normalizeKey,
 } from "./dedupe";
 
@@ -93,5 +97,83 @@ describe("findExistingContact", () => {
   it("returns null for an empty phone without querying", async () => {
     const db = stubDb([{ id: "c1", phone: "15551234567" }]);
     expect(await findExistingContact(db, "acct", "   ")).toBeNull();
+  });
+});
+
+describe("normalizeEmailKey", () => {
+  it("trims and lowercases; blank → empty string", () => {
+    expect(normalizeEmailKey("  Jane@Example.COM ")).toBe("jane@example.com");
+    expect(normalizeEmailKey(null)).toBe("");
+    expect(normalizeEmailKey("   ")).toBe("");
+  });
+});
+
+/** Stub that serves both the phone chain (.like) and the email chain
+ *  (.ilike().limit()) from one candidate list. */
+function stubBoth(
+  rows: Array<{ id: string; phone: string; email?: string | null }>,
+): SupabaseClient {
+  const builder = {
+    select: () => builder,
+    eq: () => builder,
+    like: () => Promise.resolve({ data: rows, error: null }),
+    ilike: () => builder,
+    limit: () => Promise.resolve({ data: rows, error: null }),
+  };
+  return { from: () => builder } as unknown as SupabaseClient;
+}
+
+describe("findContactByEmail", () => {
+  it("matches case-insensitively", async () => {
+    const db = stubBoth([{ id: "c1", phone: "1", email: "Jane@Example.com" }]);
+    const hit = await findContactByEmail(db, "acct", "jane@example.COM");
+    expect(hit?.id).toBe("c1");
+  });
+
+  it("skips the contact being edited", async () => {
+    const db = stubBoth([{ id: "c1", phone: "1", email: "jane@example.com" }]);
+    expect(await findContactByEmail(db, "acct", "jane@example.com", "c1")).toBeNull();
+  });
+
+  it("returns null for a blank email without querying", async () => {
+    const db = stubBoth([{ id: "c1", phone: "1", email: "" }]);
+    expect(await findContactByEmail(db, "acct", "  ")).toBeNull();
+  });
+});
+
+describe("findDuplicateContacts / hasDuplicates", () => {
+  it("reports an exact phone match and an email match independently", async () => {
+    const db = stubBoth([
+      { id: "c1", phone: "+1 555-123-4567", email: "other@example.com" },
+    ]);
+    const m = await findDuplicateContacts(db, "acct", {
+      phone: "15551234567",
+      email: "OTHER@example.com",
+    });
+    expect(m.phone?.id).toBe("c1");
+    expect(m.phoneExact).toBe(true);
+    expect(m.email?.id).toBe("c1");
+    expect(hasDuplicates(m)).toBe(true);
+  });
+
+  it("flags a trunk-variant phone as a non-exact match", async () => {
+    const db = stubBoth([{ id: "c1", phone: "37063949836", email: null }]);
+    const m = await findDuplicateContacts(db, "acct", { phone: "+370 063 949 836" });
+    expect(m.phone?.id).toBe("c1");
+    expect(m.phoneExact).toBe(false);
+    expect(m.email).toBeNull();
+  });
+
+  it("ignores the contact being edited on both qualifiers", async () => {
+    const db = stubBoth([{ id: "c1", phone: "15551234567", email: "a@b.co" }]);
+    const m = await findDuplicateContacts(
+      db,
+      "acct",
+      { phone: "15551234567", email: "a@b.co" },
+      "c1",
+    );
+    expect(m.phone).toBeNull();
+    expect(m.email).toBeNull();
+    expect(hasDuplicates(m)).toBe(false);
   });
 });
