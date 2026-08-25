@@ -17,6 +17,8 @@ import {
   MEDIA_MAX_BYTES_BY_KIND,
 } from '@/lib/storage/upload-media';
 import { readJsonResponse } from '@/lib/http/read-json-response';
+import { insertAtSelection, nextTemplatePlaceholder } from '@/lib/messaging/variables';
+import { Braces } from 'lucide-react';
 import { fetchWithGatewayRetry } from '@/lib/http/fetch-with-gateway-retry';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
@@ -121,6 +123,9 @@ function emptyButton(type: TemplateButton['type']): TemplateButton {
 
 export function TemplateManager() {
   const t = useTranslations('Settings.templates');
+  const tv = useTranslations('Variables');
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const headerRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
   const { user, accountId, loading: authLoading } = useAuth();
 
@@ -296,6 +301,20 @@ export function TemplateManager() {
       return;
     }
     toast.error(t('toastCannotEdit', { status }));
+  }
+
+
+  /** Insert the next {{n}} placeholder at the caret of a field. */
+  function insertPlaceholder(field: 'body_text' | 'header_content') {
+    const el = field === 'body_text' ? bodyRef.current : headerRef.current;
+    const current = form[field];
+    const token = nextTemplatePlaceholder(field === 'body_text' ? current : current);
+    const { value, caret } = insertAtSelection(current, token, el);
+    setForm({ ...form, [field]: value });
+    requestAnimationFrame(() => {
+      el?.focus();
+      el?.setSelectionRange(caret, caret);
+    });
   }
 
   async function handleSubmit() {
@@ -720,7 +739,19 @@ export function TemplateManager() {
 
               {form.header_format === 'text' && (
                 <div className="space-y-2 mt-2">
+                  {form.header_content.trim() !== '' && headerVarCount === 0 && (
+                    <button
+                      type="button"
+                      onClick={() => insertPlaceholder('header_content')}
+                      title={tv('insertPlaceholderTitle')}
+                      className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:text-foreground"
+                    >
+                      <Braces className="size-3" />
+                      {tv('insertPlaceholder')} {'{{1}}'}
+                    </button>
+                  )}
                   <Input
+                    ref={headerRef}
                     id="template-header-text"
                     aria-label="Header text"
                     placeholder={t.raw('headerTextPlaceholder')}
@@ -810,8 +841,20 @@ export function TemplateManager() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-muted-foreground">{t('bodyText')}</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-muted-foreground">{t('bodyText')}</Label>
+                <button
+                  type="button"
+                  onClick={() => insertPlaceholder('body_text')}
+                  title={tv('insertPlaceholderTitle')}
+                  className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:text-foreground"
+                >
+                  <Braces className="size-3" />
+                  {tv('insertPlaceholder')} {nextTemplatePlaceholder(form.body_text)}
+                </button>
+              </div>
               <Textarea
+                ref={bodyRef}
                 placeholder={t.raw('bodyPlaceholder')}
                 value={form.body_text}
                 onChange={(e) =>

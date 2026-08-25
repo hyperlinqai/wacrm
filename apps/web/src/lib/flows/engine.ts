@@ -59,6 +59,8 @@ import {
   type StartNodeConfig,
   type KeywordTriggerConfig,
 } from "./types";
+import { hasVariables, renderVariables, type ContactVariables } from "@/lib/messaging/variables";
+import { loadContactVariables } from "@/lib/messaging/load-contact-variables";
 
 // ============================================================
 // Pure helpers — extracted so engine.test.ts can exercise them
@@ -547,12 +549,29 @@ async function evaluateConditionNode(
  * ("Thanks {{vars.name}}, what's your email?"). Missing vars render as
  * empty string — the same behavior as the automations engine.
  */
-function interpolateVars(template: string, vars: Record<string, unknown>): string {
+// Contact variables are loaded once per run (keyed by run id) so a
+// flow with several prompts costs one contact read, not one per node.
+const runContactVars = new Map<string, Promise<ContactVariables | null>>();
+
+async function interpolateVars(
+  template: string,
+  run: { id: string; contact_id: string | null; vars: Record<string, unknown> },
+  db: AdminClient,
+): Promise<string> {
   if (!template) return "";
-  return template.replace(/\{\{vars\.([a-zA-Z0-9_]+)\}\}/g, (_, key) => {
-    const v = vars[key];
-    return v === undefined || v === null ? "" : String(v);
-  });
+  if (!hasVariables(template)) return template;
+  let contact: ContactVariables | null = null;
+  if (run.contact_id) {
+    let pending = runContactVars.get(run.id);
+    if (!pending) {
+      pending = loadContactVariables(db, run.contact_id).catch(() => null);
+      runContactVars.set(run.id, pending);
+      // Bound the cache: a run is short-lived; drop the entry soon after.
+      setTimeout(() => runContactVars.delete(run.id), 5 * 60_000).unref?.();
+    }
+    contact = await pending;
+  }
+  return renderVariables(template, { contact, vars: run.vars ?? {} });
 }
 
 async function endRun(
@@ -619,7 +638,7 @@ async function advanceFromNodeKey(
     userId: run.user_id,
           conversationId: run.conversation_id!,
           contactId: run.contact_id!,
-          text: interpolateVars(cfg.text, run.vars),
+          text: await interpolateVars(cfg.text, run, db),
         });
         await logEvent(db, run.id, "message_sent", node.node_key, {
           node_type: "send_message",
@@ -647,7 +666,7 @@ async function advanceFromNodeKey(
           kind: cfg.media_type,
           link: cfg.media_url,
           caption: cfg.caption
-            ? interpolateVars(cfg.caption, run.vars)
+            ? await interpolateVars(cfg.caption, run, db)
             : undefined,
           filename: cfg.filename,
         });
@@ -677,7 +696,7 @@ async function advanceFromNodeKey(
     userId: run.user_id,
           conversationId: run.conversation_id!,
           contactId: run.contact_id!,
-          text: interpolateVars(cfg.prompt_text, run.vars),
+          text: await interpolateVars(cfg.prompt_text, run, db),
         });
         await logEvent(db, run.id, "message_sent", node.node_key, {
           node_type: "collect_input",
@@ -1057,7 +1076,7 @@ async function handleReplyForActiveRun(
     userId: run.user_id,
           conversationId: run.conversation_id!,
           contactId: run.contact_id!,
-          text: interpolateVars(cfg.prompt_text, run.vars),
+          text: await interpolateVars(cfg.prompt_text, run, db),
         });
       } catch (err) {
         await logEvent(db, run.id, "error", currentNode.node_key, {

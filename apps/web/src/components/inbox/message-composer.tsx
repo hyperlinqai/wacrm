@@ -53,7 +53,9 @@ import {
   blankButtonsPayload,
 } from "@/components/interactive/interactive-builder";
 import { validateInteractivePayload } from "@/lib/whatsapp/interactive";
-import type { InteractiveMessagePayload, QuickReply } from "@/types";
+import type { Contact, InteractiveMessagePayload, QuickReply } from "@/types";
+import { VariablePicker } from "@/components/shared/variable-picker";
+import { buildVariableCatalog, insertAtSelection, renderVariables } from "@/lib/messaging/variables";
 import { QuickReplyPicker } from "./quick-reply-picker";
 
 /** Media content types an agent can send from the composer. */
@@ -118,6 +120,9 @@ interface MessageComposerProps {
   onOpenTemplates: () => void;
   replyTo?: ReplyDraft | null;
   onClearReply?: () => void;
+  /** The conversation's contact — lets quick replies and the variable
+   *  picker resolve {{contact.*}} to real values while drafting. */
+  contact?: Contact | null;
 }
 
 function formatDuration(seconds: number): string {
@@ -140,6 +145,7 @@ export function MessageComposer({
   onOpenTemplates,
   replyTo,
   onClearReply,
+  contact = null,
 }: MessageComposerProps) {
   const t = useTranslations("Inbox.composer");
 
@@ -363,7 +369,11 @@ export function MessageComposer({
         openInteractiveBuilder(qr.interactive_payload);
         return;
       }
-      const body = qr.content_text ?? "";
+      const body = renderVariables(qr.content_text ?? "", {
+        contact: contact
+          ? { name: contact.name, phone: contact.phone, email: contact.email, company: contact.company }
+          : null,
+      });
       // Separate the snippet from any existing draft with a newline so the
       // words don't run together ("Thanks" + "we'll…" → "Thankswe'll…").
       setText((prev) =>
@@ -378,7 +388,7 @@ export function MessageComposer({
         }
       });
     },
-    [openInteractiveBuilder, adjustHeight],
+    [openInteractiveBuilder, adjustHeight, contact],
   );
 
   // Upload a captured file to chat-media and stage it as a draft.
@@ -630,6 +640,36 @@ export function MessageComposer({
         </div>
       ) : (
         <div className="flex items-end gap-2">
+          {/* Insert a contact detail (resolved immediately — this is a
+              live chat, not a template). */}
+          <VariablePicker
+            groups={buildVariableCatalog()}
+            disabled={inputsDisabled}
+            preview={(item) =>
+              renderVariables(item.token, {
+                contact: contact
+                  ? { name: contact.name, phone: contact.phone, email: contact.email, company: contact.company }
+                  : null,
+              })
+            }
+            onInsert={(token) => {
+              const resolved = renderVariables(token, {
+                contact: contact
+                  ? { name: contact.name, phone: contact.phone, email: contact.email, company: contact.company }
+                  : null,
+              });
+              if (!resolved) return;
+              const el = textareaRef.current;
+              const { value, caret } = insertAtSelection(text, resolved, el);
+              setText(value);
+              requestAnimationFrame(() => {
+                adjustHeight();
+                el?.focus();
+                el?.setSelectionRange(caret, caret);
+              });
+            }}
+            className="mb-0.5"
+          />
           {/* Attach menu — photo / video / document / voice. */}
           <DropdownMenu>
             <DropdownMenuTrigger

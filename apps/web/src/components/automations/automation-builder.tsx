@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useRef,
   useContext,
   useEffect,
   useState,
@@ -38,6 +39,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { VariablePicker } from "@/components/shared/variable-picker"
+import { buildVariableCatalog, insertAtSelection } from "@/lib/messaging/variables"
 import { Switch } from "@/components/ui/switch"
 import {
   DropdownMenu,
@@ -1301,12 +1304,32 @@ function StepEditor({
   const cfg = step.step_config
   const set = (patch: Record<string, unknown>) =>
     onChange({ ...step, step_config: { ...cfg, ...patch } })
+  const { customFields } = useResources()
+  const messageTextRef = useRef<HTMLTextAreaElement>(null)
 
   switch (step.step_type) {
     case "send_message":
       return (
         <FieldBlock label={t("config.messageText")}>
+          <div className="mb-1 flex justify-end">
+            <VariablePicker
+              groups={buildVariableCatalog({
+                customFieldNames: customFields.map((f) => f.field_name),
+                includeMessageText: true,
+              })}
+              onInsert={(token) => {
+                const el = messageTextRef.current
+                const { value, caret } = insertAtSelection((cfg.text as string) ?? "", token, el)
+                set({ text: value })
+                requestAnimationFrame(() => {
+                  el?.focus()
+                  el?.setSelectionRange(caret, caret)
+                })
+              }}
+            />
+          </div>
           <Textarea
+            ref={messageTextRef}
             value={(cfg.text as string) ?? ""}
             onChange={(e) => set({ text: e.target.value })}
             placeholder={t("config.placeholderMessageText")}

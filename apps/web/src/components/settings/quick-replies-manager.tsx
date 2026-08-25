@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, MessageSquare, Pencil, Plus, Trash2, Zap } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { VariablePicker } from "@/components/shared/variable-picker";
+import { buildVariableCatalog, insertAtSelection } from "@/lib/messaging/variables";
 import {
   Dialog,
   DialogContent,
@@ -46,6 +48,7 @@ export function QuickRepliesManager() {
   const [items, setItems] = useState<QuickReply[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState<DraftState | null>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
@@ -211,12 +214,29 @@ export function QuickRepliesManager() {
                 />
               </div>
               {draft.kind === "text" ? (
-                <Textarea
-                  value={draft.content_text}
-                  onChange={(e) => setDraft({ ...draft, content_text: e.target.value })}
-                  placeholder="The message text to insert"
-                  className="min-h-28 bg-muted text-foreground"
-                />
+                <div className="space-y-1">
+                  <div className="flex justify-end">
+                    <VariablePicker
+                      groups={buildVariableCatalog()}
+                      onInsert={(token) => {
+                        const el = contentRef.current;
+                        const { value, caret } = insertAtSelection(draft.content_text, token, el);
+                        setDraft({ ...draft, content_text: value });
+                        requestAnimationFrame(() => {
+                          el?.focus();
+                          el?.setSelectionRange(caret, caret);
+                        });
+                      }}
+                    />
+                  </div>
+                  <Textarea
+                    ref={contentRef}
+                    value={draft.content_text}
+                    onChange={(e) => setDraft({ ...draft, content_text: e.target.value })}
+                    placeholder="The message text to insert"
+                    className="min-h-28 bg-muted text-foreground"
+                  />
+                </div>
               ) : (
                 <InteractiveBuilder
                   value={draft.interactive_payload}

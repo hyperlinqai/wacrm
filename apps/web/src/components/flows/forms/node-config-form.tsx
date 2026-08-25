@@ -49,6 +49,19 @@ import { cn } from "@/lib/utils";
 import { uploadAccountMedia, MEDIA_MAX_BYTES } from "@/lib/storage/upload-media";
 import { slugify, type BuilderNode } from "../shared";
 import { NextNodeRow, NodeKeySelect, TextRow } from "./fields";
+import { buildVariableCatalog, type VariableGroup } from "@/lib/messaging/variables";
+
+/**
+ * Variables a flow prompt can use: the contact's details plus every
+ * `var_key` captured by a collect_input node elsewhere in this flow.
+ */
+function flowVariables(allNodes: BuilderNode[], currentKey: string): VariableGroup[] {
+  const flowVarKeys = allNodes
+    .filter((n) => n.node_type === "collect_input" && n.node_key !== currentKey)
+    .map((n) => (n.config as { var_key?: string }).var_key ?? "")
+    .filter(Boolean);
+  return buildVariableCatalog({ flowVarKeys });
+}
 
 interface NodeConfigFormProps {
   node: BuilderNode;
@@ -84,6 +97,8 @@ export function NodeConfigForm({
             label={t("textToCustomer")}
             value={(cfg as { text?: string }).text ?? ""}
             onChange={(v) => onUpdateConfig({ text: v })}
+            rows={3}
+            variables={flowVariables(allNodes, node.node_key)}
           />
           <NextNodeRow
             value={(cfg as { next_node_key?: string }).next_node_key ?? ""}
@@ -138,6 +153,7 @@ export function NodeConfigForm({
             value={(cfg as { prompt_text?: string }).prompt_text ?? ""}
             onChange={(v) => onUpdateConfig({ prompt_text: v })}
             rows={2}
+            variables={flowVariables(allNodes, node.node_key)}
           />
           <div>
             <label className="mb-1 block text-xs text-muted-foreground">

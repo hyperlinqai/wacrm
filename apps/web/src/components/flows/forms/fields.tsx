@@ -18,6 +18,9 @@
  * (introduced in this PR) mount the exact same form components.
  */
 
+import { useRef } from "react";
+import { VariablePicker } from "@/components/shared/variable-picker";
+import { insertAtSelection, type VariableGroup } from "@/lib/messaging/variables";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -36,17 +39,34 @@ export function TextRow({
   value,
   onChange,
   rows = 1,
+  variables,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   rows?: number;
+  /** When set, shows an "Insert variable" picker that drops tokens at the caret. */
+  variables?: VariableGroup[];
 }) {
+  const ref = useRef<HTMLTextAreaElement | HTMLInputElement>(null);
+  const insert = (token: string) => {
+    const el = ref.current;
+    const { value: next, caret } = insertAtSelection(value, token, el);
+    onChange(next);
+    requestAnimationFrame(() => {
+      el?.focus();
+      el?.setSelectionRange(caret, caret);
+    });
+  };
   return (
     <div>
-      <label className="mb-1 block text-xs text-muted-foreground">{label}</label>
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <label className="block text-xs text-muted-foreground">{label}</label>
+        {variables && <VariablePicker groups={variables} onInsert={insert} />}
+      </div>
       {rows > 1 ? (
         <Textarea
+          ref={ref as React.RefObject<HTMLTextAreaElement | null>}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           rows={rows}
@@ -54,6 +74,7 @@ export function TextRow({
         />
       ) : (
         <Input
+          ref={ref as React.RefObject<HTMLInputElement | null>}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className="bg-muted"
