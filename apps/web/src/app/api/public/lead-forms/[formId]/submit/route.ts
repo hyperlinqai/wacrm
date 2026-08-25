@@ -19,6 +19,8 @@ import { NextResponse } from 'next/server'
 
 import { supabaseAdmin } from '@/lib/web-forms/admin-client'
 import { isOriginAllowed } from '@/lib/web-forms/domains'
+import { ensureLeadFormTag } from '@/lib/web-forms/segment-tag'
+import { addContactTagAndDispatch } from '@/lib/contacts/tag-events'
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit'
 import { sanitizePhoneForMeta, isValidE164 } from '@/lib/whatsapp/phone-utils'
 import { resolveAuditUserId, findOrCreateContact, ContactError } from '@/lib/api/v1/contacts'
@@ -87,7 +89,7 @@ export async function POST(
 
   const { data: form, error: formErr } = await admin
     .from('lead_forms')
-    .select('id, organization_id, account_id, status, fields, style, allowed_domains')
+    .select('id, name, organization_id, account_id, created_by, status, fields, style, allowed_domains, tag_id')
     .eq('id', formId)
     .maybeSingle()
 
@@ -205,6 +207,27 @@ export async function POST(
     })
 
     await admin.rpc('increment_lead_form_submit_count', { p_lead_form_id: formId })
+
+    // Segment: drop the contact into this form's tag so it is targetable
+    // as a broadcast audience right away. Goes through the central tag
+    // writer so a `tag_added` automation on that tag fires too (e.g. an
+    // auto-reply or drip to fresh leads). A failure here must not turn a
+    // captured lead into a visitor-facing error — log and continue.
+    try {
+      const tagId = await ensureLeadFormTag(
+        admin,
+        {
+          id: form.id as string,
+          name: form.name as string,
+          account_id: accountId,
+          tag_id: form.tag_id as string | null,
+        },
+        (form.created_by as string | null) ?? auditUserId,
+      )
+      await addContactTagAndDispatch({ db: admin, accountId, contactId, tagId })
+    } catch (err) {
+      console.error(`[web-forms/submit] segment tagging failed for form ${formId}:`, err)
+    }
 
     const style = (form.style as { successMessage?: string } | null) ?? {}
     return NextResponse.json(

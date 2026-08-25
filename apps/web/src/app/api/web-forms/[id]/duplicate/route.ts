@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireRole, toErrorResponse } from '@/lib/auth/account'
 import { supabaseAdmin } from '@/lib/web-forms/admin-client'
+import { ensureLeadFormTag } from '@/lib/web-forms/segment-tag'
 
 export async function POST(
   _request: Request,
@@ -38,12 +39,21 @@ export async function POST(
       // duplicate should never start silently accepting real leads
       // before someone reviews it.
       status: 'paused',
+      // The copy gets its own segment (created below), not the
+      // original's — otherwise both forms' leads would pool into one
+      // audience and the duplicate couldn't be targeted separately.
+      tag_id: null,
     })
     .select()
     .single()
 
   if (copyErr || !copy) {
     return NextResponse.json({ error: copyErr?.message ?? 'copy failed' }, { status: 500 })
+  }
+  try {
+    copy.tag_id = await ensureLeadFormTag(admin, copy, ctx.userId)
+  } catch (err) {
+    console.error('[web-forms] segment tag creation failed for copy:', err)
   }
   return NextResponse.json({ form: copy }, { status: 201 })
 }

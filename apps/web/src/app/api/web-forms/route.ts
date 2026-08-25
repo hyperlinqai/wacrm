@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { requireRole, toErrorResponse } from '@/lib/auth/account'
 import { supabaseAdmin } from '@/lib/web-forms/admin-client'
+import { ensureLeadFormTag, tagBelongsToAccount } from '@/lib/web-forms/segment-tag'
 
 export async function GET() {
   const supabase = await createClient()
@@ -40,11 +41,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const { name, fields, style, allowed_domains } = body as {
+  const { name, fields, style, allowed_domains, tag_id } = body as {
     name?: string
     fields?: unknown[]
     style?: Record<string, unknown>
     allowed_domains?: string[] | null
+    /** Segment tag to apply to submitters; omitted/null = create one
+     *  named after the form. */
+    tag_id?: string | null
   }
 
   if (!name || typeof name !== 'string') {
@@ -64,6 +68,11 @@ export async function POST(request: Request) {
   }
 
   const admin = supabaseAdmin()
+
+  if (tag_id && !(await tagBelongsToAccount(admin, tag_id, ctx.accountId))) {
+    return NextResponse.json({ error: 'tag_id is not a tag of this account' }, { status: 400 })
+  }
+
   const { data: form, error } = await admin
     .from('lead_forms')
     .insert({
@@ -74,12 +83,21 @@ export async function POST(request: Request) {
       style: style ?? {},
       allowed_domains: allowed_domains ?? null,
       status: 'active',
+      tag_id: tag_id ?? null,
     })
     .select()
     .single()
 
   if (error || !form) {
     return NextResponse.json({ error: error?.message ?? 'insert failed' }, { status: 500 })
+  }
+
+  // No tag picked → create the form's own segment tag now, so the
+  // audience exists (and is visible in Tags) before the first lead.
+  try {
+    form.tag_id = await ensureLeadFormTag(admin, form, ctx.userId)
+  } catch (err) {
+    console.error('[web-forms] segment tag creation failed:', err)
   }
   return NextResponse.json({ form }, { status: 201 })
 }

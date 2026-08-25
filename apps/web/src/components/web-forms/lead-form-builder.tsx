@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { AlertCircle, ArrowLeft, Loader2 } from "lucide-react"
 import { useTranslations } from "next-intl"
@@ -19,8 +19,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { createClient } from "@/lib/supabase/client"
 import { parseAllowedDomains } from "@/lib/web-forms/domains"
-import type { LeadForm, LeadFormField, LeadFormStatus, LeadFormStyle } from "@/types"
+import type { LeadForm, LeadFormField, LeadFormStatus, LeadFormStyle, Tag } from "@/types"
 import { EmbedCodeDialog } from "./embed-code-dialog"
 import { FieldListEditor } from "./field-list-editor"
 
@@ -49,7 +50,13 @@ interface BuilderState {
   style: LeadFormStyle
   /** Raw comma-separated text; parsed into `allowed_domains` on save. */
   allowedDomainsText: string
+  /** Segment tag applied to submitters; null = let the API create one
+   *  named after the form (saved as `tag_id: null`). */
+  tagId: string | null
 }
+
+/** Select value standing in for "no specific tag — create one". */
+const AUTO_TAG = "__auto__"
 
 function resolveInitial(props: LeadFormBuilderProps): BuilderState {
   if (props.initial) {
@@ -59,6 +66,7 @@ function resolveInitial(props: LeadFormBuilderProps): BuilderState {
       fields: props.initial.fields,
       style: props.initial.style ?? {},
       allowedDomainsText: (props.initial.allowed_domains ?? []).join(", "),
+      tagId: props.initial.tag_id ?? null,
     }
   }
   if (props.initialTemplate) {
@@ -68,9 +76,10 @@ function resolveInitial(props: LeadFormBuilderProps): BuilderState {
       fields: props.initialTemplate.fields,
       style: {},
       allowedDomainsText: "",
+      tagId: null,
     }
   }
-  return { name: "", status: "active", fields: [], style: {}, allowedDomainsText: "" }
+  return { name: "", status: "active", fields: [], style: {}, allowedDomainsText: "", tagId: null }
 }
 
 export function LeadFormBuilder(props: LeadFormBuilderProps) {
@@ -81,6 +90,26 @@ export function LeadFormBuilder(props: LeadFormBuilderProps) {
 
   const [state, setState] = useState<BuilderState>(() => resolveInitial(props))
   const [saving, setSaving] = useState(false)
+
+  // Account tags for the Segment picker (same RLS-scoped read the
+  // broadcast audience step uses).
+  const [tags, setTags] = useState<Tag[]>([])
+  const [loadingTags, setLoadingTags] = useState(true)
+  useEffect(() => {
+    let cancelled = false
+    createClient()
+      .from("tags")
+      .select("*")
+      .order("name")
+      .then(({ data }) => {
+        if (cancelled) return
+        setTags((data as Tag[] | null) ?? [])
+        setLoadingTags(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
   const [createdForm, setCreatedForm] = useState<LeadForm | null>(null)
 
   const hasPhoneField = useMemo(
@@ -104,6 +133,7 @@ export function LeadFormBuilder(props: LeadFormBuilderProps) {
         // Normalized hostnames only (no scheme/path/"www.") — the same
         // rule the submit route matches an Origin with.
         allowed_domains: parseAllowedDomains(state.allowedDomainsText),
+        tag_id: state.tagId,
       }
       if (isEditing) payload.status = state.status
 
@@ -279,6 +309,39 @@ export function LeadFormBuilder(props: LeadFormBuilderProps) {
               placeholder={t("successMessagePlaceholder")}
             />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("segmentSectionTitle")}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <Label htmlFor="lead-form-segment-tag">{t("segmentTagLabel")}</Label>
+          <Select
+            value={state.tagId ?? AUTO_TAG}
+            onValueChange={(v) => setState((s) => ({ ...s, tagId: v === AUTO_TAG ? null : v }))}
+            disabled={loadingTags}
+          >
+            <SelectTrigger id="lead-form-segment-tag">
+              <SelectValue placeholder={loadingTags ? t("segmentLoadingTags") : undefined} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={AUTO_TAG}>{t("segmentTagAuto")}</SelectItem>
+              {tags.map((tag) => (
+                <SelectItem key={tag.id} value={tag.id}>
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="inline-block size-2.5 rounded-full"
+                      style={{ backgroundColor: tag.color }}
+                    />
+                    {tag.name}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">{t("segmentHint")}</p>
         </CardContent>
       </Card>
 

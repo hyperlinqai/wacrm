@@ -696,6 +696,9 @@ export interface LeadForm {
   fields: LeadFormField[];
   style: LeadFormStyle;
   allowed_domains: string[] | null;
+  /** Segment tag applied to every submitting contact (migration 047).
+   *  null only transiently — the API creates one named after the form. */
+  tag_id: string | null;
   submit_count: number;
   created_by: string;
   created_at: string;
