@@ -964,7 +964,7 @@
         },
         "new_contact_created": {
           "label": "New Contact Created",
-          "hint": "When a contact is auto-created from an incoming message"
+          "hint": "When a contact is created in any way — added by hand, imported, captured by a web form, via the API, or auto-created from an incoming message. Use a Send template step: WhatsApp only allows free-text to people who messaged you in the last 24 hours."
         },
         "conversation_assigned": {
           "label": "Conversation Assigned",
