@@ -17,6 +17,7 @@ import {
   MEDIA_MAX_BYTES_BY_KIND,
 } from '@/lib/storage/upload-media';
 import { readJsonResponse } from '@/lib/http/read-json-response';
+import { fetchWithGatewayRetry } from '@/lib/http/fetch-with-gateway-retry';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -307,7 +308,9 @@ export function TemplateManager() {
       const url = isEdit
         ? `/api/whatsapp/templates/${editingId}`
         : '/api/whatsapp/templates/submit';
-      const res = await fetch(url, {
+      // Retries once on a 502/503/504 — the proxy couldn't reach the
+      // app (typically a redeploy window), so the request never ran.
+      const res = await fetchWithGatewayRetry(url, {
         method: isEdit ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildSubmitPayload()),
