@@ -16,6 +16,7 @@ import {
   uploadAccountMedia,
   MEDIA_MAX_BYTES_BY_KIND,
 } from '@/lib/storage/upload-media';
+import { readJsonResponse } from '@/lib/http/read-json-response';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -311,7 +312,7 @@ export function TemplateManager() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildSubmitPayload()),
       });
-      const data = await res.json();
+      const data = await readJsonResponse(res);
       if (!res.ok) {
         throw new Error(
           data?.error || `${isEdit ? 'Edit' : 'Submit'} failed (HTTP ${res.status})`,
@@ -346,7 +347,7 @@ export function TemplateManager() {
     setSyncing(true);
     try {
       const res = await fetch('/api/whatsapp/templates/sync', { method: 'POST' });
-      const data = await res.json();
+      const data = await readJsonResponse(res);
       if (!res.ok) {
         throw new Error(data?.error || `Sync failed (HTTP ${res.status})`);
       }
@@ -394,7 +395,7 @@ export function TemplateManager() {
       const res = await fetch(`/api/whatsapp/templates/${target.id}`, {
         method: 'DELETE',
       });
-      const data = await res.json().catch(() => ({}));
+      const data = await readJsonResponse(res).catch(() => ({}));
       if (!res.ok) {
         throw new Error(data?.error || `Delete failed (HTTP ${res.status})`);
       }
