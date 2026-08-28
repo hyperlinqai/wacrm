@@ -12,6 +12,7 @@ import {
   parseContactCsv,
   type ParsedContactRow,
 } from '@/lib/contacts/parse-contact-csv';
+import { isExcelFilename, parseContactXlsx } from '@/lib/contacts/parse-contact-xlsx';
 import {
   assignImportedContactTags,
   resolveImportTagIds,
@@ -202,12 +203,25 @@ export function ImportModal({
     setFile(selected);
     setResult(null);
 
-    const text = await selected.text();
+    let parsed;
+    try {
+      parsed = isExcelFilename(selected.name)
+        ? await parseContactXlsx(await selected.arrayBuffer())
+        : parseContactCsv(await selected.text());
+    } catch (err) {
+      console.error('[import] file parse failed:', err);
+      toast.error(t('toastParseError'));
+      setParsedRows([]);
+      setHasTagsColumn(false);
+      setHasCompanyColumn(false);
+      setTagColorByKey(new Map());
+      return;
+    }
     const {
       rows,
       hasTagsColumn: csvHasTags,
       hasCompanyColumn: csvHasCompany,
-    } = parseContactCsv(text);
+    } = parsed;
 
     if (rows.length === 0) {
       toast.error(t('toastNoValidRows'));
@@ -524,7 +538,7 @@ export function ImportModal({
           <input
             ref={fileInputRef}
             type="file"
-            accept=".csv,text/csv"
+            accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
             onChange={handleFileChange}
             className="hidden"
           />

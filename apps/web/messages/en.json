@@ -435,7 +435,12 @@
       "applyRemoveTags": "Remove",
       "toastTagsBulkAdded": "{count} tag assignments added",
       "toastTagsBulkRemoved": "{count} tag assignments removed",
-      "toastTagsBulkFailed": "{count} tag updates failed"
+      "toastTagsBulkFailed": "{count} tag updates failed",
+      "exportBtn": "Export",
+      "exportSelectedHint": "Export the {count} selected contacts",
+      "toastExported": "{count} contacts exported",
+      "toastExportEmpty": "No contacts to export",
+      "toastExportFailed": "Failed to export contacts"
     },
     "form": {
       "addTitle": "Add Contact",
@@ -560,9 +565,9 @@
     },
     "importModal": {
       "title": "Import Contacts",
-      "desc": "Upload a CSV with a required <phoneCode>phone</phoneCode> column. Optional: <nameCode>name</nameCode>, <emailCode>email</emailCode>, <companyCode>company</companyCode>, <tagsCode>tags</tagsCode> (comma-separated; quote multi-tag cells).",
-      "uploadDropzone": "Click to choose a CSV file",
-      "uploadHint": ".csv up to your browser limit",
+      "desc": "Upload a CSV or Excel (.xlsx) file with a required <phoneCode>phone</phoneCode> column. Optional: <nameCode>name</nameCode>, <emailCode>email</emailCode>, <companyCode>company</companyCode>, <tagsCode>tags</tagsCode> (comma-separated; quote multi-tag cells).",
+      "uploadDropzone": "Click to choose a CSV or Excel file",
+      "uploadHint": ".csv or .xlsx up to your browser limit",
       "rowsReady": "{count} row ready",
       "rowsReady_plural": "{count} rows ready",
       "preview": "Preview · first {count}",
@@ -588,7 +593,7 @@
       "close": "Close",
       "importBtn": "Import {count} contact",
       "importBtn_plural": "Import {count} contacts",
-      "toastNoValidRows": "No valid rows found. Ensure CSV has a \"phone\" column header.",
+      "toastNoValidRows": "No valid rows found. Ensure the file has a \"phone\" column header.",
       "toastTagsWarning": "Contacts imported, but some tag assignments failed.",
       "toastImported": "{count} contact imported",
       "toastImported_plural": "{count} contacts imported",
@@ -611,7 +616,8 @@
       "optionStatusInactive": "Inactive (pinned)",
       "optionStatusHint": "Inactive contacts are kept but skipped by broadcasts until you activate them.",
       "resultList": "{count} added to “{name}”",
-      "toastListWarning": "Contacts imported, but adding them to the list failed."
+      "toastListWarning": "Contacts imported, but adding them to the list failed.",
+      "toastParseError": "Couldn't read that file. Make sure it's a valid CSV or Excel (.xlsx) file."
     },
     "customFields": {
       "title": "Custom fields",

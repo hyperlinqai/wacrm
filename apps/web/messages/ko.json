@@ -435,7 +435,12 @@
       "applyRemoveTags": "제거",
       "toastTagsBulkAdded": "태그 지정 {count}건을 추가했습니다",
       "toastTagsBulkRemoved": "태그 지정 {count}건을 제거했습니다",
-      "toastTagsBulkFailed": "태그 업데이트 {count}건이 실패했습니다"
+      "toastTagsBulkFailed": "태그 업데이트 {count}건이 실패했습니다",
+      "exportBtn": "내보내기",
+      "exportSelectedHint": "선택한 연락처 {count}개 내보내기",
+      "toastExported": "연락처 {count}개를 내보냈습니다",
+      "toastExportEmpty": "내보낼 연락처가 없습니다",
+      "toastExportFailed": "연락처를 내보내지 못했습니다"
     },
     "form": {
       "addTitle": "연락처 추가",
@@ -560,9 +565,9 @@
     },
     "importModal": {
       "title": "연락처 가져오기",
-      "desc": "필수 <phoneCode>phone</phoneCode> 열이 포함된 CSV를 업로드하세요. 선택 항목: <nameCode>name</nameCode>, <emailCode>email</emailCode>, <companyCode>company</companyCode>, <tagsCode>tags</tagsCode> (쉼표로 구분; 여러 태그가 있는 셀은 따옴표로 묶으세요).",
-      "uploadDropzone": "클릭하여 CSV 파일 선택",
-      "uploadHint": "브라우저 제한까지 .csv 업로드 가능",
+      "desc": "필수 <phoneCode>phone</phoneCode> 열이 포함된 CSV 또는 Excel(.xlsx) 파일을 업로드하세요. 선택 사항: <nameCode>name</nameCode>, <emailCode>email</emailCode>, <companyCode>company</companyCode>, <tagsCode>tags</tagsCode>(쉼표로 구분; 여러 태그가 있는 셀은 따옴표로 묶으세요).",
+      "uploadDropzone": "클릭하여 CSV 또는 Excel 파일 선택",
+      "uploadHint": "브라우저 제한까지 .csv 또는 .xlsx",
       "rowsReady": "{count}개 행 준비됨",
       "rowsReady_plural": "{count}개 행 준비됨",
       "preview": "미리보기 · 처음 {count}개",
@@ -588,7 +593,7 @@
       "close": "닫기",
       "importBtn": "{count}개 연락처 가져오기",
       "importBtn_plural": "{count}개 연락처 가져오기",
-      "toastNoValidRows": "유효한 행을 찾을 수 없습니다. CSV에 \"phone\" 열 헤더가 있는지 확인하세요.",
+      "toastNoValidRows": "유효한 행을 찾을 수 없습니다. 파일에 \"phone\" 열 머리글이 있는지 확인하세요.",
       "toastTagsWarning": "연락처는 가져왔지만 일부 태그 지정에 실패했습니다.",
       "toastImported": "연락처 {count}개를 가져왔습니다",
       "toastImported_plural": "연락처 {count}개를 가져왔습니다",
@@ -611,7 +616,8 @@
       "optionStatusInactive": "비활성 (고정)",
       "optionStatusHint": "비활성 연락처는 보관되지만 활성화할 때까지 브로드캐스트에서 제외됩니다.",
       "resultList": "{count}개를 “{name}”에 추가함",
-      "toastListWarning": "연락처를 가져왔지만 리스트에 추가하지 못했습니다."
+      "toastListWarning": "연락처를 가져왔지만 리스트에 추가하지 못했습니다.",
+      "toastParseError": "파일을 읽을 수 없습니다. 올바른 CSV 또는 Excel(.xlsx) 파일인지 확인하세요."
     },
     "customFields": {
       "title": "커스텀 필드",

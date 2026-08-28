@@ -63,6 +63,7 @@ import {
   Tag as TagIcon,
   TagsIcon,
   CheckSquare,
+  Download,
 } from 'lucide-react';
 import { ContactForm } from '@/components/contacts/contact-form';
 import { ContactDetailView } from '@/components/contacts/contact-detail-view';
@@ -79,6 +80,11 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { deleteContacts } from '@/lib/contacts/delete-contacts';
 import { bulkAddTags, bulkRemoveTags } from '@/lib/contacts/bulk-tags';
+import {
+  buildContactExportRow,
+  contactExportFilename,
+  exportContactsToExcel,
+} from '@/lib/contacts/export-contacts';
 import {
   EMPTY_FILTERS,
   hasAnyFilter,
@@ -142,6 +148,7 @@ export default function ContactsPage() {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [bulkTagPicked, setBulkTagPicked] = useState<Set<string>>(new Set());
+  const [exporting, setExporting] = useState(false);
 
   // Reference data
   const [tagsMap, setTagsMap] = useState<Record<string, Tag>>({});
@@ -431,6 +438,93 @@ export default function ContactsPage() {
     }
   }
 
+  /**
+   * Export to Excel: the current selection if any rows are checked
+   * (works for a "select all matching" selection too, however many
+   * contacts that spans), otherwise every contact matching the current
+   * filters. Hydrates tags/lists itself rather than reusing `contacts`
+   * state, since that's capped at one page.
+   */
+  async function handleExport() {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      let baseContacts: Contact[];
+
+      if (selected.size > 0) {
+        const ids = [...selected];
+        const rows: Contact[] = [];
+        for (let i = 0; i < ids.length; i += 500) {
+          const { data, error } = await supabase
+            .from('contacts')
+            .select('*')
+            .in('id', ids.slice(i, i + 500));
+          if (error) throw error;
+          rows.push(...((data ?? []) as Contact[]));
+        }
+        baseContacts = rows;
+      } else {
+        if (totalCount === 0) {
+          toast.info(t('toastExportEmpty'));
+          return;
+        }
+        if (totalCount > SELECT_ALL_MAX) {
+          toast.error(t('toastSelectAllTooMany'));
+          return;
+        }
+        const { data, error } = await supabase.rpc(
+          'filter_contacts',
+          toFilterContactsParams(filters, { limit: totalCount, offset: 0 })
+        );
+        if (error) throw error;
+        baseContacts = ((data ?? []) as { contact: Contact }[]).map((r) => r.contact);
+      }
+
+      if (baseContacts.length === 0) {
+        toast.info(t('toastExportEmpty'));
+        return;
+      }
+
+      const ids = baseContacts.map((c) => c.id);
+      const tagsByContact: Record<string, string[]> = {};
+      const listsByContact: Record<string, string[]> = {};
+      const listNameById = new Map(lists.map((l) => [l.id, l.name]));
+
+      for (let i = 0; i < ids.length; i += 500) {
+        const chunk = ids.slice(i, i + 500);
+        const [{ data: contactTags, error: tagsErr }, { data: members, error: listsErr }] =
+          await Promise.all([
+            supabase.from('contact_tags').select('contact_id, tag_id').in('contact_id', chunk),
+            supabase.from('contact_list_members').select('contact_id, list_id').in('contact_id', chunk),
+          ]);
+        if (tagsErr) throw tagsErr;
+        if (listsErr) throw listsErr;
+        contactTags?.forEach((ct) => {
+          (tagsByContact[ct.contact_id] ??= []).push(tagsMap[ct.tag_id]?.name ?? '');
+        });
+        members?.forEach((m) => {
+          (listsByContact[m.contact_id] ??= []).push(listNameById.get(m.list_id) ?? '');
+        });
+      }
+
+      const exportRows = baseContacts.map((c) =>
+        buildContactExportRow(
+          c,
+          (tagsByContact[c.id] ?? []).filter(Boolean),
+          (listsByContact[c.id] ?? []).filter(Boolean)
+        )
+      );
+
+      await exportContactsToExcel(exportRows, contactExportFilename());
+      toast.success(t('toastExported', { count: exportRows.length }));
+    } catch (err) {
+      console.error('[contacts] export failed:', err);
+      toast.error(t('toastExportFailed'));
+    } finally {
+      setExporting(false);
+    }
+  }
+
   async function applyOverride(ids: string[], override: ContactActivationOverride | null) {
     if (ids.length === 0) return;
     setBulkBusy(true);
@@ -661,6 +755,20 @@ export default function ContactsPage() {
                 <Upload className="size-4" />
                 {t('importBtn')}
               </GatedButton>
+              <Button
+                variant="outline"
+                onClick={handleExport}
+                disabled={exporting || totalCount === 0}
+                className="border-border text-muted-foreground hover:bg-muted"
+                title={selected.size > 0 ? t('exportSelectedHint', { count: selected.size }) : undefined}
+              >
+                {exporting ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Download className="size-4" />
+                )}
+                {t('exportBtn')}
+              </Button>
               <GatedButton
                 canAct={canEdit}
                 gateReason="add or import contacts"

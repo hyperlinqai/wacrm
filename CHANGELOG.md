@@ -35,6 +35,22 @@ contacts while messaging a chosen subset.
   CSV import / API / manual), tags, lists, a custom-field rule
   (is / is not / contains / has value / empty) and created date, with
   removable chips. Every filter is resolved server-side in one query.
+- **Excel import/export for contacts.** The import modal now accepts
+  `.xlsx`/`.xls` files alongside CSV (same phone/name/email/company/tags
+  columns, auto-detected by file extension). A new *Export* button on the
+  Contacts page downloads the current selection — or everything matching
+  the active filters if nothing's selected — as an `.xlsx` file with
+  Name/Phone/Email/Company/Status/Source/Tags/Lists/Created At columns;
+  the first five column names match the import parser exactly, so an
+  exported file can be edited and re-imported without renaming columns.
+
+> **Dependency note:** uses `xlsx` (SheetJS Community Edition) pinned to
+> the CDN-distributed 0.20.2 build (`https://cdn.sheetjs.com/xlsx-0.20.2/`),
+> not the npm registry version — npm's last published `xlsx` release has
+> two unpatched high-severity advisories (prototype pollution, ReDoS) that
+> SheetJS only fixed in builds distributed from their own CDN, since the
+> npm package itself is no longer maintained. `npm audit` reports zero
+> vulnerabilities with this pin.
 - **Select all matching filters, not just the page.** Once every row on
   the current page is checked, a "Select all N contacts" link expands the
   selection to everything matching the active filters (capped at 5,000 —
