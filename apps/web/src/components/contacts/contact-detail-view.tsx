@@ -6,7 +6,14 @@ import { addContactTag, deleteContactTag } from '@/lib/contacts/tag-api';
 import { useAuth } from '@/hooks/use-auth';
 import { formatCurrency } from '@/lib/currency';
 import { toast } from 'sonner';
-import type { Contact, Tag, ContactTag, ContactNote, CustomField, ContactCustomValue, Deal, MessageTemplate } from '@/types';
+import type { Contact, ContactActivationOverride, ContactList, Tag, ContactTag, ContactNote, CustomField, ContactCustomValue, Deal, MessageTemplate } from '@/types';
+import { ContactStatusBadge } from '@/components/contacts/contact-status-badge';
+import {
+  addContactsToList,
+  fetchContactListIds,
+  removeContactsFromList,
+  setActivationOverride,
+} from '@/lib/contacts/lists-api';
 import {
   TemplatePicker,
   type TemplateSendValues,
@@ -75,6 +82,12 @@ export function ContactDetailView({
   const [editEmail, setEditEmail] = useState('');
   const [editCompany, setEditCompany] = useState('');
   const [savingDetails, setSavingDetails] = useState(false);
+
+  // Status + lists (details tab, migration 049)
+  const [allLists, setAllLists] = useState<ContactList[]>([]);
+  const [contactListIds, setContactListIds] = useState<string[]>([]);
+  const [savingLists, setSavingLists] = useState(false);
+  const [savingStatus, setSavingStatus] = useState(false);
 
   // Tags tab
   const [allTags, setAllTags] = useState<Tag[]>([]);
@@ -195,6 +208,59 @@ export function ContactDetailView({
     await navigator.clipboard.writeText(contact.phone);
     setCopiedPhone(true);
     setTimeout(() => setCopiedPhone(false), 2000);
+  }
+
+  useEffect(() => {
+    if (!open || !contactId) return;
+    let cancelled = false;
+    (async () => {
+      const [{ data: ls }, ids] = await Promise.all([
+        supabase.from('contact_lists').select('*').order('name'),
+        fetchContactListIds(supabase, contactId).catch(() => [] as string[]),
+      ]);
+      if (cancelled) return;
+      setAllLists((ls ?? []) as ContactList[]);
+      setContactListIds(ids);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, contactId, supabase]);
+
+  async function changeStatus(value: 'rule' | ContactActivationOverride) {
+    if (!contactId) return;
+    setSavingStatus(true);
+    try {
+      await setActivationOverride(supabase, [contactId], value === 'rule' ? null : value);
+      toast.success(t('toastStatusUpdated'));
+      fetchContact();
+      onUpdated();
+    } catch {
+      toast.error(t('toastStatusFailed'));
+    } finally {
+      setSavingStatus(false);
+    }
+  }
+
+  async function toggleList(listId: string) {
+    if (!contactId) return;
+    setSavingLists(true);
+    const isMember = contactListIds.includes(listId);
+    try {
+      if (isMember) {
+        await removeContactsFromList(supabase, listId, [contactId]);
+        setContactListIds((prev) => prev.filter((id) => id !== listId));
+      } else {
+        await addContactsToList(supabase, listId, [contactId]);
+        setContactListIds((prev) => [...prev, listId]);
+      }
+      fetchContact();
+      onUpdated();
+    } catch {
+      toast.error(t('toastListFailed'));
+    } finally {
+      setSavingLists(false);
+    }
   }
 
   async function saveDetails() {
@@ -429,6 +495,7 @@ export function ContactDetailView({
                         {contact.company}
                       </span>
                     )}
+                    <ContactStatusBadge contact={contact} />
                   </div>
                 </div>
               </div>
@@ -520,6 +587,51 @@ export function ContactDetailView({
                       onChange={(e) => setEditCompany(e.target.value)}
                       className="bg-muted border-border text-foreground h-8 text-sm"
                     />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-muted-foreground text-xs">{t('statusLabel')}</Label>
+                    <select
+                      value={contact.activation_override ?? 'rule'}
+                      disabled={savingStatus}
+                      onChange={(e) => changeStatus(e.target.value as 'rule' | ContactActivationOverride)}
+                      className="h-8 w-full rounded-lg border border-border bg-muted px-2.5 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    >
+                      <option value="rule">{t('statusFollowRule')}</option>
+                      <option value="active">{t('statusPinnedActive')}</option>
+                      <option value="inactive">{t('statusPinnedInactive')}</option>
+                    </select>
+                    <p className="text-[11px] text-muted-foreground">
+                      {contact.is_active === false ? t('statusInactiveHint') : t('statusActiveHint')}
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-muted-foreground text-xs">{t('listsLabel')}</Label>
+                    {allLists.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">{t('noLists')}</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-1.5">
+                        {allLists.map((l) => {
+                          const member = contactListIds.includes(l.id);
+                          return (
+                            <button
+                              key={l.id}
+                              type="button"
+                              disabled={savingLists}
+                              onClick={() => toggleList(l.id)}
+                              className="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium transition-colors"
+                              style={
+                                member
+                                  ? { backgroundColor: l.color + '20', color: l.color, borderColor: l.color + '55' }
+                                  : { borderColor: 'var(--border)', color: 'var(--muted-foreground)' }
+                              }
+                            >
+                              <span className="size-1.5 rounded-sm" style={{ backgroundColor: l.color }} />
+                              {l.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                   <Button
                     onClick={saveDetails}

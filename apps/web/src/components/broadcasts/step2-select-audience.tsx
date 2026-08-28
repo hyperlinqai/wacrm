@@ -186,17 +186,41 @@ export function Step2SelectAudience({
       }
 
       if (baseIds) {
-        const effective = [...baseIds].filter(
-          (id) => !excludeSet?.has(id),
-        );
-        setEstimatedCount(effective.length);
+        // Only ACTIVE contacts are broadcast recipients (migration 049) —
+        // narrow the candidate ids to active ones before excluding.
+        const candidates = [...baseIds].filter((id) => !excludeSet?.has(id));
+        let active = 0;
+        for (let i = 0; i < candidates.length; i += 500) {
+          const { count } = await supabase
+            .from('contacts')
+            .select('*', { count: 'exact', head: true })
+            .eq('is_active', true)
+            .in('id', candidates.slice(i, i + 500));
+          active += count ?? 0;
+        }
+        setEstimatedCount(active);
       } else {
-        // "All" — fetch the total, then subtract exclude set if any.
+        // "All" — every active contact, minus the exclude set.
         const { count } = await supabase
           .from('contacts')
-          .select('*', { count: 'exact', head: true });
+          .select('*', { count: 'exact', head: true })
+          .eq('is_active', true);
         const total = count ?? 0;
-        setEstimatedCount(excludeSet ? Math.max(0, total - excludeSet.size) : total);
+        if (excludeSet && excludeSet.size > 0) {
+          const ids = [...excludeSet];
+          let excludedActive = 0;
+          for (let i = 0; i < ids.length; i += 500) {
+            const { count: c } = await supabase
+              .from('contacts')
+              .select('*', { count: 'exact', head: true })
+              .eq('is_active', true)
+              .in('id', ids.slice(i, i + 500));
+            excludedActive += c ?? 0;
+          }
+          setEstimatedCount(Math.max(0, total - excludedActive));
+        } else {
+          setEstimatedCount(total);
+        }
       }
     } finally {
       setLoadingCount(false);
@@ -254,6 +278,9 @@ export function Step2SelectAudience({
         <h2 className="text-lg font-semibold text-foreground">{t('selectAudience.title')}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {t('selectAudience.subtitle')}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {t('selectAudience.activeOnlyNote')}
         </p>
       </div>
 

@@ -166,8 +166,14 @@ export function useBroadcastSending(): UseBroadcastSendingReturn {
 
     let contacts: Contact[] = [];
 
+    // Inactive contacts (migration 049) are never broadcast recipients
+    // for database-driven audiences. A CSV audience is an explicit
+    // upload, so it is left as the user supplied it.
     if (audience.type === 'all') {
-      const { data, error } = await supabase.from('contacts').select('*');
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('*')
+        .eq('is_active', true);
       if (error) throw new Error(`Failed to fetch contacts: ${error.message}`);
       contacts = data ?? [];
     } else if (
@@ -190,6 +196,7 @@ export function useBroadcastSending(): UseBroadcastSendingReturn {
         const { data, error } = await supabase
           .from('contacts')
           .select('*')
+          .eq('is_active', true)
           .in('id', uniqueContactIds);
         if (error) throw new Error(`Failed to fetch contacts: ${error.message}`);
         contacts = data ?? [];
@@ -324,6 +331,7 @@ export function useBroadcastSending(): UseBroadcastSendingReturn {
     const { data, error } = await supabase
       .from('contacts')
       .select('*')
+      .eq('is_active', true)
       .in('id', contactIds);
     if (error) throw new Error(`Failed to fetch contacts: ${error.message}`);
     return data ?? [];

@@ -30,6 +30,10 @@ import { useCan } from "@/hooks/use-can";
 import { useAuth } from "@/hooks/use-auth";
 import { GatedButton } from "@/components/ui/gated-button";
 import { useTranslations } from "next-intl";
+import {
+  INDUSTRY_PRESETS,
+  findPipelineTemplate,
+} from "@/lib/presets/industry-presets";
 
 // Pipeline creation is admin-class (settings-tier write under
 // the new RLS); deal creation is operational and only requires
@@ -247,6 +251,20 @@ export default function PipelinesPage() {
     setDealFormOpen(true);
   }, []);
 
+  // "Start from a template" — industry presets; falls back to the spec
+  // default stages when no template is chosen.
+  const [templateId, setTemplateId] = useState<string>("");
+  const template = templateId ? findPipelineTemplate(templateId) : null;
+
+  function chooseTemplate(id: string) {
+    setTemplateId(id);
+    const tpl = id ? findPipelineTemplate(id) : null;
+    // Prefill the name unless the user already typed a custom one.
+    if (tpl && (!newPipelineName.trim() || template?.name === newPipelineName)) {
+      setNewPipelineName(tpl.name);
+    }
+  }
+
   async function handleCreatePipeline() {
     const name = newPipelineName.trim();
     if (!name) return;
@@ -279,7 +297,10 @@ export default function PipelinesPage() {
       return;
     }
 
-    const stagesPayload = SPEC_DEFAULT_STAGES.map((s) => ({
+    const stageSource = template
+      ? template.stages.map((s, position) => ({ ...s, position }))
+      : SPEC_DEFAULT_STAGES;
+    const stagesPayload = stageSource.map((s) => ({
       pipeline_id: pipeline.id,
       name: s.name,
       color: s.color,
@@ -288,6 +309,7 @@ export default function PipelinesPage() {
     await supabase.from("pipeline_stages").insert(stagesPayload);
 
     setNewPipelineName("");
+    setTemplateId("");
     setNewPipelineOpen(false);
     setSelectedPipelineId(pipeline.id);
     await refreshPipelines();
@@ -425,11 +447,48 @@ export default function PipelinesPage() {
 
       {/* New Pipeline Dialog */}
       <Dialog open={newPipelineOpen} onOpenChange={setNewPipelineOpen}>
-        <DialogContent className="sm:max-w-sm bg-popover border-border">
+        <DialogContent className="sm:max-w-md bg-popover border-border">
           <DialogHeader>
             <DialogTitle className="text-popover-foreground">{t("newPipeline")}</DialogTitle>
           </DialogHeader>
-          <div className="py-2">
+          <div className="py-2 space-y-4">
+            <div>
+              <Label className="text-muted-foreground">{t("templateLabel")}</Label>
+              <select
+                value={templateId}
+                onChange={(e) => chooseTemplate(e.target.value)}
+                className="mt-2 h-9 w-full rounded-lg border border-border bg-muted px-2.5 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              >
+                <option value="">{t("templateNone")}</option>
+                {INDUSTRY_PRESETS.map((ind) => (
+                  <optgroup key={ind.id} label={ind.label}>
+                    {ind.pipelines.map((pl) => (
+                      <option key={pl.id} value={pl.id}>
+                        {pl.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+              {template && (
+                <p className="mt-1.5 text-xs text-muted-foreground">{template.description}</p>
+              )}
+              <div className="mt-2 flex flex-wrap items-center gap-1">
+                {(template ? template.stages : SPEC_DEFAULT_STAGES).map((s, i, arr) => (
+                  <span key={s.name} className="flex items-center gap-1">
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium"
+                      style={{ backgroundColor: `${s.color}20`, color: s.color }}
+                    >
+                      <span className="size-1.5 rounded-full" style={{ backgroundColor: s.color }} />
+                      {s.name}
+                    </span>
+                    {i < arr.length - 1 && <span className="text-[10px] text-muted-foreground">→</span>}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div>
             <Label className="text-muted-foreground">{t("pipelineName")}</Label>
             <Input
               value={newPipelineName}
@@ -441,8 +500,9 @@ export default function PipelinesPage() {
               }}
             />
             <p className="mt-2 text-xs text-muted-foreground">
-              {t("defaultStagesDesc")}
+              {template ? t("templateStagesDesc") : t("defaultStagesDesc")}
             </p>
+            </div>
           </div>
           <DialogFooter className="bg-popover/50 border-border">
             <Button

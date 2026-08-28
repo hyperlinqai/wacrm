@@ -377,7 +377,10 @@
         "email": "Email",
         "company": "Company",
         "tags": "Tags",
-        "createdAt": "Created"
+        "createdAt": "Created",
+        "status": "Status",
+        "lists": "Lists",
+        "source": "Source"
       },
       "loading": "Loading contacts...",
       "noContactsMatch": "No contacts match your filters.",
@@ -398,7 +401,32 @@
       "toastFailedDelete": "Failed to delete contact",
       "toastDeleted": "Contact deleted",
       "toastBulkFailedDelete": "Failed to delete contacts",
-      "toastBulkDeleted": "{count} contacts deleted"
+      "toastBulkDeleted": "{count} contacts deleted",
+      "countPill": "{count} total",
+      "subtitleActive": "{active} of {total} contacts are active and reachable by broadcasts.",
+      "sources": {
+        "manual": "Added manually",
+        "whatsapp": "WhatsApp",
+        "web_form": "Web form",
+        "import": "CSV import",
+        "api": "API"
+      },
+      "bulkStatus": "Status",
+      "markActive": "Mark active",
+      "markInactive": "Mark inactive",
+      "followRule": "Follow active-contacts rule",
+      "markActiveOne": "Mark active",
+      "markInactiveOne": "Mark inactive",
+      "addToList": "Add to list",
+      "removeFromList": "Remove from list",
+      "newListPlaceholder": "New list name…",
+      "toastMarkedActive": "{count} contacts marked active",
+      "toastMarkedInactive": "{count} contacts marked inactive",
+      "toastFollowRule": "{count} contacts now follow the active-contacts rule",
+      "toastStatusFailed": "Failed to update contact status",
+      "toastAddedToList": "{count} contacts added to “{name}”",
+      "toastRemovedFromList": "{count} contacts removed from “{name}”",
+      "toastListFailed": "Failed to update list membership"
     },
     "form": {
       "addTitle": "Add Contact",
@@ -508,7 +536,18 @@
       "toastCustomFieldsSaved": "Custom fields saved",
       "toastCustomFieldsFailed": "Failed to save custom fields",
       "toastTemplateSent": "Template \"{name}\" sent",
-      "toastTemplateFailed": "Failed to send template: {reason}"
+      "toastTemplateFailed": "Failed to send template: {reason}",
+      "statusLabel": "Status",
+      "statusFollowRule": "Follow active-contacts rule",
+      "statusPinnedActive": "Always active (pinned)",
+      "statusPinnedInactive": "Always inactive (pinned)",
+      "statusActiveHint": "This contact is active and will receive broadcasts.",
+      "statusInactiveHint": "This contact is inactive and is skipped by broadcasts.",
+      "listsLabel": "Lists",
+      "noLists": "No lists yet.",
+      "toastStatusUpdated": "Status updated",
+      "toastStatusFailed": "Failed to update status",
+      "toastListFailed": "Failed to update lists"
     },
     "importModal": {
       "title": "Import Contacts",
@@ -551,7 +590,19 @@
       "toastSkipped_plural": "{count} duplicates skipped",
       "toastFailed": "{count} contact failed to import",
       "toastFailed_plural": "{count} contacts failed to import",
-      "toastError": "Import failed"
+      "toastError": "Import failed",
+      "optionsTitle": "Import options",
+      "optionList": "Add to list",
+      "optionListNone": "No list",
+      "optionListNew": "＋ New list…",
+      "optionListNamePlaceholder": "List name",
+      "optionStatus": "Status after import",
+      "optionStatusRule": "Follow active-contacts rule",
+      "optionStatusActive": "Active (pinned)",
+      "optionStatusInactive": "Inactive (pinned)",
+      "optionStatusHint": "Inactive contacts are kept but skipped by broadcasts until you activate them.",
+      "resultList": "{count} added to “{name}”",
+      "toastListWarning": "Contacts imported, but adding them to the list failed."
     },
     "customFields": {
       "title": "Custom fields",
@@ -570,6 +621,113 @@
       "toastRenameFailed": "Could not rename field.",
       "toastDeleteFailed": "Could not delete field.",
       "toastDeleted": "Deleted \"{name}\"."
+    },
+    "views": {
+      "contacts": "Contacts",
+      "lists": "Lists",
+      "activation": "Active contacts",
+      "listsTitle": "Lists",
+      "listsSubtitle": "Named groups of contacts. Import straight into a list, then decide which lists count as active.",
+      "activationTitle": "Active contacts",
+      "activationSubtitle": "Decide who counts as an active contact. Only active contacts receive broadcasts."
+    },
+    "filters": {
+      "searchPlaceholder": "Search name, email, phone or company",
+      "statusAll": "All statuses",
+      "status": {
+        "all": "All",
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "statusHint": "Active contacts follow the active-contacts rule unless pinned by hand.",
+      "allSources": "All sources",
+      "sourceTitle": "Filter by source",
+      "sourcePrefix": "Source:",
+      "sources": {
+        "manual": "Added manually",
+        "whatsapp": "WhatsApp",
+        "web_form": "Web form",
+        "import": "CSV import",
+        "api": "API"
+      },
+      "tags": "Tags",
+      "tagsTitle": "Filter by tags",
+      "noTags": "No tags yet.",
+      "lists": "Lists",
+      "listsTitle": "Filter by lists",
+      "noLists": "No lists yet.",
+      "customField": "Custom field",
+      "customFieldTitle": "Filter by custom field",
+      "noCustomFields": "No custom fields defined.",
+      "selectField": "Select a field…",
+      "valuePlaceholder": "Value",
+      "operators": {
+        "is": "Is",
+        "is_not": "Is not",
+        "contains": "Contains",
+        "is_set": "Has any value",
+        "is_empty": "Is empty"
+      },
+      "createdAny": "Any time",
+      "createdTitle": "Created",
+      "created": {
+        "any": "Any time",
+        "7d": "Last 7 days",
+        "30d": "Last 30 days",
+        "90d": "Last 90 days",
+        "custom": "Custom range"
+      },
+      "from": "From",
+      "to": "To",
+      "clearAll": "Clear filters",
+      "clear": "Clear"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "pinnedHint": "Pinned by hand — ignores the active-contacts rule",
+      "ruleHint": "Follows the active-contacts rule"
+    },
+    "lists": {
+      "toastLoadFailed": "Failed to load lists",
+      "toastCreated": "List “{name}” created",
+      "toastDuplicate": "A list named “{name}” already exists",
+      "toastCreateFailed": "Failed to create list",
+      "toastUpdateFailed": "Failed to update list",
+      "toastDeleteFailed": "Failed to delete list",
+      "toastDeleted": "List “{name}” deleted",
+      "createTitle": "New list",
+      "createDesc": "Lists group contacts for imports, filters and the active-contacts rule. Contacts can belong to many lists.",
+      "namePlaceholder": "e.g. Diwali campaign, VIP customers",
+      "createBtn": "Create list",
+      "empty": "No lists yet. Create one above, or add contacts to a list from the contacts table.",
+      "memberCount": "{count} contacts",
+      "viewContacts": "View contacts",
+      "rename": "Rename",
+      "delete": "Delete",
+      "deleteTitle": "Delete list",
+      "deleteDesc": "Delete “{name}”? Its {count} contacts stay in your database — they are only removed from this list.",
+      "cancel": "Cancel"
+    },
+    "activation": {
+      "toastSaveFailed": "Failed to save the rule",
+      "toastSaved": "Active-contacts rule saved",
+      "modeEveryone": "Everyone",
+      "modeEveryoneDesc": "Every contact is active unless you mark it inactive.",
+      "modeLists": "By list",
+      "modeListsDesc": "Only contacts in the selected lists are active.",
+      "modeTags": "By tag",
+      "modeTagsDesc": "Only contacts with the selected tags are active.",
+      "explainer": "Import as many contacts as you like — only active ones receive broadcasts. Contacts pinned active/inactive by hand keep their status regardless of this rule.",
+      "pickLists": "Active lists",
+      "noLists": "No lists yet — create one in the Lists tab.",
+      "pickTags": "Active tags",
+      "noTags": "No tags yet — create them in Settings.",
+      "previewLoading": "Counting…",
+      "previewCount": "{active} of {total} contacts would be active",
+      "previewHint": "{inactive} contacts would be inactive and skipped by broadcasts.",
+      "saveBtn": "Save rule",
+      "readOnly": "Only admins can change the active-contacts rule."
     }
   },
   "Pipelines": {
@@ -592,7 +750,10 @@
       "toastFailedMoveDeal": "Failed to move deal",
       "toastFailedCreatePipeline": "Failed to create pipeline",
       "toastPipelineCreated": "Pipeline created",
-      "toastNotLinkedToAccount": "Your profile is not linked to an account."
+      "toastNotLinkedToAccount": "Your profile is not linked to an account.",
+      "templateLabel": "Start from a template",
+      "templateNone": "Default sales stages",
+      "templateStagesDesc": "The stages above will be created. You can rename, recolour or reorder them afterwards."
     },
     "board": {
       "dropDealHere": "Drop a deal here",
@@ -823,7 +984,8 @@
         "errorLoadTags": "Failed to load tags",
         "errorLoadFields": "Failed to load custom fields",
         "errorCsvParse": "Could not parse CSV file.",
-        "errorCsvMissingPhone": "CSV must have a 'phone' column."
+        "errorCsvMissingPhone": "CSV must have a 'phone' column.",
+        "activeOnlyNote": "Only active contacts are included. Manage who is active under Contacts → Active contacts."
       },
       "personalize": {
         "title": "Personalize Variables",
@@ -1534,7 +1696,16 @@
         "blue": "Blue",
         "violet": "Violet",
         "pink": "Pink"
-      }
+      },
+      "packTitle": "Starter tag packs",
+      "packDesc": "Add industry-standard tags in one click — pick your business type, untick anything you don’t need.",
+      "packDialogTitle": "Add starter tags",
+      "packDialogDesc": "Tags you already have are greyed out and will not be duplicated.",
+      "packAlreadyHave": "You already have this tag",
+      "packAllPresent": "You already have every tag in this pack.",
+      "packSelectedCount": "{count} of {total} new tags selected",
+      "packAddBtn": "Add {count} tags",
+      "packAdded": "{count} tags added"
     },
     "templates": {
       "title": "Message Templates",

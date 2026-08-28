@@ -377,7 +377,10 @@
         "email": "이메일",
         "company": "회사",
         "tags": "태그",
-        "createdAt": "생성일"
+        "createdAt": "생성일",
+        "status": "상태",
+        "lists": "리스트",
+        "source": "출처"
       },
       "loading": "연락처를 불러오는 중...",
       "noContactsMatch": "필터와 일치하는 연락처가 없습니다.",
@@ -398,7 +401,32 @@
       "toastFailedDelete": "연락처를 삭제하지 못했습니다",
       "toastDeleted": "연락처가 삭제되었습니다",
       "toastBulkFailedDelete": "연락처를 삭제하지 못했습니다",
-      "toastBulkDeleted": "연락처 {count}개가 삭제되었습니다"
+      "toastBulkDeleted": "연락처 {count}개가 삭제되었습니다",
+      "countPill": "전체 {count}개",
+      "subtitleActive": "전체 {total}개 중 {active}개 연락처가 활성 상태이며 브로드캐스트를 받을 수 있습니다.",
+      "sources": {
+        "manual": "직접 추가",
+        "whatsapp": "WhatsApp",
+        "web_form": "웹 폼",
+        "import": "CSV 가져오기",
+        "api": "API"
+      },
+      "bulkStatus": "상태",
+      "markActive": "활성으로 표시",
+      "markInactive": "비활성으로 표시",
+      "followRule": "활성 연락처 규칙 따르기",
+      "markActiveOne": "활성으로 표시",
+      "markInactiveOne": "비활성으로 표시",
+      "addToList": "리스트에 추가",
+      "removeFromList": "리스트에서 제거",
+      "newListPlaceholder": "새 리스트 이름…",
+      "toastMarkedActive": "연락처 {count}개를 활성으로 표시했습니다",
+      "toastMarkedInactive": "연락처 {count}개를 비활성으로 표시했습니다",
+      "toastFollowRule": "연락처 {count}개가 이제 활성 연락처 규칙을 따릅니다",
+      "toastStatusFailed": "연락처 상태를 업데이트하지 못했습니다",
+      "toastAddedToList": "연락처 {count}개를 “{name}”에 추가했습니다",
+      "toastRemovedFromList": "연락처 {count}개를 “{name}”에서 제거했습니다",
+      "toastListFailed": "리스트 구성원을 업데이트하지 못했습니다"
     },
     "form": {
       "addTitle": "연락처 추가",
@@ -508,7 +536,18 @@
       "toastCustomFieldsSaved": "커스텀 필드가 저장되었습니다",
       "toastCustomFieldsFailed": "커스텀 필드를 저장하지 못했습니다",
       "toastTemplateSent": "\"{name}\" 템플릿을 보냈습니다",
-      "toastTemplateFailed": "템플릿을 보내지 못했습니다: {reason}"
+      "toastTemplateFailed": "템플릿을 보내지 못했습니다: {reason}",
+      "statusLabel": "상태",
+      "statusFollowRule": "활성 연락처 규칙 따르기",
+      "statusPinnedActive": "항상 활성 (고정)",
+      "statusPinnedInactive": "항상 비활성 (고정)",
+      "statusActiveHint": "이 연락처는 활성 상태이며 브로드캐스트를 받습니다.",
+      "statusInactiveHint": "이 연락처는 비활성 상태이며 브로드캐스트에서 제외됩니다.",
+      "listsLabel": "리스트",
+      "noLists": "아직 리스트가 없습니다.",
+      "toastStatusUpdated": "상태를 업데이트했습니다",
+      "toastStatusFailed": "상태를 업데이트하지 못했습니다",
+      "toastListFailed": "리스트를 업데이트하지 못했습니다"
     },
     "importModal": {
       "title": "연락처 가져오기",
@@ -551,7 +590,19 @@
       "toastSkipped_plural": "중복 {count}건을 건너뛰었습니다",
       "toastFailed": "연락처 {count}개를 가져오지 못했습니다",
       "toastFailed_plural": "연락처 {count}개를 가져오지 못했습니다",
-      "toastError": "가져오기 실패"
+      "toastError": "가져오기 실패",
+      "optionsTitle": "가져오기 옵션",
+      "optionList": "리스트에 추가",
+      "optionListNone": "리스트 없음",
+      "optionListNew": "＋ 새 리스트…",
+      "optionListNamePlaceholder": "리스트 이름",
+      "optionStatus": "가져온 후 상태",
+      "optionStatusRule": "활성 연락처 규칙 따르기",
+      "optionStatusActive": "활성 (고정)",
+      "optionStatusInactive": "비활성 (고정)",
+      "optionStatusHint": "비활성 연락처는 보관되지만 활성화할 때까지 브로드캐스트에서 제외됩니다.",
+      "resultList": "{count}개를 “{name}”에 추가함",
+      "toastListWarning": "연락처를 가져왔지만 리스트에 추가하지 못했습니다."
     },
     "customFields": {
       "title": "커스텀 필드",
@@ -570,6 +621,113 @@
       "toastRenameFailed": "필드 이름을 변경할 수 없습니다.",
       "toastDeleteFailed": "필드를 삭제할 수 없습니다.",
       "toastDeleted": "\"{name}\"을(를) 삭제했습니다."
+    },
+    "views": {
+      "contacts": "연락처",
+      "lists": "리스트",
+      "activation": "활성 연락처",
+      "listsTitle": "리스트",
+      "listsSubtitle": "이름이 있는 연락처 그룹입니다. 리스트로 바로 가져온 다음 어떤 리스트를 활성으로 볼지 결정하세요.",
+      "activationTitle": "활성 연락처",
+      "activationSubtitle": "누가 활성 연락처인지 결정하세요. 활성 연락처만 브로드캐스트를 받습니다."
+    },
+    "filters": {
+      "searchPlaceholder": "이름, 이메일, 전화번호 또는 회사 검색",
+      "statusAll": "모든 상태",
+      "status": {
+        "all": "전체",
+        "active": "활성",
+        "inactive": "비활성"
+      },
+      "statusHint": "직접 고정하지 않는 한 활성 연락처는 활성 연락처 규칙을 따릅니다.",
+      "allSources": "모든 출처",
+      "sourceTitle": "출처로 필터링",
+      "sourcePrefix": "출처:",
+      "sources": {
+        "manual": "직접 추가",
+        "whatsapp": "WhatsApp",
+        "web_form": "웹 폼",
+        "import": "CSV 가져오기",
+        "api": "API"
+      },
+      "tags": "태그",
+      "tagsTitle": "태그로 필터링",
+      "noTags": "아직 태그가 없습니다.",
+      "lists": "리스트",
+      "listsTitle": "리스트로 필터링",
+      "noLists": "아직 리스트가 없습니다.",
+      "customField": "커스텀 필드",
+      "customFieldTitle": "커스텀 필드로 필터링",
+      "noCustomFields": "정의된 커스텀 필드가 없습니다.",
+      "selectField": "필드 선택…",
+      "valuePlaceholder": "값",
+      "operators": {
+        "is": "같음",
+        "is_not": "같지 않음",
+        "contains": "포함",
+        "is_set": "값 있음",
+        "is_empty": "비어 있음"
+      },
+      "createdAny": "전체 기간",
+      "createdTitle": "생성일",
+      "created": {
+        "any": "전체 기간",
+        "7d": "최근 7일",
+        "30d": "최근 30일",
+        "90d": "최근 90일",
+        "custom": "직접 지정"
+      },
+      "from": "시작",
+      "to": "종료",
+      "clearAll": "필터 지우기",
+      "clear": "지우기"
+    },
+    "status": {
+      "active": "활성",
+      "inactive": "비활성",
+      "pinnedHint": "직접 고정됨 — 활성 연락처 규칙을 무시합니다",
+      "ruleHint": "활성 연락처 규칙을 따릅니다"
+    },
+    "lists": {
+      "toastLoadFailed": "리스트를 불러오지 못했습니다",
+      "toastCreated": "리스트 “{name}”을(를) 만들었습니다",
+      "toastDuplicate": "“{name}” 이름의 리스트가 이미 있습니다",
+      "toastCreateFailed": "리스트를 만들지 못했습니다",
+      "toastUpdateFailed": "리스트를 업데이트하지 못했습니다",
+      "toastDeleteFailed": "리스트를 삭제하지 못했습니다",
+      "toastDeleted": "리스트 “{name}”을(를) 삭제했습니다",
+      "createTitle": "새 리스트",
+      "createDesc": "리스트는 가져오기, 필터, 활성 연락처 규칙을 위해 연락처를 묶습니다. 연락처는 여러 리스트에 속할 수 있습니다.",
+      "namePlaceholder": "예: 디왈리 캠페인, VIP 고객",
+      "createBtn": "리스트 만들기",
+      "empty": "아직 리스트가 없습니다. 위에서 만들거나 연락처 표에서 리스트에 추가하세요.",
+      "memberCount": "연락처 {count}개",
+      "viewContacts": "연락처 보기",
+      "rename": "이름 변경",
+      "delete": "삭제",
+      "deleteTitle": "리스트 삭제",
+      "deleteDesc": "“{name}”을(를) 삭제할까요? 연락처 {count}개는 데이터베이스에 남고 이 리스트에서만 제거됩니다.",
+      "cancel": "취소"
+    },
+    "activation": {
+      "toastSaveFailed": "규칙을 저장하지 못했습니다",
+      "toastSaved": "활성 연락처 규칙을 저장했습니다",
+      "modeEveryone": "전체",
+      "modeEveryoneDesc": "비활성으로 표시하지 않는 한 모든 연락처가 활성입니다.",
+      "modeLists": "리스트 기준",
+      "modeListsDesc": "선택한 리스트에 속한 연락처만 활성입니다.",
+      "modeTags": "태그 기준",
+      "modeTagsDesc": "선택한 태그가 있는 연락처만 활성입니다.",
+      "explainer": "연락처를 원하는 만큼 가져오세요. 활성 연락처만 브로드캐스트를 받습니다. 직접 활성/비활성으로 고정한 연락처는 이 규칙과 관계없이 상태를 유지합니다.",
+      "pickLists": "활성 리스트",
+      "noLists": "아직 리스트가 없습니다. 리스트 탭에서 만드세요.",
+      "pickTags": "활성 태그",
+      "noTags": "아직 태그가 없습니다. 설정에서 만드세요.",
+      "previewLoading": "계산 중…",
+      "previewCount": "전체 {total}개 중 {active}개 연락처가 활성이 됩니다",
+      "previewHint": "연락처 {inactive}개가 비활성이 되어 브로드캐스트에서 제외됩니다.",
+      "saveBtn": "규칙 저장",
+      "readOnly": "관리자만 활성 연락처 규칙을 변경할 수 있습니다."
     }
   },
   "Pipelines": {
@@ -592,7 +750,10 @@
       "toastFailedMoveDeal": "딜을 이동하지 못했습니다",
       "toastFailedCreatePipeline": "파이프라인을 만들지 못했습니다",
       "toastPipelineCreated": "파이프라인이 생성되었습니다",
-      "toastNotLinkedToAccount": "프로필이 계정에 연결되어 있지 않습니다."
+      "toastNotLinkedToAccount": "프로필이 계정에 연결되어 있지 않습니다.",
+      "templateLabel": "템플릿에서 시작",
+      "templateNone": "기본 영업 단계",
+      "templateStagesDesc": "위의 단계가 생성됩니다. 이후 이름, 색상, 순서를 변경할 수 있습니다."
     },
     "board": {
       "dropDealHere": "여기에 딜을 놓으세요",
@@ -823,7 +984,8 @@
         "errorLoadTags": "태그를 불러오지 못했습니다",
         "errorLoadFields": "커스텀 필드를 불러오지 못했습니다",
         "errorCsvParse": "CSV 파일을 파싱할 수 없습니다.",
-        "errorCsvMissingPhone": "CSV에 'phone' 열이 있어야 합니다."
+        "errorCsvMissingPhone": "CSV에 'phone' 열이 있어야 합니다.",
+        "activeOnlyNote": "활성 연락처만 포함됩니다. 연락처 → 활성 연락처에서 활성 대상을 관리하세요."
       },
       "personalize": {
         "title": "변수 개인화",
@@ -1534,7 +1696,16 @@
         "blue": "파랑",
         "violet": "보라",
         "pink": "분홍"
-      }
+      },
+      "packTitle": "스타터 태그 팩",
+      "packDesc": "업종별 표준 태그를 한 번에 추가하세요. 업종을 선택하고 필요 없는 태그는 체크를 해제하면 됩니다.",
+      "packDialogTitle": "스타터 태그 추가",
+      "packDialogDesc": "이미 있는 태그는 회색으로 표시되며 중복 생성되지 않습니다.",
+      "packAlreadyHave": "이미 있는 태그입니다",
+      "packAllPresent": "이 팩의 모든 태그를 이미 가지고 있습니다.",
+      "packSelectedCount": "새 태그 {total}개 중 {count}개 선택됨",
+      "packAddBtn": "태그 {count}개 추가",
+      "packAdded": "태그 {count}개를 추가했습니다"
     },
     "templates": {
       "title": "메시지 템플릿",

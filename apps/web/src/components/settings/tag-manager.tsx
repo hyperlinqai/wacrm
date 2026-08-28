@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Loader2, Plus, Tag as TagIcon, X } from 'lucide-react';
+import { Loader2, Plus, Tag as TagIcon, X, Sparkles } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,12 @@ import {
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import type { Tag } from '@/types';
+import {
+  INDUSTRY_PRESETS,
+  getIndustryPreset,
+  missingPresetTags,
+  type IndustryId,
+} from '@/lib/presets/industry-presets';
 
 const PRESET_COLORS = [
   { name: 'red', value: '#ef4444' },
@@ -55,6 +61,59 @@ export function TagManager() {
   const [deleting, setDeleting] = useState(false);
   const [newTagName, setNewTagName] = useState('');
   const [selectedColor, setSelectedColor] = useState(PRESET_COLORS[3].value);
+
+  // Starter packs — industry presets the user can add in one click.
+  // Names already present (case-insensitive) are never duplicated.
+  const [packOpen, setPackOpen] = useState(false);
+  const [packIndustry, setPackIndustry] = useState<IndustryId>('general');
+  const [packPicked, setPackPicked] = useState<Set<string>>(new Set());
+  const [addingPack, setAddingPack] = useState(false);
+
+  const packTags = getIndustryPreset(packIndustry).tags;
+  const packMissing = missingPresetTags(packTags, tags.map((t) => t.name));
+  const packMissingKeys = new Set(packMissing.map((t) => t.name.toLowerCase()));
+  const packSelected = packMissing.filter((t) => packPicked.has(t.name.toLowerCase()));
+
+  function openPack(industry: IndustryId) {
+    setPackIndustry(industry);
+    const missing = missingPresetTags(getIndustryPreset(industry).tags, tags.map((t) => t.name));
+    setPackPicked(new Set(missing.map((t) => t.name.toLowerCase())));
+    setPackOpen(true);
+  }
+
+  function togglePackTag(name: string) {
+    const k = name.toLowerCase();
+    setPackPicked((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      return next;
+    });
+  }
+
+  async function handleAddPack() {
+    if (!user || !accountId || packSelected.length === 0) return;
+    setAddingPack(true);
+    try {
+      const { error } = await supabase.from('tags').insert(
+        packSelected.map((t) => ({
+          user_id: user.id,
+          account_id: accountId,
+          name: t.name,
+          color: t.color,
+        }))
+      );
+      if (error) throw error;
+      toast.success(t('packAdded', { count: packSelected.length }));
+      setPackOpen(false);
+      await fetchTags(user.id);
+    } catch (err) {
+      console.error('Starter pack error:', err);
+      toast.error(t('failedToCreateTag'));
+    } finally {
+      setAddingPack(false);
+    }
+  }
 
   useEffect(() => {
     if (authLoading) return;
@@ -247,9 +306,97 @@ export function TagManager() {
                 {t('addTag')}
               </Button>
             </div>
+
+            {/* Starter packs */}
+            <div className="rounded-lg border border-dashed border-border p-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Sparkles className="size-4 text-primary" />
+                {t('packTitle')}
+              </div>
+              <p className="mt-0.5 text-xs text-muted-foreground">{t('packDesc')}</p>
+              <div className="mt-2.5 flex flex-wrap gap-1.5">
+                {INDUSTRY_PRESETS.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => openPack(p.id)}
+                    className="rounded-full border border-border bg-background px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </>
         )}
       </CardContent>
+
+      {/* Starter pack picker */}
+      <Dialog open={packOpen} onOpenChange={setPackOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="size-4 text-primary" />
+              {t('packDialogTitle')}
+            </DialogTitle>
+            <DialogDescription>{t('packDialogDesc')}</DialogDescription>
+          </DialogHeader>
+          <select
+            value={packIndustry}
+            onChange={(e) => openPack(e.target.value as IndustryId)}
+            className="h-9 w-full rounded-lg border border-border bg-muted px-2.5 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+          >
+            {INDUSTRY_PRESETS.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+          <div className="flex max-h-72 flex-wrap gap-2 overflow-y-auto py-1">
+            {packTags.map((pt) => {
+              const k = pt.name.toLowerCase();
+              const exists = !packMissingKeys.has(k);
+              const picked = packPicked.has(k);
+              return (
+                <button
+                  key={pt.name}
+                  type="button"
+                  disabled={exists}
+                  onClick={() => togglePackTag(pt.name)}
+                  aria-pressed={picked}
+                  title={exists ? t('packAlreadyHave') : undefined}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-all',
+                    exists && 'cursor-not-allowed opacity-40 line-through'
+                  )}
+                  style={{
+                    backgroundColor: `${pt.color}${picked || exists ? '20' : '08'}`,
+                    color: pt.color,
+                    border: `1px solid ${pt.color}${picked ? '70' : '30'}`,
+                  }}
+                >
+                  <span className="size-2 rounded-full" style={{ backgroundColor: pt.color }} />
+                  {pt.name}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {packMissing.length === 0
+              ? t('packAllPresent')
+              : t('packSelectedCount', { count: packSelected.length, total: packMissing.length })}
+          </p>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPackOpen(false)} disabled={addingPack}>
+              {t('cancel')}
+            </Button>
+            <Button onClick={handleAddPack} disabled={addingPack || packSelected.length === 0}>
+              {addingPack ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+              {t('packAddBtn', { count: packSelected.length })}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete confirmation */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

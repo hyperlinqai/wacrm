@@ -110,9 +110,57 @@ export interface Contact {
   avatar_url?: string;
   created_at: string;
   updated_at: string;
+  /** Where the contact came from (migration 046):
+   *  manual | whatsapp | web_form | import | api. */
+  source?: ContactSource;
+  source_form_id?: string | null;
+  /** Derived "counts as active" flag (migration 049). Maintained by DB
+   *  triggers from `activation_override` + the organization's
+   *  contact_activation_rules — never written by the app directly. */
+  is_active?: boolean;
+  /** Manual pin: 'active' / 'inactive' beat the organization rule;
+   *  null = follow the rule. */
+  activation_override?: ContactActivationOverride | null;
   /** Hydrated by queries that embed `contact_tags(tags(*))` (e.g. the
    *  Inbox conversation list, for tag filtering). Absent otherwise. */
   tags?: Tag[];
+}
+
+export type ContactSource = 'manual' | 'whatsapp' | 'web_form' | 'import' | 'api';
+export const CONTACT_SOURCES: ContactSource[] = ['manual', 'whatsapp', 'web_form', 'import', 'api'];
+
+export type ContactActivationOverride = 'active' | 'inactive';
+
+/** Hand-curated group of contacts (migration 049). */
+export interface ContactList {
+  id: string;
+  organization_id: string;
+  account_id: string;
+  user_id: string;
+  name: string;
+  description?: string | null;
+  color: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ContactListMember {
+  list_id: string;
+  contact_id: string;
+  created_at: string;
+}
+
+export type ContactActivationMode = 'everyone' | 'lists' | 'tags';
+
+/** One row per organization: who counts as an active contact. */
+export interface ContactActivationRule {
+  organization_id: string;
+  account_id: string;
+  mode: ContactActivationMode;
+  list_ids: string[];
+  tag_ids: string[];
+  updated_by?: string | null;
+  updated_at: string;
 }
 
 export interface Tag {

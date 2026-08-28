@@ -9,6 +9,47 @@ Versions follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Pre-1.0, `MINOR` bumps cover new modules; `PATCH` bumps cover bug fixes
 and polish.
 
+## [Unreleased]
+
+Contacts can now be organised into **lists**, and only **active** contacts
+receive broadcasts — so a workspace can hold thousands of imported
+contacts while messaging a chosen subset.
+
+> **Migration required:** apply `supabase/migrations/049_contact_lists_and_activation.sql`
+> (adds `contact_lists`, `contact_list_members`, `contact_activation_rules`,
+> `contacts.is_active` / `contacts.activation_override`, and the
+> `filter_contacts`, `contact_list_counts`, `preview_activation_rule` RPCs).
+> Existing contacts stay active; nothing changes until you pick a rule.
+
+### Added
+
+- **Contact lists.** A new *Lists* tab on the Contacts page: create, rename,
+  colour and delete lists; add/remove contacts in bulk from the table; a
+  CSV import can drop its rows straight into an existing or new list.
+- **Active-contacts rule.** *Contacts → Active contacts* lets an admin decide
+  who counts as active: everyone (default), only members of chosen lists,
+  or only holders of chosen tags — with a live "N of M would be active"
+  preview. Any contact can be pinned always-active / always-inactive from
+  the table, the bulk bar, the detail sheet or at import time.
+- **Contacts filter bar.** Filter by status, source (WhatsApp / web form /
+  CSV import / API / manual), tags, lists, a custom-field rule
+  (is / is not / contains / has value / empty) and created date, with
+  removable chips. Every filter is resolved server-side in one query.
+- **Broadcasts skip inactive contacts** for the All / Tags / Custom-field
+  audiences (CSV uploads are sent as supplied). The audience estimate
+  reflects this.
+- **Industry presets.** Settings → Tags has *Starter tag packs* (General,
+  SaaS, Agency/Services, E-commerce, Real estate, Education, Healthcare,
+  Finance/Insurance, Hospitality, Recruitment) — existing tags are never
+  duplicated. The *New pipeline* dialog has *Start from a template* with
+  industry-standard stage sets (SaaS Sales, Customer Onboarding, Client
+  Acquisition, Project Delivery, Order Fulfilment, Admissions, Hiring…).
+
+### Changed
+
+- Contacts created by the WhatsApp webhook and the public API now record
+  `source = 'whatsapp'` / `'api'`; CSV imports record `'import'`.
+
 ## [0.8.1] — 2026-07-10
 
 Fixes inbound chats fragmenting into multiple threads for the same

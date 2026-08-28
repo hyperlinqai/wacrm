@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import {
@@ -18,6 +18,11 @@ import {
   type ContactTagAssignment,
 } from '@/lib/contacts/resolve-import-tags';
 import { cn } from '@/lib/utils';
+import {
+  addContactsToList,
+  findOrCreateListByName,
+} from '@/lib/contacts/lists-api';
+import type { ContactActivationOverride, ContactList } from '@/types';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -36,6 +41,8 @@ import {
   XCircle,
   AlertTriangle,
   Tag,
+  ListChecks,
+  Activity,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -144,7 +151,31 @@ export function ImportModal({
     skipped: number;
     failed: number;
     tagsAssigned: number;
+    listName?: string;
+    listAdded?: number;
   } | null>(null);
+
+  // Import options (migration 049): drop the batch into a list and/or
+  // pin its status so a big import can land inactive by default.
+  const [lists, setLists] = useState<ContactList[]>([]);
+  const [listChoice, setListChoice] = useState<string>(''); // '' | list id | '__new'
+  const [newListName, setNewListName] = useState('');
+  const [statusChoice, setStatusChoice] = useState<'rule' | ContactActivationOverride>('rule');
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    supabase
+      .from('contact_lists')
+      .select('*')
+      .order('name')
+      .then(({ data }) => {
+        if (!cancelled) setLists((data ?? []) as ContactList[]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, supabase]);
 
   function reset() {
     setFile(null);
@@ -153,6 +184,9 @@ export function ImportModal({
     setHasCompanyColumn(false);
     setTagColorByKey(new Map());
     setResult(null);
+    setListChoice('');
+    setNewListName('');
+    setStatusChoice('rule');
     if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
@@ -263,6 +297,9 @@ export function ImportModal({
       }
 
       const tagAssignments: ContactTagAssignment[] = [];
+      const importedIds: string[] = [];
+      const activationOverride: ContactActivationOverride | null =
+        statusChoice === 'rule' ? null : statusChoice;
 
       // 4) Batch insert the genuinely-new rows in chunks of 50. The DB
       //    unique index is the backstop: a 23505 (race, or a format
@@ -278,6 +315,8 @@ export function ImportModal({
           name: row.name || null,
           email: row.email || null,
           company: row.company || null,
+          source: 'import' as const,
+          activation_override: activationOverride,
         }));
 
         const { data, error } = await supabase
@@ -299,6 +338,7 @@ export function ImportModal({
 
             if (!singleErr && singleData) {
               imported++;
+              importedIds.push(singleData.id);
               if (source.tagNames.length > 0) {
                 tagAssignments.push({
                   contactId: singleData.id,
@@ -318,6 +358,7 @@ export function ImportModal({
           // preserves RETURNING order. If this path is ever split into
           // parallel inserts, zip by phone or returned id instead.
           for (let j = 0; j < inserted.length; j++) {
+            importedIds.push(inserted[j].id);
             const source = chunk[j];
             if (!source || source.tagNames.length === 0) continue;
             tagAssignments.push({
@@ -341,7 +382,31 @@ export function ImportModal({
         toast.warning(t('toastTagsWarning'));
       }
 
-      setResult({ imported, skipped, failed, tagsAssigned });
+      // 6) Drop the new contacts into the chosen list (existing or new).
+      let listName: string | undefined;
+      let listAdded = 0;
+      if (listChoice && importedIds.length > 0) {
+        try {
+          const list =
+            listChoice === '__new'
+              ? await findOrCreateListByName(supabase, {
+                  userId: user.id,
+                  accountId,
+                  name: newListName,
+                })
+              : lists.find((l) => l.id === listChoice) ?? null;
+          if (list) {
+            await addContactsToList(supabase, list.id, importedIds);
+            listName = list.name;
+            listAdded = importedIds.length;
+          }
+        } catch (err) {
+          console.error('[import] list assignment failed:', err);
+          toast.warning(t('toastListWarning'));
+        }
+      }
+
+      setResult({ imported, skipped, failed, tagsAssigned, listName, listAdded });
       if (imported > 0) {
         toast.success(t('toastImported', { count: imported }));
         onImported();
@@ -564,6 +629,59 @@ export function ImportModal({
             </div>
           )}
 
+          {parsedRows.length > 0 && !result && (
+            <div className="mt-4 rounded-xl border border-border bg-background/50 p-4 space-y-3">
+              <p className="text-sm font-medium text-popover-foreground">{t('optionsTitle')}</p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label className="space-y-1.5 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <ListChecks className="size-3.5" />
+                    {t('optionList')}
+                  </span>
+                  <select
+                    value={listChoice}
+                    onChange={(e) => setListChoice(e.target.value)}
+                    className="h-9 w-full rounded-lg border border-border bg-muted px-2.5 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="">{t('optionListNone')}</option>
+                    {lists.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.name}
+                      </option>
+                    ))}
+                    <option value="__new">{t('optionListNew')}</option>
+                  </select>
+                  {listChoice === '__new' && (
+                    <input
+                      type="text"
+                      value={newListName}
+                      onChange={(e) => setNewListName(e.target.value)}
+                      placeholder={t('optionListNamePlaceholder')}
+                      maxLength={60}
+                      className="h-9 w-full rounded-lg border border-border bg-muted px-2.5 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    />
+                  )}
+                </label>
+                <label className="space-y-1.5 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <Activity className="size-3.5" />
+                    {t('optionStatus')}
+                  </span>
+                  <select
+                    value={statusChoice}
+                    onChange={(e) => setStatusChoice(e.target.value as 'rule' | ContactActivationOverride)}
+                    className="h-9 w-full rounded-lg border border-border bg-muted px-2.5 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="rule">{t('optionStatusRule')}</option>
+                    <option value="active">{t('optionStatusActive')}</option>
+                    <option value="inactive">{t('optionStatusInactive')}</option>
+                  </select>
+                  <span className="block leading-relaxed">{t('optionStatusHint')}</span>
+                </label>
+              </div>
+            </div>
+          )}
+
           {result && (
             <div className="rounded-xl border border-border bg-background/50 p-4">
               <p className="text-sm font-medium text-popover-foreground">{t('importComplete')}</p>
@@ -580,6 +698,12 @@ export function ImportModal({
                     {t('resultTags', { count: result.tagsAssigned })}
                   </div>
                 )}
+                {result.listAdded && result.listAdded > 0 && result.listName ? (
+                  <div className="flex items-center gap-1.5 text-sm text-violet-400">
+                    <CheckCircle className="size-4 shrink-0" />
+                    {t('resultList', { count: result.listAdded, name: result.listName })}
+                  </div>
+                ) : null}
                 {result.skipped > 0 && (
                   <div className="flex items-center gap-1.5 text-sm text-amber-400">
                     <AlertTriangle className="size-4 shrink-0" />
@@ -609,7 +733,11 @@ export function ImportModal({
           {!result && (
             <Button
               type="button"
-              disabled={parsedRows.length === 0 || importing}
+              disabled={
+                parsedRows.length === 0 ||
+                importing ||
+                (listChoice === '__new' && !newListName.trim())
+              }
               onClick={handleImport}
               className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
