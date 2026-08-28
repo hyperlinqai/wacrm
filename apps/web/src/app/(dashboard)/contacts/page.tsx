@@ -60,6 +60,9 @@ import {
   Pin,
   PinOff,
   Settings2,
+  Tag as TagIcon,
+  TagsIcon,
+  CheckSquare,
 } from 'lucide-react';
 import { ContactForm } from '@/components/contacts/contact-form';
 import { ContactDetailView } from '@/components/contacts/contact-detail-view';
@@ -75,6 +78,7 @@ import { GatedButton } from '@/components/ui/gated-button';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { deleteContacts } from '@/lib/contacts/delete-contacts';
+import { bulkAddTags, bulkRemoveTags } from '@/lib/contacts/bulk-tags';
 import {
   EMPTY_FILTERS,
   hasAnyFilter,
@@ -91,6 +95,10 @@ import {
 } from '@/lib/contacts/lists-api';
 
 const PAGE_SIZE = 25;
+// Above this, "select all matching" refuses and asks the user to narrow
+// filters first — a bulk action fetching/mutating tens of thousands of
+// rows in one go isn't a case this UI is built for.
+const SELECT_ALL_MAX = 5000;
 
 type View = 'contacts' | 'lists' | 'activation';
 
@@ -133,6 +141,7 @@ export default function ContactsPage() {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [newListName, setNewListName] = useState('');
+  const [bulkTagPicked, setBulkTagPicked] = useState<Set<string>>(new Set());
 
   // Reference data
   const [tagsMap, setTagsMap] = useState<Record<string, Tag>>({});
@@ -397,6 +406,31 @@ export default function ContactsPage() {
     setBulkDeleteOpen(false);
   }
 
+  /**
+   * Expand the selection from "the rows on this page" to every contact
+   * matching the current filters, so bulk actions aren't capped at
+   * PAGE_SIZE. Refetches just ids/offset 0..totalCount through the same
+   * RPC the table already uses, so it respects the exact same filter.
+   */
+  async function selectAllMatching() {
+    if (totalCount === 0 || totalCount > SELECT_ALL_MAX) return;
+    setBulkBusy(true);
+    try {
+      const { data, error } = await supabase.rpc(
+        'filter_contacts',
+        toFilterContactsParams(filters, { limit: totalCount, offset: 0 })
+      );
+      if (error) throw error;
+      const rows = (data ?? []) as { contact: Contact }[];
+      setSelected(new Set(rows.map((r) => r.contact.id)));
+    } catch (err) {
+      console.error('[contacts] select-all-matching failed:', err);
+      toast.error(t('toastSelectAllFailed'));
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
   async function applyOverride(ids: string[], override: ContactActivationOverride | null) {
     if (ids.length === 0) return;
     setBulkBusy(true);
@@ -470,6 +504,43 @@ export default function ContactsPage() {
     }
   }
 
+  function toggleBulkTagPick(tagId: string) {
+    setBulkTagPicked((prev) => {
+      const next = new Set(prev);
+      if (next.has(tagId)) next.delete(tagId);
+      else next.add(tagId);
+      return next;
+    });
+  }
+
+  async function bulkApplyTags(mode: 'add' | 'remove') {
+    const contactIds = [...selected];
+    const tagIds = [...bulkTagPicked];
+    if (contactIds.length === 0 || tagIds.length === 0) return;
+    setBulkBusy(true);
+    try {
+      const { succeeded, failed } =
+        mode === 'add'
+          ? await bulkAddTags(contactIds, tagIds)
+          : await bulkRemoveTags(contactIds, tagIds);
+      if (succeeded > 0) {
+        toast.success(
+          mode === 'add'
+            ? t('toastTagsBulkAdded', { count: succeeded })
+            : t('toastTagsBulkRemoved', { count: succeeded })
+        );
+      }
+      if (failed > 0) toast.error(t('toastTagsBulkFailed', { count: failed }));
+      setBulkTagPicked(new Set());
+      refreshAll();
+    } catch (err) {
+      console.error('[contacts] bulk tag update failed:', err);
+      toast.error(t('toastTagsBulkFailed', { count: contactIds.length * tagIds.length }));
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
   const hasNext = page < totalPages - 1;
   const hasPrev = page > 0;
@@ -479,16 +550,6 @@ export default function ContactsPage() {
     [tagsMap]
   );
   const filtersActive = hasAnyFilter(filters);
-
-  // Lists the current selection could be removed from (any list that at
-  // least one selected row belongs to).
-  const removableLists = useMemo(() => {
-    const ids = new Set<string>();
-    contacts.forEach((c) => {
-      if (selected.has(c.id)) c.lists?.forEach((l) => ids.add(l.id));
-    });
-    return lists.filter((l) => ids.has(l.id));
-  }, [contacts, selected, lists]);
 
   const views: { id: View; label: string; icon: typeof Users }[] = [
     { id: 'contacts', label: tv('contacts'), icon: Users },
@@ -624,9 +685,25 @@ export default function ContactsPage() {
           {/* Bulk action bar */}
           {selected.size > 0 && (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 px-4 py-2">
-              <p className="text-sm text-foreground">
-                {t('selectedCount', { count: selected.size })}
-              </p>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <p className="text-sm text-foreground">
+                  {t('selectedCount', { count: selected.size })}
+                </p>
+                {allOnPageSelected &&
+                  selected.size < totalCount &&
+                  totalCount > contacts.length && (
+                    <button
+                      type="button"
+                      onClick={selectAllMatching}
+                      disabled={bulkBusy || totalCount > SELECT_ALL_MAX}
+                      className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline disabled:opacity-50 disabled:no-underline"
+                      title={totalCount > SELECT_ALL_MAX ? t('toastSelectAllTooMany') : undefined}
+                    >
+                      <CheckSquare className="size-3.5" />
+                      {t('selectAllMatching', { count: totalCount })}
+                    </button>
+                  )}
+              </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="ghost"
@@ -669,6 +746,76 @@ export default function ContactsPage() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+
+                {/* Tags */}
+                <Popover
+                  onOpenChange={(open) => {
+                    if (!open) setBulkTagPicked(new Set());
+                  }}
+                >
+                  <PopoverTrigger
+                    render={
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!canEdit || bulkBusy || allTags.length === 0}
+                        className="border-border"
+                      />
+                    }
+                  >
+                    <TagsIcon className="size-4" />
+                    {t('bulkTags')}
+                    <ChevronDown className="size-3.5 opacity-60" />
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-64 p-0">
+                    <div className="px-3 py-2 border-b border-border text-sm font-medium text-popover-foreground">
+                      {t('bulkTags')}
+                    </div>
+                    <div className="max-h-56 overflow-y-auto py-1">
+                      {allTags.map((tag) => (
+                        <label
+                          key={tag.id}
+                          className="flex items-center gap-2.5 px-3 py-1.5 cursor-pointer hover:bg-muted/50"
+                        >
+                          <Checkbox
+                            checked={bulkTagPicked.has(tag.id)}
+                            onCheckedChange={() => toggleBulkTagPick(tag.id)}
+                            aria-label={tag.name}
+                          />
+                          <span
+                            className="size-2.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: tag.color }}
+                          />
+                          <span className="text-sm text-popover-foreground truncate">
+                            {tag.name}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-1.5 border-t border-border p-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        disabled={bulkTagPicked.size === 0 || bulkBusy}
+                        onClick={() => bulkApplyTags('add')}
+                      >
+                        <TagIcon className="size-3.5" />
+                        {t('applyAddTags')}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1"
+                        disabled={bulkTagPicked.size === 0 || bulkBusy}
+                        onClick={() => bulkApplyTags('remove')}
+                      >
+                        <ListX className="size-3.5" />
+                        {t('applyRemoveTags')}
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
 
                 {/* Add to list */}
                 <Popover>
@@ -729,7 +876,7 @@ export default function ContactsPage() {
                 </Popover>
 
                 {/* Remove from list */}
-                {removableLists.length > 0 && (
+                {lists.length > 0 && (
                   <DropdownMenu>
                     <DropdownMenuTrigger
                       render={
@@ -746,7 +893,7 @@ export default function ContactsPage() {
                       <ChevronDown className="size-3.5 opacity-60" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="bg-popover border-border">
-                      {removableLists.map((l) => (
+                      {lists.map((l) => (
                         <DropdownMenuItem key={l.id} onClick={() => bulkRemoveFromList(l.id)}>
                           <span className="size-2.5 rounded-sm" style={{ backgroundColor: l.color }} />
                           {l.name}

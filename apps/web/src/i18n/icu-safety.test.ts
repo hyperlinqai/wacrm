@@ -81,20 +81,33 @@ describe('ICU-hostile strings are not read with plain t()', () => {
 
       for (const { path, text } of sources) {
         // Leaf names repeat across namespaces ('delete', 'desc', …), so only
-        // consider a file that actually opens this key's namespace. The call
-        // may use a trailing sub-path (useTranslations('Settings.templates')
-        // + t('config.foo')), so match on any namespace prefix.
-        const opensNamespace = [...text.matchAll(/useTranslations\(\s*['"]([^'"]+)['"]/g)].some(
-          (m) => namespace === m[1] || namespace.startsWith(`${m[1]}.`),
-        );
-        if (!opensNamespace) continue;
+        // check calls through a translator variable that actually opened
+        // this key's namespace. Every `useTranslations()` call site is
+        // bound to a variable — often `t`, but a component that opens a
+        // second namespace names it something else (`tv`, `tRoles`,
+        // `tStatus`, …) — so collect (identifier, namespace) pairs rather
+        // than assuming the identifier is always `t`. The call may use a
+        // trailing sub-path (useTranslations('Settings.templates') +
+        // t('config.foo')), so match on any namespace prefix.
+        const identifiers = [
+          ...text.matchAll(/(?:const|let)\s+(\w+)\s*=\s*useTranslations\(\s*['"]([^'"]+)['"]/g),
+        ]
+          .filter(([, , ns]) => namespace === ns || namespace.startsWith(`${ns}.`))
+          .map(([, ident]) => ident);
 
-        // A plain call: `t('leaf')` or `t("a.leaf")`, but not `.raw(` / `.rich(`.
-        const plainCall = new RegExp(
-          String.raw`(?<![.\w])t\(\s*['"](?:[\w.]+\.)?${leaf}['"]`,
-        );
-        if (plainCall.test(text)) {
-          offenders.push(`${key} — plain t() in ${path.replace(process.cwd() + '/', '')}`);
+        for (const ident of identifiers) {
+          // A plain call: `t('leaf')` / `tv("a.leaf")`, but not `.raw(` / `.rich(`
+          // (those are preceded by `.`, which the lookbehind excludes) and not
+          // a different identifier that merely ends in this one (e.g. `tv(`
+          // shouldn't match a probe for `t`, hence the `\b` before it).
+          const plainCall = new RegExp(
+            String.raw`(?<![.\w])${ident}\(\s*['"](?:[\w.]+\.)?${leaf}['"]`,
+          );
+          if (plainCall.test(text)) {
+            offenders.push(
+              `${key} — plain ${ident}() in ${path.replace(process.cwd() + '/', '')}`,
+            );
+          }
         }
       }
     }

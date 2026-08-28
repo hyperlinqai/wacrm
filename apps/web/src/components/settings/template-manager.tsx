@@ -743,7 +743,7 @@ export function TemplateManager() {
                     <button
                       type="button"
                       onClick={() => insertPlaceholder('header_content')}
-                      title={tv('insertPlaceholderTitle')}
+                      title={tv.raw('insertPlaceholderTitle')}
                       className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:text-foreground"
                     >
                       <Braces className="size-3" />
@@ -846,7 +846,7 @@ export function TemplateManager() {
                 <button
                   type="button"
                   onClick={() => insertPlaceholder('body_text')}
-                  title={tv('insertPlaceholderTitle')}
+                  title={tv.raw('insertPlaceholderTitle')}
                   className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:text-foreground"
                 >
                   <Braces className="size-3" />

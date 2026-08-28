@@ -426,7 +426,16 @@
       "toastStatusFailed": "Failed to update contact status",
       "toastAddedToList": "{count} contacts added to “{name}”",
       "toastRemovedFromList": "{count} contacts removed from “{name}”",
-      "toastListFailed": "Failed to update list membership"
+      "toastListFailed": "Failed to update list membership",
+      "selectAllMatching": "Select all {count} contacts",
+      "toastSelectAllFailed": "Failed to select all matching contacts",
+      "toastSelectAllTooMany": "Too many matching contacts to select at once — narrow your filters first",
+      "bulkTags": "Tags",
+      "applyAddTags": "Add",
+      "applyRemoveTags": "Remove",
+      "toastTagsBulkAdded": "{count} tag assignments added",
+      "toastTagsBulkRemoved": "{count} tag assignments removed",
+      "toastTagsBulkFailed": "{count} tag updates failed"
     },
     "form": {
       "addTitle": "Add Contact",

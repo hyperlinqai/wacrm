@@ -426,7 +426,16 @@
       "toastStatusFailed": "연락처 상태를 업데이트하지 못했습니다",
       "toastAddedToList": "연락처 {count}개를 “{name}”에 추가했습니다",
       "toastRemovedFromList": "연락처 {count}개를 “{name}”에서 제거했습니다",
-      "toastListFailed": "리스트 구성원을 업데이트하지 못했습니다"
+      "toastListFailed": "리스트 구성원을 업데이트하지 못했습니다",
+      "selectAllMatching": "전체 {count}개 연락처 선택",
+      "toastSelectAllFailed": "일치하는 연락처를 모두 선택하지 못했습니다",
+      "toastSelectAllTooMany": "한 번에 선택하기에는 일치하는 연락처가 너무 많습니다 — 먼저 필터를 좁혀주세요",
+      "bulkTags": "태그",
+      "applyAddTags": "추가",
+      "applyRemoveTags": "제거",
+      "toastTagsBulkAdded": "태그 지정 {count}건을 추가했습니다",
+      "toastTagsBulkRemoved": "태그 지정 {count}건을 제거했습니다",
+      "toastTagsBulkFailed": "태그 업데이트 {count}건이 실패했습니다"
     },
     "form": {
       "addTitle": "연락처 추가",

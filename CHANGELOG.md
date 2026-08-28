@@ -35,6 +35,19 @@ contacts while messaging a chosen subset.
   CSV import / API / manual), tags, lists, a custom-field rule
   (is / is not / contains / has value / empty) and created date, with
   removable chips. Every filter is resolved server-side in one query.
+- **Select all matching filters, not just the page.** Once every row on
+  the current page is checked, a "Select all N contacts" link expands the
+  selection to everything matching the active filters (capped at 5,000 —
+  narrow filters first for larger sets), so bulk actions aren't limited to
+  25 contacts at a time.
+- **Bulk tag add/remove.** The bulk-action bar has a *Tags* control to add
+  or remove one or more tags across every selected contact, alongside the
+  existing bulk status, list, and delete actions — goes through the same
+  per-contact route as manual tagging so tag-triggered automations still
+  fire for each contact.
+- *Remove from list* in the bulk bar now lists every list (not just ones
+  visible on the current page), so it works correctly with "select all
+  matching" selections that span contacts outside the loaded page.
 - **Broadcasts skip inactive contacts** for the All / Tags / Custom-field
   audiences (CSV uploads are sent as supplied). The audience estimate
   reflects this.
@@ -44,6 +57,24 @@ contacts while messaging a chosen subset.
   duplicated. The *New pipeline* dialog has *Start from a template* with
   industry-standard stage sets (SaaS Sales, Customer Onboarding, Client
   Acquisition, Project Delivery, Order Fulfilment, Admissions, Hiring…).
+
+### Fixed
+
+- **Contacts page rendered blank/garbled rows** ("missing key" React
+  warning). `filter_contacts` / `filter_contacts_by_tags` returned a raw
+  Postgres composite value for each contact — a shape supabase-js/PostgREST
+  auto-decodes, but this app's direct-Postgres data layer (`src/lib/db`)
+  reads RPC results as plain rows over `pg`, which doesn't decode composite
+  types. Every field came back undefined. Both RPCs now return `jsonb`
+  instead, which `pg` decodes natively.
+
+> **Migration required:** apply `supabase/migrations/050_fix_contact_rpc_composite_return.sql`
+> (no schema changes — recreates the two RPCs with a `jsonb` return type).
+- Send Template's "insert placeholder" tooltip could throw a render error
+  (`INVALID_MESSAGE: MALFORMED_ARGUMENT`) — its literal `{{n}}` string was
+  read with plain `t()` instead of `t.raw()`. Also hardened the ICU-safety
+  test, which only checked translator variables named `t` and missed this
+  because the component's second translator is named `tv`.
 
 ### Changed
 
