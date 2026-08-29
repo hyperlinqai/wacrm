@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Loader2, Plus, ListChecks, Pencil, Trash2, Filter, Check, X } from 'lucide-react';
+import { Loader2, Plus, ListChecks, Pencil, Trash2, Filter, Check, X, Radio } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { useCan } from '@/hooks/use-can';
@@ -53,6 +54,7 @@ interface ListManagerProps {
  */
 export function ListManager({ refreshKey = 0, onViewContacts, onChanged }: ListManagerProps) {
   const t = useTranslations('Contacts.lists');
+  const router = useRouter();
   const supabase = createClient();
   const { user, accountId } = useAuth();
   const canEdit = useCan('send-messages');
@@ -276,6 +278,19 @@ export function ListManager({ refreshKey = 0, onViewContacts, onChanged }: ListM
                     <Filter className="size-3.5" />
                     {t('viewContacts')}
                   </Button>
+                  {canEdit && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={list.member_count === 0}
+                      title={list.member_count === 0 ? t('runCampaignEmpty') : undefined}
+                      onClick={() => router.push(`/broadcasts/new?listId=${list.id}`)}
+                      className="text-muted-foreground hover:text-foreground disabled:opacity-40"
+                    >
+                      <Radio className="size-3.5" />
+                      {t('runCampaign')}
+                    </Button>
+                  )}
                   {canEdit && (
                     <>
                       <Button

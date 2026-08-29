@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
@@ -30,8 +30,9 @@ export default function NewBroadcastPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [template, setTemplate] = useState<MessageTemplate | null>(null);
   const [audience, setAudience] = useState<{
-    type: 'all' | 'tags' | 'custom_field' | 'csv';
+    type: 'all' | 'tags' | 'lists' | 'custom_field' | 'csv';
     tagIds?: string[];
+    listIds?: string[];
     customField?: {
       fieldId: string;
       operator: 'is' | 'is_not' | 'contains';
@@ -40,6 +41,16 @@ export default function NewBroadcastPage() {
     csvContacts?: { phone: string; name?: string }[];
     excludeTagIds?: string[];
   }>({ type: 'all' });
+
+  useEffect(() => {
+    // ?listId=<id> — "Run campaign" from a list on the Contacts page
+    // jumps straight in with that list pre-selected as the audience,
+    // instead of the user re-picking it in step 2. Browser-only read
+    // (window.location doesn't exist during SSR), so it runs post-mount.
+    const listId = new URLSearchParams(window.location.search).get('listId');
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (listId) setAudience({ type: 'lists', listIds: [listId] });
+  }, []);
   const [variables, setVariables] = useState<
     Record<string, { type: 'static' | 'field' | 'custom_field'; value: string }>
   >({});
@@ -56,6 +67,7 @@ export default function NewBroadcastPage() {
         audience: {
           type: audience.type,
           tagIds: audience.tagIds,
+          listIds: audience.listIds,
           customField: audience.customField,
           csvContacts: audience.csvContacts,
           excludeTagIds: audience.excludeTagIds,
@@ -111,6 +123,7 @@ export default function NewBroadcastPage() {
       audience_filter: {
         type: audience.type,
         tagIds: audience.tagIds,
+        listIds: audience.listIds,
       },
       status: 'draft',
       total_recipients: 0,

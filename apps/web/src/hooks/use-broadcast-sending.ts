@@ -18,8 +18,10 @@ export interface CustomFieldFilter {
 }
 
 export interface AudienceConfig {
-  type: 'all' | 'tags' | 'custom_field' | 'csv';
+  type: 'all' | 'tags' | 'lists' | 'custom_field' | 'csv';
   tagIds?: string[];
+  /** Contacts in ANY of these lists (OR), migration 049. */
+  listIds?: string[];
   customField?: CustomFieldFilter;
   csvContacts?: { phone: string; name?: string }[];
   /** Contacts carrying any of these tags are subtracted from the result. */
@@ -193,6 +195,29 @@ export function useBroadcastSending(): UseBroadcastSendingReturn {
         const uniqueContactIds = [
           ...new Set(contactTags.map((ct) => ct.contact_id)),
         ];
+        const { data, error } = await supabase
+          .from('contacts')
+          .select('*')
+          .eq('is_active', true)
+          .in('id', uniqueContactIds);
+        if (error) throw new Error(`Failed to fetch contacts: ${error.message}`);
+        contacts = data ?? [];
+      }
+    } else if (
+      audience.type === 'lists' &&
+      audience.listIds &&
+      audience.listIds.length > 0
+    ) {
+      const { data: members, error: listError } = await supabase
+        .from('contact_list_members')
+        .select('contact_id')
+        .in('list_id', audience.listIds);
+
+      if (listError)
+        throw new Error(`Failed to fetch list members: ${listError.message}`);
+
+      if (members && members.length > 0) {
+        const uniqueContactIds = [...new Set(members.map((m) => m.contact_id))];
         const { data, error } = await supabase
           .from('contacts')
           .select('*')
@@ -382,6 +407,7 @@ export function useBroadcastSending(): UseBroadcastSendingReturn {
           audience_filter: {
             type: payload.audience.type,
             tagIds: payload.audience.tagIds,
+            listIds: payload.audience.listIds,
             customField: payload.audience.customField,
             excludeTagIds: payload.audience.excludeTagIds,
           },

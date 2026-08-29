@@ -20,6 +20,7 @@ import { useTranslations } from 'next-intl';
 interface AudienceConfig {
   type: string;
   tagIds?: string[];
+  listIds?: string[];
   csvContacts?: { phone: string; name?: string }[];
 }
 
@@ -70,6 +71,18 @@ export function Step4ScheduleSend({
 
           const uniqueIds = new Set((contactTags ?? []).map((ct) => ct.contact_id));
           setEstimatedReach(uniqueIds.size);
+        } else if (
+          audience.type === 'lists' &&
+          audience.listIds &&
+          audience.listIds.length > 0
+        ) {
+          const { data: members } = await supabase
+            .from('contact_list_members')
+            .select('contact_id')
+            .in('list_id', audience.listIds);
+
+          const uniqueIds = new Set((members ?? []).map((m) => m.contact_id));
+          setEstimatedReach(uniqueIds.size);
         } else if (audience.type === 'csv' && audience.csvContacts) {
           setEstimatedReach(audience.csvContacts.length);
         } else {
@@ -88,7 +101,9 @@ export function Step4ScheduleSend({
       ? t('scheduleSend.audienceAll')
       : audience.type === 'tags'
         ? t('scheduleSend.audienceTags')
-        : audience.type === 'csv'
+        : audience.type === 'lists'
+          ? t('scheduleSend.audienceLists')
+          : audience.type === 'csv'
           ? t('scheduleSend.audienceCsv')
           : t('scheduleSend.audienceField');
 

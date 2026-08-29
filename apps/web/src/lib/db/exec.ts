@@ -31,14 +31,20 @@ export async function withRls<T>(
 ): Promise<T> {
   const client = await getPool().connect();
   try {
-    await client.query('BEGIN');
-    // Role names are a closed enum — safe to interpolate.
-    await client.query(`SET LOCAL role ${ctx.role}`);
+    // BEGIN + SET LOCAL role + set_config used to be three separate
+    // awaited round trips before every single query in the app — each
+    // one paying full network latency to the DB. Sent together as one
+    // multi-statement string (Postgres' simple query protocol runs
+    // ';'-separated statements in a single round trip), it's one. Role
+    // names are a closed enum — safe to interpolate. set_config's value
+    // can't use a bind parameter here (simple query protocol doesn't
+    // support them), so it's embedded via escapeLiteral instead, the
+    // same safety property a parameterized query gives.
     const claims = ctx.claims ?? { role: ctx.role };
-    await client.query('SELECT set_config($1, $2, true)', [
-      'request.jwt.claims',
-      JSON.stringify(claims),
-    ]);
+    const claimsLiteral = client.escapeLiteral(JSON.stringify(claims));
+    await client.query(
+      `BEGIN; SET LOCAL role ${ctx.role}; SELECT set_config('request.jwt.claims', ${claimsLiteral}, true);`,
+    );
     const result = await fn(client);
     await client.query('COMMIT');
     return result;

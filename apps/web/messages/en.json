@@ -722,7 +722,9 @@
       "delete": "Delete",
       "deleteTitle": "Delete list",
       "deleteDesc": "Delete “{name}”? Its {count} contacts stay in your database — they are only removed from this list.",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "runCampaign": "Run campaign",
+      "runCampaignEmpty": "Add contacts to this list first"
     },
     "activation": {
       "toastSaveFailed": "Failed to save the rule",
@@ -973,7 +975,8 @@
           "all": "All Contacts",
           "tags": "Filter by Tags",
           "customField": "Custom Field",
-          "csv": "Upload CSV"
+          "csv": "Upload CSV",
+          "lists": "Filter by Lists"
         },
         "allDesc": "Send to all {count} contacts in your database.",
         "allDescLoading": "Send to all contacts in your database.",
@@ -1000,7 +1003,10 @@
         "errorLoadFields": "Failed to load custom fields",
         "errorCsvParse": "Could not parse CSV file.",
         "errorCsvMissingPhone": "CSV must have a 'phone' column.",
-        "activeOnlyNote": "Only active contacts are included. Manage who is active under Contacts → Active contacts."
+        "activeOnlyNote": "Only active contacts are included. Manage who is active under Contacts → Active contacts.",
+        "listDesc": "Send to contacts in specific lists.",
+        "selectLists": "Select Lists",
+        "noListsFound": "No lists found. Create one from Contacts → Lists."
       },
       "personalize": {
         "title": "Personalize Variables",
@@ -1048,7 +1054,8 @@
         "sending": "Sending...",
         "preparing": "Preparing...",
         "progressDesc": "Processing {current} of {total} recipients...",
-        "toastFailedPreview": "Failed to load preview data"
+        "toastFailedPreview": "Failed to load preview data",
+        "audienceLists": "Filtered by lists"
       }
     }
   },
@@ -1925,7 +1932,11 @@
       "step4_3": "Paste the <strong class=\"text-foreground\">Webhook Callback URL</strong> from above",
       "step4_4": "Enter the same <strong class=\"text-foreground\">Verify Token</strong> you set here",
       "step4_5": "Subscribe to \"messages\" webhook field",
-      "metaDocs": "Meta WhatsApp API Documentation"
+      "metaDocs": "Meta WhatsApp API Documentation",
+      "usingApp": "Using Meta app:",
+      "subscribedApps": "Apps subscribed to receive events for this number:",
+      "thisIsYourApp": "(this is your app)",
+      "stepsToFix": "Steps to fix:"
     },
     "sections": {
       "overview": "Overview",

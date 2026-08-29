@@ -11,6 +11,57 @@ and polish.
 
 ## [Unreleased]
 
+### Added
+
+- **WhatsApp webhook diagnostics now catch a silent-failure class of bug.**
+  Settings → WhatsApp → *Verify with Meta* now shows which Meta app your
+  access token belongs to (by name, not just an id), lists every app
+  subscribed to receive events for your number, and highlights whether
+  *your* app is actually among them — a previous version treated "some
+  app is subscribed" as success, which can't tell your integration
+  apart from a leftover test app or Meta's own auto-subscribed default.
+  It also checks that `META_APP_SECRET` is both set **and actually
+  valid for your app** (verified directly against Meta, not just
+  presence) — a wrong or stale secret makes `verifyMetaWebhookSignature`
+  fail closed, silently rejecting every genuine webhook call with a
+  401 before any of the app's code runs. Symptoms without this check:
+  outbound sends work fine, registration succeeds, the UI looks
+  healthy — but no inbound message, delivery receipt, or read receipt
+  ever arrives. Failures now come with numbered fix steps instead of a
+  bare error string.
+
+
+### Performance & reliability
+
+- **Every database query made 5 sequential network round trips**
+  (`BEGIN`, `SET LOCAL role`, `set_config`, the query itself, `COMMIT`) —
+  each one paying full network latency to the DB, on every single page
+  load. Combined the first three into one round trip (verified against
+  production: ~439ms → ~236ms average per query, with RLS/`auth.uid()`
+  behavior confirmed identical before and after).
+- **Fixed a connection-pool leak**: Postgres had no `statement_timeout`
+  or `idle_in_transaction_session_timeout` configured, so a connection
+  that dies mid-transaction (e.g. a network blip) stayed checked out of
+  the pool forever — found one that had been stuck for 30+ minutes on
+  production. The pool now sets both (30s / 15s), verified to actually
+  terminate an abandoned transaction.
+- If navigation still feels slow after deploying this: production's
+  database connection came from a different network than the DB host
+  (`157.10.99.50`) in a live check — the app server and database don't
+  appear to be co-located, which means every query pays real internet
+  round-trip time no matter how few round trips it takes. Worth
+  confirming where the app is actually deployed relative to the DB.
+
+### Added
+
+- **Lists as a broadcast audience.** The campaign wizard's "Select
+  Audience" step now has a *Lists* option alongside All/Tags/Custom
+  field/CSV — pick one or more lists (OR), same exclude-tags and
+  active-only behavior as the rest. A *Run campaign* button on each
+  list card (Contacts → Lists) jumps straight into a new broadcast with
+  that list pre-selected.
+
+
 Contacts can now be organised into **lists**, and only **active** contacts
 receive broadcasts — so a workspace can hold thousands of imported
 contacts while messaging a chosen subset.

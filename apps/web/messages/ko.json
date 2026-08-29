@@ -722,7 +722,9 @@
       "delete": "삭제",
       "deleteTitle": "리스트 삭제",
       "deleteDesc": "“{name}”을(를) 삭제할까요? 연락처 {count}개는 데이터베이스에 남고 이 리스트에서만 제거됩니다.",
-      "cancel": "취소"
+      "cancel": "취소",
+      "runCampaign": "캠페인 실행",
+      "runCampaignEmpty": "먼저 이 리스트에 연락처를 추가하세요"
     },
     "activation": {
       "toastSaveFailed": "규칙을 저장하지 못했습니다",
@@ -973,7 +975,8 @@
           "all": "전체 연락처",
           "tags": "태그로 필터링",
           "customField": "커스텀 필드",
-          "csv": "CSV 업로드"
+          "csv": "CSV 업로드",
+          "lists": "리스트로 필터링"
         },
         "allDesc": "데이터베이스의 전체 연락처 {count}명에게 보냅니다.",
         "allDescLoading": "데이터베이스의 전체 연락처에게 보냅니다.",
@@ -1000,7 +1003,10 @@
         "errorLoadFields": "커스텀 필드를 불러오지 못했습니다",
         "errorCsvParse": "CSV 파일을 파싱할 수 없습니다.",
         "errorCsvMissingPhone": "CSV에 'phone' 열이 있어야 합니다.",
-        "activeOnlyNote": "활성 연락처만 포함됩니다. 연락처 → 활성 연락처에서 활성 대상을 관리하세요."
+        "activeOnlyNote": "활성 연락처만 포함됩니다. 연락처 → 활성 연락처에서 활성 대상을 관리하세요.",
+        "listDesc": "특정 리스트에 속한 연락처에게 보냅니다.",
+        "selectLists": "리스트 선택",
+        "noListsFound": "리스트가 없습니다. 연락처 → 리스트에서 만드세요."
       },
       "personalize": {
         "title": "변수 개인화",
@@ -1048,7 +1054,8 @@
         "sending": "전송 중...",
         "preparing": "준비 중...",
         "progressDesc": "수신자 {total}명 중 {current}명 처리 중...",
-        "toastFailedPreview": "미리보기 데이터를 불러오지 못했습니다"
+        "toastFailedPreview": "미리보기 데이터를 불러오지 못했습니다",
+        "audienceLists": "리스트로 필터링됨"
       }
     }
   },
@@ -1925,7 +1932,11 @@
       "step4_3": "위의 <strong class=\"text-foreground\">웹훅 콜백 URL</strong>을 붙여넣기",
       "step4_4": "여기서 설정한 것과 동일한 <strong class=\"text-foreground\">인증 토큰</strong>을 입력",
       "step4_5": "\"messages\" 웹훅 필드를 구독",
-      "metaDocs": "Meta WhatsApp API 문서"
+      "metaDocs": "Meta WhatsApp API 문서",
+      "usingApp": "사용 중인 Meta 앱:",
+      "subscribedApps": "이 번호의 이벤트를 수신하도록 구독된 앱:",
+      "thisIsYourApp": "(이것이 사용 중인 앱입니다)",
+      "stepsToFix": "해결 방법:"
     },
     "sections": {
       "overview": "개요",

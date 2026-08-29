@@ -2,11 +2,12 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { CustomField, Tag } from '@/types';
+import { ContactList, CustomField, Tag } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
   Users,
   Tags,
+  ListChecks,
   Filter,
   Upload,
   Loader2,
@@ -16,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-type AudienceType = 'all' | 'tags' | 'custom_field' | 'csv';
+type AudienceType = 'all' | 'tags' | 'lists' | 'custom_field' | 'csv';
 type CustomFieldOperator = 'is' | 'is_not' | 'contains';
 
 interface CustomFieldFilter {
@@ -28,6 +29,7 @@ interface CustomFieldFilter {
 interface AudienceConfig {
   type: AudienceType;
   tagIds?: string[];
+  listIds?: string[];
   customField?: CustomFieldFilter;
   csvContacts?: { phone: string; name?: string }[];
   excludeTagIds?: string[];
@@ -73,6 +75,12 @@ export function Step2SelectAudience({
       icon: Tags,
     },
     {
+      type: 'lists',
+      label: t('selectAudience.method.lists'),
+      description: t('selectAudience.listDesc'),
+      icon: ListChecks,
+    },
+    {
       type: 'custom_field',
       label: t('selectAudience.method.customField'),
       description: t('selectAudience.customFieldDesc'),
@@ -86,8 +94,10 @@ export function Step2SelectAudience({
     },
   ], [t]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [lists, setLists] = useState<ContactList[]>([]);
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
   const [loadingTags, setLoadingTags] = useState(false);
+  const [loadingLists, setLoadingLists] = useState(false);
   const [loadingFields, setLoadingFields] = useState(false);
   const [estimatedCount, setEstimatedCount] = useState<number | null>(null);
   const [loadingCount, setLoadingCount] = useState(false);
@@ -107,6 +117,22 @@ export function Step2SelectAudience({
     }
     fetchTags();
   }, []);
+
+  // Lazy-load lists only when that audience type is active.
+  useEffect(() => {
+    if (audience.type !== 'lists') return;
+    async function fetchLists() {
+      setLoadingLists(true);
+      try {
+        const supabase = createClient();
+        const { data } = await supabase.from('contact_lists').select('*').order('name');
+        setLists(data ?? []);
+      } finally {
+        setLoadingLists(false);
+      }
+    }
+    fetchLists();
+  }, [audience.type]);
 
   // Lazy-load custom fields only when that audience type is active.
   useEffect(() => {
@@ -146,6 +172,16 @@ export function Step2SelectAudience({
           .from('contact_tags')
           .select('contact_id')
           .in('tag_id', audience.tagIds);
+        baseIds = new Set((data ?? []).map((r) => r.contact_id));
+      } else if (
+        audience.type === 'lists' &&
+        audience.listIds &&
+        audience.listIds.length > 0
+      ) {
+        const { data } = await supabase
+          .from('contact_list_members')
+          .select('contact_id')
+          .in('list_id', audience.listIds);
         baseIds = new Set((data ?? []).map((r) => r.contact_id));
       } else if (
         audience.type === 'custom_field' &&
@@ -228,6 +264,7 @@ export function Step2SelectAudience({
   }, [
     audience.type,
     audience.tagIds,
+    audience.listIds,
     audience.customField,
     audience.csvContacts,
     audience.excludeTagIds,
@@ -243,6 +280,14 @@ export function Step2SelectAudience({
       ? current.filter((id) => id !== tagId)
       : [...current, tagId];
     onUpdate({ ...audience, tagIds: updated });
+  }
+
+  function toggleList(listId: string) {
+    const current = audience.listIds ?? [];
+    const updated = current.includes(listId)
+      ? current.filter((id) => id !== listId)
+      : [...current, listId];
+    onUpdate({ ...audience, listIds: updated });
   }
 
   function toggleExcludeTag(tagId: string) {
@@ -265,6 +310,7 @@ export function Step2SelectAudience({
   const isValid =
     audience.type === 'all' ||
     (audience.type === 'tags' && audience.tagIds && audience.tagIds.length > 0) ||
+    (audience.type === 'lists' && audience.listIds && audience.listIds.length > 0) ||
     (audience.type === 'custom_field' &&
       !!audience.customField?.fieldId &&
       audience.customField.value.length > 0) ||
@@ -298,6 +344,7 @@ export function Step2SelectAudience({
                   // Wipe shape fields from other types to avoid stale
                   // config leaking across selections.
                   tagIds: option.type === 'tags' ? audience.tagIds : undefined,
+                  listIds: option.type === 'lists' ? audience.listIds : undefined,
                   customField:
                     option.type === 'custom_field'
                       ? audience.customField
@@ -360,6 +407,42 @@ export function Step2SelectAudience({
                       style={{ backgroundColor: tag.color }}
                     />
                     {tag.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {audience.type === 'lists' && (
+        <div className="rounded-xl border border-border bg-card/50 p-4">
+          <p className="mb-3 text-sm font-medium text-foreground">{t('selectAudience.selectLists')}</p>
+          {loadingLists ? (
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          ) : lists.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              {t('selectAudience.noListsFound')}
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {lists.map((list) => {
+                const isSelected = audience.listIds?.includes(list.id);
+                return (
+                  <button
+                    key={list.id}
+                    onClick={() => toggleList(list.id)}
+                    className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-all ${
+                      isSelected
+                        ? 'border-primary/30 bg-primary/10 text-primary'
+                        : 'border-border bg-muted text-muted-foreground hover:border-border'
+                    }`}
+                  >
+                    <span
+                      className="mr-1.5 h-2 w-2 rounded-sm"
+                      style={{ backgroundColor: list.color }}
+                    />
+                    {list.name}
                   </button>
                 );
               })}

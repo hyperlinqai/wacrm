@@ -95,9 +95,12 @@ export function WhatsAppConfig() {
   const lastRegistrationError = config?.last_registration_error ?? null;
 
   const [verifyingRegistration, setVerifyingRegistration] = useState(false);
+  type MetaApp = { id: string; name: string | null };
   type RegistrationProbe = {
     live: boolean;
     checks: Record<string, boolean | null>;
+    our_app?: MetaApp | null;
+    subscribed_apps?: MetaApp[];
     errors?: string[];
     last_registration_error?: string | null;
     registered_at?: string | null;
@@ -565,13 +568,53 @@ export function WhatsAppConfig() {
             </AlertDescription>
 
             {registrationProbe && (
-              <div className="mt-3 rounded border border-border bg-card/60 px-3 py-2 space-y-1.5 text-[11px]">
+              <div className="mt-3 rounded border border-border bg-card/60 px-3 py-2 space-y-2 text-[11px]">
                 <p className="font-medium text-foreground">
                   {t('diagnosticLastRun')}
                   <span className={registrationProbe.live ? 'text-emerald-400' : 'text-amber-400'}>
                     {registrationProbe.live ? t('live') : t('notLive')}
                   </span>
                 </p>
+
+                {/* "Which Meta app are we using" — the exact question a
+                    mismatch hides, since every other check (token valid,
+                    phone verified, registered) can pass while the wrong
+                    app is the one actually wired to receive webhooks. */}
+                {registrationProbe.our_app && (
+                  <p className="text-muted-foreground">
+                    {t('usingApp')}{' '}
+                    <span className="font-medium text-foreground">
+                      {registrationProbe.our_app.name ?? registrationProbe.our_app.id}
+                    </span>
+                  </p>
+                )}
+                {registrationProbe.subscribed_apps &&
+                  registrationProbe.subscribed_apps.length > 0 && (
+                    <div className="text-muted-foreground">
+                      <p>{t('subscribedApps')}</p>
+                      <ul className="mt-0.5 space-y-0.5 pl-1">
+                        {registrationProbe.subscribed_apps.map((app) => {
+                          const isOurs = app.id === registrationProbe.our_app?.id;
+                          return (
+                            <li key={app.id} className="flex items-center gap-1.5">
+                              {isOurs ? (
+                                <CheckCircle2 className="size-3 text-emerald-400 shrink-0" />
+                              ) : (
+                                <span className="size-3 rounded-full border border-border shrink-0" />
+                              )}
+                              <span className={isOurs ? 'text-foreground font-medium' : ''}>
+                                {app.name ?? app.id}
+                              </span>
+                              {isOurs && (
+                                <span className="text-emerald-400">{t('thisIsYourApp')}</span>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  )}
+
                 <ul className="space-y-0.5 text-muted-foreground">
                   {Object.entries(registrationProbe.checks).map(([k, v]) => (
                     <li key={k} className="flex items-center gap-1.5">
@@ -587,11 +630,14 @@ export function WhatsAppConfig() {
                   ))}
                 </ul>
                 {(registrationProbe.errors ?? []).length > 0 && (
-                  <ul className="pt-1 space-y-0.5 text-red-300">
-                    {registrationProbe.errors?.map((e, i) => (
-                      <li key={i}>• {e}</li>
-                    ))}
-                  </ul>
+                  <div className="pt-1">
+                    <p className="font-medium text-red-300">{t('stepsToFix')}</p>
+                    <ol className="mt-0.5 list-decimal space-y-1 pl-4 text-red-300">
+                      {registrationProbe.errors?.map((e, i) => (
+                        <li key={i}>{e}</li>
+                      ))}
+                    </ol>
+                  </div>
                 )}
               </div>
             )}

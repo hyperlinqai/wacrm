@@ -215,6 +215,12 @@ export interface SubscribedApp {
  * Diagnostic — fetch the list of apps currently subscribed to this
  * WABA. The UI uses this to confirm OUR app is in the list when
  * the user clicks Verify Registration.
+ *
+ * IMPORTANT: a non-empty list does NOT by itself mean "our app is
+ * subscribed" — some other Meta app (an earlier test setup, a
+ * partner's integration) can be the one actually receiving events.
+ * Compare each entry's `whatsapp_business_api_data.id` against the
+ * app id `debugAccessToken` resolves for the token in use.
  */
 export async function getSubscribedApps(
   args: GetSubscribedAppsArgs
@@ -229,6 +235,50 @@ export async function getSubscribedApps(
   }
   const data = (await response.json()) as { data?: SubscribedApp[] }
   return data.data ?? []
+}
+
+export interface DebugAccessTokenArgs {
+  accessToken: string
+}
+
+export interface DebugAccessTokenResult {
+  appId: string | null
+  /** The Meta app's display name — what shows up in the App Dashboard. */
+  appName: string | null
+  isValid: boolean
+}
+
+/**
+ * Diagnostic — resolve which Meta app the stored access token belongs
+ * to, via Graph API's token-introspection endpoint. Answers "which app
+ * are we using?" so the UI can compare it by name against whichever
+ * app(s) `getSubscribedApps` reports as subscribed to the WABA — the
+ * two can silently diverge (e.g. the token was reissued under a
+ * different app after the original webhook subscription was made).
+ *
+ * Self-inspection: passing the same token as both `input_token` and
+ * `access_token` is a documented pattern for a token to look itself
+ * up without needing a separate app-level access token.
+ */
+export async function debugAccessToken(
+  args: DebugAccessTokenArgs
+): Promise<DebugAccessTokenResult> {
+  const { accessToken } = args
+  const url = new URL(`${META_API_BASE}/debug_token`)
+  url.searchParams.set('input_token', accessToken)
+  url.searchParams.set('access_token', accessToken)
+  const response = await metaFetch(url)
+  if (!response.ok) {
+    await throwMetaError(response, `Meta API error: ${response.status}`)
+  }
+  const json = (await response.json()) as {
+    data?: { app_id?: string; application?: string; is_valid?: boolean }
+  }
+  return {
+    appId: json.data?.app_id ?? null,
+    appName: json.data?.application ?? null,
+    isValid: json.data?.is_valid ?? false,
+  }
 }
 
 // ============================================================

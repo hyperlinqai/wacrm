@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   INTERACTIVE_LIMITS,
+  debugAccessToken,
+  getSubscribedApps,
   sendInteractiveButtons,
   sendInteractiveList,
 } from "./meta-api";
@@ -265,5 +267,78 @@ describe("sendInteractiveList — validation", () => {
         },
       },
     });
+  });
+});
+
+function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+describe("debugAccessToken", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("resolves the app id/name from a valid token, self-inspecting via input_token === access_token", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({
+        data: { app_id: "123", application: "WA CRM App", is_valid: true },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await debugAccessToken({ accessToken: "tok" });
+    expect(result).toEqual({ appId: "123", appName: "WA CRM App", isValid: true });
+
+    const calledUrl = new URL(fetchMock.mock.calls[0][0] as string);
+    expect(calledUrl.searchParams.get("input_token")).toBe("tok");
+    expect(calledUrl.searchParams.get("access_token")).toBe("tok");
+  });
+
+  it("returns nulls when Meta's response has no data (e.g. malformed token)", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({})));
+    const result = await debugAccessToken({ accessToken: "tok" });
+    expect(result).toEqual({ appId: null, appName: null, isValid: false });
+  });
+
+  it("throws Meta's error message on a non-OK response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(jsonResponse({ error: { message: "Invalid token" } }, 400)),
+    );
+    await expect(debugAccessToken({ accessToken: "bad" })).rejects.toThrow("Invalid token");
+  });
+});
+
+describe("getSubscribedApps", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("returns every subscribed app, not just whether the list is non-empty — callers must match by id", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        jsonResponse({
+          data: [
+            { whatsapp_business_api_data: { id: "123", name: "WA CRM App" } },
+            { whatsapp_business_api_data: { id: "999", name: "Business Agent" } },
+          ],
+        }),
+      ),
+    );
+
+    const result = await getSubscribedApps({ wabaId: "waba", accessToken: "tok" });
+    expect(result).toHaveLength(2);
+    expect(result.map((a) => a.whatsapp_business_api_data?.id)).toEqual(["123", "999"]);
+  });
+
+  it("returns an empty array when nothing is subscribed", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({ data: [] })));
+    const result = await getSubscribedApps({ wabaId: "waba", accessToken: "tok" });
+    expect(result).toEqual([]);
   });
 });
