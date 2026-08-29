@@ -13,6 +13,59 @@ and polish.
 
 ### Added
 
+- **Deactivate WhatsApp Account button.** Settings → WhatsApp connection
+  now has a clearly-labeled "Deactivate WhatsApp Account" action (with a
+  proper confirmation dialog, replacing a bare browser `confirm()`) —
+  disconnects the current number's saved config so a different one can
+  be connected next, either through Embedded Signup or the manual form.
+  Same underlying disconnect the corrupted-token repair banner already
+  used, now confirmed through one shared dialog for both entry points.
+
+
+### Fixed
+
+- **"Connect WhatsApp with Meta" kept showing after a number was already
+  connected.** Now hides once any WhatsApp config exists — it's a
+  first-connection flow, not a way to re-fix an existing one.
+- **A failed 2-step-verification PIN could not be corrected after
+  Embedded Signup.** The manual form required re-entering the access
+  token to save any change, but Embedded Signup's token is exchanged
+  and encrypted entirely server-side — the business never sees it, so
+  there was nothing to "re-enter." Saving now omits `access_token`
+  when the field is untouched and the server reuses the stored one,
+  so a PIN-only retry works without it.
+- **`(#133005) Two step verification pin mismatch` showed as a raw,
+  unexplained Meta error code.** It now explains what actually happened
+  (the number already has a different PIN from an earlier WhatsApp
+  connection) and what to do about it, with the raw Meta message kept
+  underneath for anyone who wants it. Applies to both the manual form's
+  status banner and the Embedded Signup completion toast.
+
+
+### Added
+
+- **WhatsApp Embedded Signup — fully automatic connection, no manual
+  credentials.** Settings → WhatsApp connection now leads with
+  *Connect WhatsApp with Meta*: the business logs into Facebook, picks
+  their WhatsApp Business Account, phone number and 2-step-verification
+  PIN entirely inside Meta's own hosted popup, and the app wires up the
+  access token, webhook subscription and phone registration
+  automatically server-side — nothing to paste in on either side. The
+  previous manual form (phone number id / WABA id / access token / PIN,
+  all typed in by hand) still exists as a fallback and is unchanged.
+
+> **One-time setup required, in Meta's App Dashboard (not this repo):**
+> add the Facebook Login for Business product, create a configuration
+> for the "WhatsApp Business Signup" use case, and set
+> `NEXT_PUBLIC_META_APP_ID` / `NEXT_PUBLIC_META_WHATSAPP_CONFIG_ID`
+> accordingly (see `docs/dokploy.md` § "WhatsApp Embedded Signup"). The
+> new button hides itself and the manual form keeps working until both
+> are set — no behavior change for existing deployments that don't
+> configure this.
+
+
+### Added
+
 - **WhatsApp webhook diagnostics now catch a silent-failure class of bug.**
   Settings → WhatsApp → *Verify with Meta* now shows which Meta app your
   access token belongs to (by name, not just an id), lists every app

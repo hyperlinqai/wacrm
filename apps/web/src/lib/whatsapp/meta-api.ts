@@ -281,6 +281,54 @@ export async function debugAccessToken(
   }
 }
 
+export interface ExchangeEmbeddedSignupCodeArgs {
+  /** The short-lived authorization code FB.login()'s callback returns. */
+  code: string
+}
+
+export interface ExchangeEmbeddedSignupCodeResult {
+  accessToken: string
+}
+
+/**
+ * Embedded Signup, server side: exchange the authorization code the
+ * browser got from `FB.login({ config_id, response_type: 'code', ... })`
+ * for a real access token. This is the one step that must happen on
+ * the server — it needs the App Secret, which the browser must never
+ * see.
+ *
+ * No `redirect_uri` is passed: this is Meta's Business Login for
+ * WhatsApp flow (JS SDK popup, not a browser redirect), which is
+ * documented to accept the code without one. The token comes back
+ * already scoped to the System User Meta created for the business
+ * during signup — no further long-lived-token exchange needed.
+ */
+export async function exchangeEmbeddedSignupCode(
+  args: ExchangeEmbeddedSignupCodeArgs
+): Promise<ExchangeEmbeddedSignupCodeResult> {
+  const { code } = args
+  const appId = process.env.META_APP_ID
+  const appSecret = process.env.META_APP_SECRET
+  if (!appId || !appSecret) {
+    throw new Error(
+      'META_APP_ID and META_APP_SECRET must both be set on the server to complete Embedded Signup.'
+    )
+  }
+  const url = new URL(`${META_API_BASE}/oauth/access_token`)
+  url.searchParams.set('client_id', appId)
+  url.searchParams.set('client_secret', appSecret)
+  url.searchParams.set('code', code)
+  const response = await metaFetch(url)
+  if (!response.ok) {
+    await throwMetaError(response, `Meta API error: ${response.status}`)
+  }
+  const json = (await response.json()) as { access_token?: string }
+  if (!json.access_token) {
+    throw new Error('Meta did not return an access token for this code.')
+  }
+  return { accessToken: json.access_token }
+}
+
 // ============================================================
 // Sending
 // ============================================================

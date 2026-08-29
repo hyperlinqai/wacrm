@@ -1,4 +1,20 @@
 # Browser-facing Next.js values. These are inlined at `next build`
-# (including Docker). They are not secrets.
+# (including Docker). They are not secrets — a Meta App ID and a
+# Facebook Login "configuration" id are both meant to be public
+# (they appear in every login button/JS SDK init call using them).
 NEXT_PUBLIC_SITE_URL=https://crm.hyperlinq.in
 NEXT_PUBLIC_APP_LOCALE=en
+
+# WhatsApp Embedded Signup (Settings → WhatsApp connection → "Connect
+# WhatsApp with Meta"). Leave both blank to keep only the manual
+# setup form — the button hides itself until both are set. See
+# docs/dokploy.md and src/components/settings/embedded-signup-button.tsx.
+#   NEXT_PUBLIC_META_APP_ID              — same value as the server-side
+#                                           META_APP_ID env var.
+#   NEXT_PUBLIC_META_WHATSAPP_CONFIG_ID  — Meta App Dashboard → Facebook
+#                                           Login for Business →
+#                                           Configurations → create one
+#                                           for "WhatsApp Business
+#                                           Signup" → copy its id.
+NEXT_PUBLIC_META_APP_ID=
+NEXT_PUBLIC_META_WHATSAPP_CONFIG_ID=

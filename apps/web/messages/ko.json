@@ -1936,7 +1936,28 @@
       "usingApp": "사용 중인 Meta 앱:",
       "subscribedApps": "이 번호의 이벤트를 수신하도록 구독된 앱:",
       "thisIsYourApp": "(이것이 사용 중인 앱입니다)",
-      "stepsToFix": "해결 방법:"
+      "stepsToFix": "해결 방법:",
+      "embeddedSignup": {
+        "title": "Meta로 WhatsApp 연결",
+        "description": "권장하는 연결 방법입니다. Meta로 로그인하고 WhatsApp Business 번호를 선택하면 토큰, 웹훅 구독, PIN이 모두 자동으로 설정됩니다. 수동 자격 증명이 필요 없습니다.",
+        "manualHint": "위의 \"Meta로 WhatsApp 연결\"을 사용하지 않는 경우에만 필요합니다.",
+        "connectBtn": "Meta로 WhatsApp 연결",
+        "statusLoadingSdk": "불러오는 중…",
+        "statusAwaitingPopup": "Meta 응답 대기 중…",
+        "statusFinishing": "설정 완료 중…",
+        "notConfigured": "이 배포판에는 아직 Embedded Signup이 구성되지 않았습니다(NEXT_PUBLIC_META_APP_ID / NEXT_PUBLIC_META_WHATSAPP_CONFIG_ID 누락). 아래의 수동 설정을 사용하거나 설정 안내를 참고하세요.",
+        "toastConnected": "WhatsApp이 연결되었습니다 — 모두 준비되었습니다. 메시지가 자동으로 도착합니다.",
+        "toastConnectedNotRegistered": "연결되었지만 2단계 인증 설정에 실패했습니다 — 자격 증명 카드 아래의 세부 정보를 확인하세요.",
+        "toastFailed": "연결을 완료하지 못했습니다. 다시 시도해 주세요.",
+        "toastSdkLoadFailed": "Meta 로그인을 불러오지 못했습니다 — 연결 상태를 확인하고 다시 시도하세요.",
+        "toastMetaError": "Meta에서 오류를 보고했습니다: {message}",
+        "toastNoPhoneSelected": "선택된 전화번호가 없습니다 — 설정 중에 번호를 선택하여 연결을 완료하세요."
+      },
+      "rawMetaError": "Meta 원본 오류:",
+      "deactivateAccount": "WhatsApp 계정 비활성화",
+      "deactivating": "비활성화하는 중...",
+      "deactivateConfirmDesc": "현재 연결된 WhatsApp 번호의 연결이 해제됩니다 — 이 앱을 통한 메시지 송수신이 중단됩니다. 이후 \"Meta로 WhatsApp 연결\"로 자동 연결하거나 자격 증명을 직접 입력하여 다른 번호를 연결할 수 있습니다. Meta 측 항목(번호 자체, 템플릿, 2단계 인증 PIN)에는 영향을 주지 않으며 이 앱에 저장된 연결 정보만 삭제됩니다.",
+      "cancel": "취소"
     },
     "sections": {
       "overview": "개요",

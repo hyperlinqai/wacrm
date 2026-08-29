@@ -42,8 +42,10 @@ const SECURITY_HEADERS = [
       "default-src 'self'",
       // Next.js needs 'unsafe-inline' for its inline hydration script
       // and 'unsafe-eval' in dev + some production optimisations.
-      // Nonce-based CSP is a later project.
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      // Nonce-based CSP is a later project. connect.facebook.net loads
+      // the Facebook JS SDK that drives WhatsApp Embedded Signup
+      // (Settings → WhatsApp connection) — see embedded-signup-button.tsx.
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://connect.facebook.net",
       // Tailwind + inline style attributes on lots of components.
       "style-src 'self' 'unsafe-inline'",
       // Supabase public-bucket avatars, contact avatars (arbitrary
@@ -54,10 +56,16 @@ const SECURITY_HEADERS = [
       // uploaded media is served same-origin from /api/storage.
       "media-src 'self' blob:",
       "font-src 'self' data:",
-      // Data, auth, storage and realtime (SSE) are all same-origin now.
-      // All Meta API calls happen server-side, so graph.facebook.com
-      // does not belong here.
-      "connect-src 'self'",
+      // Data, auth, storage and realtime (SSE) are all same-origin.
+      // All Meta *Graph* API calls happen server-side — graph.facebook.com
+      // does not belong here. facebook.net/facebook.com are the
+      // Embedded Signup SDK's own background calls (session status,
+      // cookie sync) from inside the loaded script.
+      "connect-src 'self' https://connect.facebook.net https://www.facebook.com",
+      // Embedded Signup's login dialog renders in an iframe Meta's SDK
+      // creates — without this it falls back to default-src 'self' and
+      // the dialog silently fails to load once CSP is enforced.
+      "frame-src https://www.facebook.com https://web.facebook.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",

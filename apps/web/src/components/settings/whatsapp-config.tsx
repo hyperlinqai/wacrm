@@ -13,6 +13,7 @@ import {
   Zap,
   AlertTriangle,
   RotateCcw,
+  PowerOff,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
@@ -22,8 +23,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { SettingsPanelHead } from './settings-panel-head';
+import { EmbeddedSignupButton } from './embedded-signup-button';
+import { explainRegistrationError } from '@/lib/whatsapp/registration-error';
 import {
   Accordion,
   AccordionItem,
@@ -57,6 +68,7 @@ export function WhatsAppConfig() {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [deactivateConfirmOpen, setDeactivateConfirmOpen] = useState(false);
   const [showToken, setShowToken] = useState(false);
   const [config, setConfig] = useState<WhatsAppConfigType | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('unknown');
@@ -258,15 +270,13 @@ export function WhatsAppConfig() {
 
       if (tokenEdited && accessToken !== MASKED_TOKEN && accessToken.trim()) {
         payload.access_token = accessToken.trim();
-      } else if (config) {
-        // Existing config — reuse stored encrypted token by decrypting on the
-        // server. But our POST handler requires an access_token to verify
-        // with Meta. If the user didn't change the token, we need to signal
-        // that. Simplest: require token re-entry if they're updating.
-        toast.error('Please re-enter the Access Token to save changes');
-        setSaving(false);
-        return;
       }
+      // Else: existing config, token field untouched (still shows the
+      // masked placeholder) — omit access_token entirely and let the
+      // server reuse the stored one. Required for a config that came
+      // from Embedded Signup: that token was exchanged server-side and
+      // was never shown to the user, so there is nothing for them to
+      // "re-enter" — e.g. correcting a PIN mismatch has to work without it.
 
       const res = await fetch('/api/whatsapp/config', {
         method: 'POST',
@@ -381,10 +391,6 @@ export function WhatsAppConfig() {
   }
 
   async function handleReset() {
-    if (!confirm('This will delete the current WhatsApp config so you can re-enter it. Continue?')) {
-      return;
-    }
-
     try {
       setResetting(true);
       const res = await fetch('/api/whatsapp/config', { method: 'DELETE' });
@@ -456,7 +462,7 @@ export function WhatsAppConfig() {
                   {statusMessage}
                 </AlertDescription>
                 <Button
-                  onClick={handleReset}
+                  onClick={() => setDeactivateConfirmOpen(true)}
                   disabled={resetting}
                   size="sm"
                   className="mt-3 bg-amber-600 hover:bg-amber-700 text-white"
@@ -476,6 +482,33 @@ export function WhatsAppConfig() {
               </div>
             </div>
           </Alert>
+        )}
+
+        {/* Automatic setup — Meta's Embedded Signup. The recommended
+            path: no manual token/WABA-id/PIN entry anywhere, on either
+            side. Shown above the manual form, not instead of it — a
+            self-hoster connecting their own single number can still
+            use manual entry, but nobody has to.
+            Hidden once *any* config exists — this is a first-connection
+            flow, not a fix-up tool. A failed /register (e.g. a PIN
+            mismatch below) is resolved by correcting the PIN in the
+            manual form, not by reconnecting from scratch. */}
+        {!config && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-foreground">{t('embeddedSignup.title')}</CardTitle>
+              <CardDescription className="text-muted-foreground">
+                {t('embeddedSignup.description')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EmbeddedSignupButton
+                onConnected={() => {
+                  if (accountId) fetchConfig(accountId);
+                }}
+              />
+            </CardContent>
+          </Card>
         )}
 
         {/* Connection Status */}
@@ -555,13 +588,26 @@ export function WhatsAppConfig() {
                   }}
                 />
               ) : lastRegistrationError ? (
-                <>
-                  {t('lastAttemptFailed')}
-                  <span className="text-red-300">
-                    &quot;{lastRegistrationError}&quot;
-                  </span>
-                  . {t('retryHint')}
-                </>
+                (() => {
+                  const explained = explainRegistrationError(lastRegistrationError);
+                  return explained ? (
+                    <>
+                      <p>{explained.summary}</p>
+                      <p className="mt-1">{explained.action}</p>
+                      <p className="mt-1.5 text-[10px] opacity-70">
+                        {t('rawMetaError')} &quot;{lastRegistrationError}&quot;
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      {t('lastAttemptFailed')}
+                      <span className="text-red-300">
+                        &quot;{lastRegistrationError}&quot;
+                      </span>
+                      . {t('retryHint')}
+                    </>
+                  );
+                })()
               ) : (
                 <>{t('noRegistrationHint')}</>
               )}
@@ -649,7 +695,7 @@ export function WhatsAppConfig() {
           <CardHeader>
             <CardTitle className="text-foreground">{t('apiCredentialsTitle')}</CardTitle>
             <CardDescription className="text-muted-foreground">
-              {t('apiCredentialsDesc')}
+              {t('apiCredentialsDesc')} {t('embeddedSignup.manualHint')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -847,19 +893,19 @@ export function WhatsAppConfig() {
           {config && (
             <Button
               variant="outline"
-              onClick={handleReset}
+              onClick={() => setDeactivateConfirmOpen(true)}
               disabled={resetting}
               className="border-red-900 text-red-400 hover:text-red-300 hover:bg-red-950/40"
             >
               {resetting ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
-                  {t('resetting')}
+                  {t('deactivating')}
                 </>
               ) : (
                 <>
-                  <RotateCcw className="size-4" />
-                  {t('resetConfig')}
+                  <PowerOff className="size-4" />
+                  {t('deactivateAccount')}
                 </>
               )}
             </Button>
@@ -962,6 +1008,39 @@ export function WhatsAppConfig() {
         </Card>
       </div>
     </div>
+
+    {/* Deactivate confirmation — shared by the corrupted-token banner
+        and the general Danger Zone button above. Deleting the row is
+        what lets a different number be connected next (manually or
+        via Embedded Signup, whichever reappears once config is null). */}
+    <Dialog open={deactivateConfirmOpen} onOpenChange={setDeactivateConfirmOpen}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{t('deactivateAccount')}</DialogTitle>
+          <DialogDescription>{t('deactivateConfirmDesc')}</DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setDeactivateConfirmOpen(false)}
+            disabled={resetting}
+          >
+            {t('cancel')}
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={async () => {
+              await handleReset();
+              setDeactivateConfirmOpen(false);
+            }}
+            disabled={resetting}
+          >
+            {resetting ? <Loader2 className="size-4 animate-spin" /> : <PowerOff className="size-4" />}
+            {t('deactivateAccount')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </section>
   );
 }

@@ -38,13 +38,46 @@ anon/authenticated/service_role RLS roles).
   META_APP_SECRET=<from Meta for Developers>
   AUTOMATION_CRON_SECRET=<random hex>
   STORAGE_DIR=/var/lib/wacrm-storage
-  # optional: META_APP_ID, WHATSAPP_TEMPLATES_DRY_RUN, ALLOWED_INVITE_HOSTS…
+  # META_APP_ID: optional for image-header templates alone, but REQUIRED
+  # if WhatsApp Embedded Signup is enabled (§1a below) — the code-exchange
+  # route rejects every attempt without it, same value as NEXT_PUBLIC_META_APP_ID.
+  META_APP_ID=<same app id as NEXT_PUBLIC_META_APP_ID>
+  # optional: WHATSAPP_TEMPLATES_DRY_RUN, ALLOWED_INVITE_HOSTS…
   ```
 
 - **Mount a volume** at `/var/lib/wacrm-storage` (Dokploy → Advanced →
   Volumes) — uploaded media lives there. Without it, uploads vanish on
   every redeploy.
 - Attach your **domain** to container port **3000**.
+
+## 1a. WhatsApp Embedded Signup (optional, but removes every manual step)
+
+Without this, WhatsApp connects via a manual form (Settings → WhatsApp
+connection) where an admin pastes in a phone number id, WABA id, a
+System User access token they generated themselves, and a PIN. With
+it, connecting is one click — "Connect WhatsApp with Meta" — and Meta
+handles token generation, WABA/phone selection and PIN setup entirely
+inside its own hosted UI.
+
+One-time setup Meta requires (in the App Dashboard for the app named
+in `META_APP_ID` / `NEXT_PUBLIC_META_APP_ID`):
+
+1. Add the **Facebook Login for Business** product to the app, if not
+   already present.
+2. Facebook Login for Business → **Configurations** → create a new
+   configuration for the **WhatsApp Business Signup** use case. Copy
+   its id.
+3. Set `NEXT_PUBLIC_META_WHATSAPP_CONFIG_ID` to that id, and
+   `NEXT_PUBLIC_META_APP_ID` to the same value as `META_APP_ID`, in
+   `apps/web/env/next-public.production`.
+4. If this app will onboard businesses other than your own, the
+   `whatsapp_business_management` and `whatsapp_business_messaging`
+   permissions need **Advanced Access** via App Review — Standard
+   Access only works for your own business's WABAs. Self-testing with
+   your own number works without this.
+
+The "Connect WhatsApp with Meta" button hides itself and falls back to
+the manual form until both `NEXT_PUBLIC_*` values are set.
 
 ## 2. After the first deploy
 

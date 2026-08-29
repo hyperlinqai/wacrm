@@ -1936,7 +1936,28 @@
       "usingApp": "Using Meta app:",
       "subscribedApps": "Apps subscribed to receive events for this number:",
       "thisIsYourApp": "(this is your app)",
-      "stepsToFix": "Steps to fix:"
+      "stepsToFix": "Steps to fix:",
+      "embeddedSignup": {
+        "title": "Connect WhatsApp with Meta",
+        "description": "The recommended way to connect — log in with Meta, pick your WhatsApp Business number, and everything (token, webhook subscription, PIN) is wired up automatically. No manual credentials needed.",
+        "manualHint": "Only needed if you're not using \"Connect WhatsApp with Meta\" above.",
+        "connectBtn": "Connect WhatsApp with Meta",
+        "statusLoadingSdk": "Loading…",
+        "statusAwaitingPopup": "Waiting for Meta…",
+        "statusFinishing": "Finishing setup…",
+        "notConfigured": "Embedded Signup isn't configured on this deployment yet (NEXT_PUBLIC_META_APP_ID / NEXT_PUBLIC_META_WHATSAPP_CONFIG_ID missing). Use the manual setup below, or see the setup instructions.",
+        "toastConnected": "WhatsApp connected — you're all set. Messages will start arriving automatically.",
+        "toastConnectedNotRegistered": "Connected, but 2-step verification setup failed — see the details below the credentials card.",
+        "toastFailed": "Couldn't finish connecting. Please try again.",
+        "toastSdkLoadFailed": "Couldn't load Meta's sign-in — check your connection and try again.",
+        "toastMetaError": "Meta reported an error: {message}",
+        "toastNoPhoneSelected": "No phone number was selected — pick one during setup to finish connecting."
+      },
+      "rawMetaError": "Raw Meta error:",
+      "deactivateAccount": "Deactivate WhatsApp Account",
+      "deactivating": "Deactivating...",
+      "deactivateConfirmDesc": "This disconnects the currently connected WhatsApp number — it will stop sending and receiving messages through this app. You can then connect a different number, either automatically with \"Connect WhatsApp with Meta\" or by entering new credentials manually. This does not affect anything on Meta's side (the number itself, its templates, or its 2-step verification PIN) — only this app's saved connection.",
+      "cancel": "Cancel"
     },
     "sections": {
       "overview": "Overview",

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   INTERACTIVE_LIMITS,
   debugAccessToken,
+  exchangeEmbeddedSignupCode,
   getSubscribedApps,
   sendInteractiveButtons,
   sendInteractiveList,
@@ -340,5 +341,62 @@ describe("getSubscribedApps", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({ data: [] })));
     const result = await getSubscribedApps({ wabaId: "waba", accessToken: "tok" });
     expect(result).toEqual([]);
+  });
+});
+
+describe("exchangeEmbeddedSignupCode", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  it("exchanges the code using META_APP_ID/META_APP_SECRET, with no redirect_uri", async () => {
+    vi.stubEnv("META_APP_ID", "app-123");
+    vi.stubEnv("META_APP_SECRET", "secret-abc");
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ access_token: "long-lived-token" }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await exchangeEmbeddedSignupCode({ code: "short-lived-code" });
+    expect(result).toEqual({ accessToken: "long-lived-token" });
+
+    const calledUrl = new URL(fetchMock.mock.calls[0][0] as string);
+    expect(calledUrl.pathname).toContain("/oauth/access_token");
+    expect(calledUrl.searchParams.get("client_id")).toBe("app-123");
+    expect(calledUrl.searchParams.get("client_secret")).toBe("secret-abc");
+    expect(calledUrl.searchParams.get("code")).toBe("short-lived-code");
+    expect(calledUrl.searchParams.has("redirect_uri")).toBe(false);
+  });
+
+  it("throws when META_APP_ID or META_APP_SECRET is missing, without making a network call", async () => {
+    vi.stubEnv("META_APP_ID", "");
+    vi.stubEnv("META_APP_SECRET", "secret-abc");
+    const fetchMock = vi.fn(neverFetch);
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(exchangeEmbeddedSignupCode({ code: "x" })).rejects.toThrow(
+      /META_APP_ID and META_APP_SECRET/,
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("throws Meta's error message on a non-OK response", async () => {
+    vi.stubEnv("META_APP_ID", "app-123");
+    vi.stubEnv("META_APP_SECRET", "secret-abc");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(jsonResponse({ error: { message: "Invalid verification code" } }, 400)),
+    );
+    await expect(exchangeEmbeddedSignupCode({ code: "expired" })).rejects.toThrow(
+      "Invalid verification code",
+    );
+  });
+
+  it("throws when Meta returns 200 with no access_token", async () => {
+    vi.stubEnv("META_APP_ID", "app-123");
+    vi.stubEnv("META_APP_SECRET", "secret-abc");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse({})));
+    await expect(exchangeEmbeddedSignupCode({ code: "x" })).rejects.toThrow(
+      "did not return an access token",
+    );
   });
 });
