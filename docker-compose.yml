@@ -21,6 +21,18 @@ x-app-env: &app-env
     - path: .env
       required: false
 
+networks:
+  # Dokploy's shared, attachable network -- every Dokploy "Application"
+  # and "Database" resource joins it automatically, which is how the
+  # `api` service reaches the Postgres container (hq-postgresql-...)
+  # by its container name. `default` (this compose's own network) is
+  # NOT implied once a service lists `networks:` explicitly, so `api`
+  # below also lists `default` to keep talking to proxy/web.
+  # Must already exist on the host -- Dokploy creates it, this compose
+  # only attaches to it.
+  dokploy-network:
+    external: true
+
 services:
   proxy:
     image: caddy:2-alpine
@@ -87,6 +99,9 @@ services:
     expose:
       - '3001'
     restart: unless-stopped
+    networks:
+      - default
+      - dokploy-network
     healthcheck:
       test:
         [
