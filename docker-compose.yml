@@ -9,11 +9,16 @@ name: wacrm
 x-app-env: &app-env
   # Runtime secrets. Later files override earlier ones. A production
   # host typically has only .env.production; local docker still
-  # prefers .env.local when both exist.
+  # prefers .env.local when both exist. `.env` is what a PaaS writes
+  # next to this file from its environment UI (Dokploy's Environment
+  # tab does exactly that), so a Dokploy deploy needs no committed env
+  # file at all — and it comes last so those values win.
   env_file:
     - path: apps/web/.env.production
       required: false
     - path: apps/web/.env.local
+      required: false
+    - path: .env
       required: false
 
 services:
@@ -27,6 +32,10 @@ services:
       - caddy-data:/data
       - caddy-config:/config
     # Host side only — HOST_PORT=8080 publishes the app on :8080.
+    # On Dokploy, set HOST_PORT to a free port (the Dokploy UI itself
+    # owns :3000) — or ignore it entirely and attach the domain to this
+    # service's container port 80; Traefik reaches it over the Docker
+    # network without any published port.
     ports:
       - '${HOST_PORT:-3000}:80'
     restart: unless-stopped

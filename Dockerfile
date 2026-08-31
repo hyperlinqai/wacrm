@@ -7,7 +7,7 @@
 # `npm ci` so Docker's layer cache survives source-only changes —
 # only editing a package.json anywhere invalidates this layer.
 # ---------------------------------------------------------------
-FROM node:20-alpine AS deps
+FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/package.json
@@ -29,7 +29,7 @@ RUN npm ci
 # ENCRYPTION_KEY, META_APP_SECRET) are read at runtime and must NOT be
 # baked into the image.
 # ---------------------------------------------------------------
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -51,7 +51,7 @@ RUN npm run build --workspace=apps/web
 # Static assets and public/ are excluded from that trace by design and
 # must be copied in separately, at their real nested path.
 # ---------------------------------------------------------------
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \

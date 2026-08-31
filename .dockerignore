@@ -1,19 +1,33 @@
+# NOTE: a bare pattern like `.next` only matches at the context root —
+# Docker does not recurse. Every directory that exists per-workspace
+# (build caches, node_modules, env files) needs the `**/` prefix or the
+# builder stage's `COPY . .` drags the host's copy into the image:
+# stale .next caches poison `next build`, macOS-native node_modules
+# shadow the Linux deps installed by `npm ci`, and .env.local would
+# bake local secrets into the layer.
 .git
 .github
-.next
-node_modules
+**/.next
+**/node_modules
+**/.turbo
+**/tsconfig.tsbuildinfo
+**/coverage
 docs
 apps/mcp-server/*
 !apps/mcp-server/package.json
 supabase
 *.md
 !README.md
-.env*
-!.env.local.example
-!.env.production
+# No .env file belongs in an image. Runtime secrets arrive via
+# docker-compose's env_file; the web build's NEXT_PUBLIC_* values are
+# copied explicitly from apps/web/env/next-public.production (a
+# deliberately committed, secret-free file that this rule doesn't match).
+**/.env*
+!**/.env.local.example
 Dockerfile
+Dockerfile.api
 docker-compose*.yml
 .dockerignore
 .vscode
 .idea
-coverage
+.claude
