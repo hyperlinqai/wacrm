@@ -23,7 +23,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { PhoneFormatSettings } from './phone-format-settings';
 import {
   Dialog,
   DialogContent,
@@ -1042,11 +1041,6 @@ export function WhatsAppConfig() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      {/* How contact numbers are turned into something WhatsApp
-          accepts. Lives here rather than under Contacts because it only
-          matters at send time. */}
-      <PhoneFormatSettings />
-
     </section>
   );
 }
