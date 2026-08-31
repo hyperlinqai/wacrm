@@ -58,8 +58,8 @@ import {
   type SetTagNodeConfig,
   type StartNodeConfig,
   type KeywordTriggerConfig,
-} from "./types";
-import { hasVariables, renderVariables, type ContactVariables } from "@/lib/messaging/variables";
+} from "@wacrm/shared/flows/types";
+import { hasVariables, renderVariables, type ContactVariables } from "@wacrm/shared/messaging/variables";
 import { loadContactVariables } from "@/lib/messaging/load-contact-variables";
 
 // ============================================================

@@ -8,13 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { slugify } from "@/components/flows/shared";
-import { INTERACTIVE_LIMITS } from "@/lib/whatsapp/meta-api";
+import { INTERACTIVE_LIMITS } from "@wacrm/shared/whatsapp/meta-api";
 import {
   validateInteractivePayload,
   type InteractiveButtonsPayload,
   type InteractiveListPayload,
   type InteractiveMessagePayload,
-} from "@/lib/whatsapp/interactive";
+} from "@wacrm/shared/whatsapp/interactive";
 import { InteractivePreview } from "./interactive-preview";
 
 // ------------------------------------------------------------

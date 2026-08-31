@@ -1,7 +1,7 @@
 'use client';
 
 import { makeBrowserClient } from '@/lib/db/browser-client';
-import type { SupabaseClient } from '@/lib/db';
+import type { SupabaseClient } from '@wacrm/shared/db';
 
 // Browser data client — direct-Postgres adapter (queries run server-side
 // under RLS via /api/db; auth, storage and realtime ride app routes).

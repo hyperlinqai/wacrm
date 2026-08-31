@@ -11,7 +11,7 @@ import {
   type BuilderInitial,
   type ServerStepNode,
 } from "@/components/automations/automation-builder"
-import type { AutomationTriggerType } from "@/types"
+import type { AutomationTriggerType } from "@wacrm/shared/types"
 
 export default function EditAutomationPage({
   params,

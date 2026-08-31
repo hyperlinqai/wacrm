@@ -12,7 +12,7 @@ import {
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import type { Message } from "@/types";
+import type { Message } from "@wacrm/shared/types";
 import { downloadMediaMessage } from "@/lib/media/download";
 import { useMediaBlobUrl } from "@/hooks/use-media-blob-url";
 

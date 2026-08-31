@@ -1,0 +1,38 @@
+# One origin, two services.
+#
+# This is the piece that makes the API/UI split invisible to everything
+# outside the deployment. The browser, Meta's webhook caller and every
+# lead-form widget already embedded on a customer's landing page all keep
+# talking to the single host they were issued for; only the routing
+# behind it changed.
+#
+# Keeping one origin is not a stylistic choice — absolute URLs built from
+# NEXT_PUBLIC_SITE_URL are persisted in the database (profiles.avatar_url
+# and the media URLs on message rows), so moving /api/* to its own
+# hostname would 404 every avatar and every piece of chat media in the
+# history until those rows were rewritten.
+#
+# TLS is handled upstream (the host's proxy), so this listens on :80.
+
+:80 {
+	encode gzip zstd
+
+	# The API app owns everything under /api — data, auth, storage,
+	# realtime (SSE), WhatsApp, cron and the public lead-form widget.
+	handle /api/* {
+		reverse_proxy api:3001 {
+			# Realtime is Server-Sent Events: never buffer it, and never
+			# time the connection out from this side. The stream is
+			# long-lived by design and carries its own 25s heartbeat.
+			flush_interval -1
+			transport http {
+				response_header_timeout 0
+			}
+		}
+	}
+
+	# Everything else is the UI.
+	handle {
+		reverse_proxy web:3000
+	}
+}

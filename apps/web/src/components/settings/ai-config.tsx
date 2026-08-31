@@ -26,9 +26,9 @@ import {
 } from '@/components/ui/select';
 import { SettingsPanelHead } from './settings-panel-head';
 import { AiKnowledgeCard } from './ai-knowledge';
-import { AI_PROVIDER_DEFAULT_MODEL } from '@/lib/ai/defaults';
-import type { AiProvider } from '@/lib/ai/types';
-import type { AccountMember } from '@/types';
+import { AI_PROVIDER_DEFAULT_MODEL } from '@wacrm/shared/ai/defaults';
+import type { AiProvider } from '@wacrm/shared/ai/types';
+import type { AccountMember } from '@wacrm/shared/types';
 import { fetchAccountMembers, memberLabel } from '@/lib/account/members';
 import { useTranslations } from 'next-intl';
 

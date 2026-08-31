@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { SupabaseClient } from '@/lib/db';
+import type { SupabaseClient } from '@wacrm/shared/db';
 
 import {
   sendMessageToConversation,
@@ -166,7 +166,7 @@ const sendTemplateMessage = vi.fn(async () => ({ messageId: 'wamid.1' }));
 
 // Stub only the senders — the module also exports INTERACTIVE_LIMITS,
 // which `interactive.ts` needs for the payload validation covered above.
-vi.mock('@/lib/whatsapp/meta-api', async (importOriginal) => ({
+vi.mock('@wacrm/shared/whatsapp/meta-api', async (importOriginal) => ({
   ...(await importOriginal<Record<string, unknown>>()),
   sendTextMessage: vi.fn(async () => ({ messageId: 'wamid.text' })),
   sendTemplateMessage: (...args: unknown[]) =>

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { SupabaseClient } from '@/lib/db';
+import type { SupabaseClient } from '@wacrm/shared/db';
 
 vi.mock('@/lib/whatsapp/encryption', () => ({
   decrypt: (s: string) => s,

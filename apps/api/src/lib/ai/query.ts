@@ -1,4 +1,4 @@
-import type { ChatMessage } from './types'
+import type { ChatMessage } from '@wacrm/shared/ai/types'
 
 /**
  * The text to retrieve knowledge against: the most recent customer

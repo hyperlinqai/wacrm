@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import type { AiConfig } from './types'
+import type { AiConfig } from '@wacrm/shared/ai/types'
 
 // Shared, hoisted mock state so the module mocks can close over it.
 const h = vi.hoisted(() => ({

@@ -1,7 +1,7 @@
 "use client"
 
 import { Clock } from 'lucide-react'
-import { DOW_SHORT_MON_FIRST } from '@/lib/dashboard/date-utils'
+import { DOW_SHORT_MON_FIRST } from '@wacrm/shared/dashboard/date-utils'
 import type { ResponseTimeSummary } from '@/lib/dashboard/types'
 import { BarChart } from '@/components/tremor/bar-chart'
 import { EmptyState } from './empty-state'

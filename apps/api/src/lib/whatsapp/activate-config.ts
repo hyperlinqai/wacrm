@@ -1,11 +1,11 @@
-import type { SupabaseClient } from '@/lib/db'
+import type { SupabaseClient } from '@wacrm/shared/db'
 import { encrypt } from './encryption'
 import {
   registerPhoneNumber,
   subscribeWabaToApp,
   verifyPhoneNumber,
   type MetaPhoneInfo,
-} from './meta-api'
+} from '@wacrm/shared/whatsapp/meta-api'
 
 /**
  * Resolve the caller's account_id from their profile. Shared by every

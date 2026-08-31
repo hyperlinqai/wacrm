@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { activateWhatsAppConfig } from "./activate-config";
-import type { SupabaseClient } from "@/lib/db";
+import type { SupabaseClient } from "@wacrm/shared/db";
 
 // PIN validation runs before any DB or Meta API call, so an untouched
 // client stands in fine here — if either mock got called, `undefined`

@@ -1,5 +1,5 @@
-import { AiError } from './types'
-import { aiRequestTimeoutMs } from './defaults'
+import { AiError } from '@wacrm/shared/ai/types'
+import { aiRequestTimeoutMs } from '@wacrm/shared/ai/defaults'
 import { providerHttpError, toNetworkError } from './providers/shared'
 
 // ============================================================

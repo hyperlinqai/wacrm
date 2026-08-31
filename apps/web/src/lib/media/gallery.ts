@@ -1,4 +1,4 @@
-import type { Message } from "@/types";
+import type { Message } from "@wacrm/shared/types";
 
 /**
  * The set of media in a thread that the lightbox can page through, built

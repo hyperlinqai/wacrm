@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
-import type { MessageReaction } from "@/types";
+import type { MessageReaction } from "@wacrm/shared/types";
 
 interface MessageReactionsProps {
   reactions: MessageReaction[];

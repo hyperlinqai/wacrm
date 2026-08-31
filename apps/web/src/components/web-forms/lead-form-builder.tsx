@@ -20,8 +20,8 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { createClient } from "@/lib/supabase/client"
-import { parseAllowedDomains } from "@/lib/web-forms/domains"
-import type { LeadForm, LeadFormField, LeadFormStatus, LeadFormStyle, Tag } from "@/types"
+import { parseAllowedDomains } from "@wacrm/shared/web-forms/domains"
+import type { LeadForm, LeadFormField, LeadFormStatus, LeadFormStyle, Tag } from "@wacrm/shared/types"
 import { EmbedCodeDialog } from "./embed-code-dialog"
 import { FieldListEditor } from "./field-list-editor"
 

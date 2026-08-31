@@ -18,10 +18,10 @@
 // them to the WhatsApp config owner — a stable account-level default.
 // ============================================================
 
-import type { SupabaseClient } from '@/lib/db';
+import type { SupabaseClient } from '@wacrm/shared/db';
 
-import { findExistingContact, isUniqueViolation } from '@/lib/contacts/dedupe';
-import { sanitizePhoneForMeta, isValidE164 } from '@/lib/whatsapp/phone-utils';
+import { findExistingContact, isUniqueViolation } from '@wacrm/shared/contacts/dedupe';
+import { sanitizePhoneForMeta, isValidE164 } from '@wacrm/shared/whatsapp/phone-utils';
 import { SendMessageError } from '@/lib/whatsapp/send-message';
 import { resolveAuditUserId, ContactError } from '@/lib/api/v1/contacts';
 

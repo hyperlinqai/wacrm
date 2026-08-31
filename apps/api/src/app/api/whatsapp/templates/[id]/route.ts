@@ -4,12 +4,12 @@ import { decrypt } from '@/lib/whatsapp/encryption'
 import {
   deleteMessageTemplate,
   editMessageTemplate,
-} from '@/lib/whatsapp/meta-api'
+} from '@wacrm/shared/whatsapp/meta-api'
 import {
   validateTemplatePayload,
   type TemplatePayload,
-} from '@/lib/whatsapp/template-validators'
-import { buildMetaTemplatePayload } from '@/lib/whatsapp/template-components'
+} from '@wacrm/shared/whatsapp/template-validators'
+import { buildMetaTemplatePayload } from '@wacrm/shared/whatsapp/template-components'
 import { ensureImageHeaderHandle } from '@/lib/whatsapp/template-header-handle'
 
 /**

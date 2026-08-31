@@ -6,15 +6,15 @@ import {
   type InteractiveButton,
   type InteractiveListSection,
   type MediaKind,
-} from '@/lib/whatsapp/meta-api'
-import type { InteractiveMessagePayload } from '@/lib/whatsapp/interactive'
+} from '@wacrm/shared/whatsapp/meta-api'
+import type { InteractiveMessagePayload } from '@wacrm/shared/whatsapp/interactive'
 import { decrypt } from '@/lib/whatsapp/encryption'
 import {
   sanitizePhoneForMeta,
   isValidE164,
   phoneVariants,
   isRecipientNotAllowedError,
-} from '@/lib/whatsapp/phone-utils'
+} from '@wacrm/shared/whatsapp/phone-utils'
 import { supabaseAdmin } from './admin-client'
 
 // ------------------------------------------------------------

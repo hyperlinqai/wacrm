@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
-import type { CustomField } from '@/types';
+import type { CustomField } from '@wacrm/shared/types';
 import {
   Dialog,
   DialogContent,

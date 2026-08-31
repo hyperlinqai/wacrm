@@ -11,7 +11,7 @@
  */
 
 import type { TemplatePayload } from './template-validators';
-import type { TemplateButton } from '@/types';
+import type { TemplateButton } from '../types';
 
 export interface MetaComponent {
   type: 'HEADER' | 'BODY' | 'FOOTER' | 'BUTTONS';

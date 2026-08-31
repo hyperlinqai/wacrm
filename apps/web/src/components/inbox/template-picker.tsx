@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { MessageTemplate } from "@/types";
+import type { MessageTemplate } from "@wacrm/shared/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,7 +21,7 @@ import {
   LayoutTemplate,
   Loader2,
 } from "lucide-react";
-import { extractVariableIndices } from "@/lib/whatsapp/template-validators";
+import { extractVariableIndices } from "@wacrm/shared/whatsapp/template-validators";
 import { useTranslations } from "next-intl";
 
 export interface TemplateSendValues {

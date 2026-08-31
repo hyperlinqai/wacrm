@@ -27,7 +27,7 @@
  * warning so operators can investigate.
  */
 
-import type { SupabaseClient } from '@/lib/db'
+import type { SupabaseClient } from '@wacrm/shared/db'
 import { normalizeStatus } from './template-status-normalize'
 
 const TEMPLATE_WEBHOOK_FIELDS = new Set([

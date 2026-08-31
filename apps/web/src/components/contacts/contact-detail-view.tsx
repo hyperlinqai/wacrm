@@ -6,7 +6,7 @@ import { addContactTag, deleteContactTag } from '@/lib/contacts/tag-api';
 import { useAuth } from '@/hooks/use-auth';
 import { formatCurrency } from '@/lib/currency';
 import { toast } from 'sonner';
-import type { Contact, ContactActivationOverride, ContactList, Tag, ContactTag, ContactNote, CustomField, ContactCustomValue, Deal, MessageTemplate } from '@/types';
+import type { Contact, ContactActivationOverride, ContactList, Tag, ContactTag, ContactNote, CustomField, ContactCustomValue, Deal, MessageTemplate } from '@wacrm/shared/types';
 import { ContactStatusBadge } from '@/components/contacts/contact-status-badge';
 import {
   addContactsToList,

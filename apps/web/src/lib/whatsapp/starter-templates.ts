@@ -1,4 +1,4 @@
-import type { TemplateButton } from "@/types";
+import type { TemplateButton } from "@wacrm/shared/types";
 
 export const STARTER_INDUSTRIES = [
   "marketing_agency",

@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import type { Message, MessageReaction } from "@/types";
+import type { Message, MessageReaction } from "@wacrm/shared/types";
 import {
   Clock,
   Check,

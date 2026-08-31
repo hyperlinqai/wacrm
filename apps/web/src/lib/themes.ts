@@ -14,6 +14,7 @@
  */
 
 export const THEME_IDS = [
+  "teal",
   "ink",
   "lime",
   "violet",
@@ -25,7 +26,7 @@ export const THEME_IDS = [
 
 export type ThemeId = (typeof THEME_IDS)[number];
 
-export const DEFAULT_THEME: ThemeId = "ink";
+export const DEFAULT_THEME: ThemeId = "teal";
 
 export const STORAGE_KEY = "wacrm.theme.v4";
 
@@ -69,6 +70,12 @@ export interface ThemeMeta {
 }
 
 export const THEMES: ReadonlyArray<ThemeMeta> = [
+  {
+    id: "teal",
+    name: "Teal & Lime",
+    tagline: "Premium teal brand theme with lime accents.",
+    swatch: "oklch(0.24 0.046 174.3)",
+  },
   {
     id: "ink",
     name: "Ink",

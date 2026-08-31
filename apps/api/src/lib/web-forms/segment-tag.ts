@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@/lib/db'
+import type { SupabaseClient } from '@wacrm/shared/db'
 
 // Every lead form owns a "segment" tag (lead_forms.tag_id, migration
 // 047) that is applied to each submitting contact, so a form's leads

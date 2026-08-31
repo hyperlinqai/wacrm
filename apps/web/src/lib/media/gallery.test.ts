@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { ContentType, Message, SenderType } from "@/types";
+import type { ContentType, Message, SenderType } from "@wacrm/shared/types";
 import { collectMediaGallery, galleryIndexOf } from "./gallery";
 
 function msg(

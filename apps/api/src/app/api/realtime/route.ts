@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getSessionUser } from '@/lib/db/auth-server';
 import { ANON_CONTEXT, userContext } from '@/lib/db/exec';
-import { SESSION_COOKIE } from '@/lib/db/jwt';
+import { SESSION_COOKIE } from '@wacrm/shared/db/jwt';
 import { getRealtimeHub, type Binding, type OutgoingEvent } from '@/lib/db/realtime-server';
 
 // SSE stream carrying live postgres_changes events, RLS-filtered per

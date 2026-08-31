@@ -2,7 +2,7 @@ import crypto from 'crypto'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { makeAdminClient } from '@/lib/db/server-client'
-import { exchangeEmbeddedSignupCode } from '@/lib/whatsapp/meta-api'
+import { exchangeEmbeddedSignupCode } from '@wacrm/shared/whatsapp/meta-api'
 import { activateWhatsAppConfig, resolveAccountId } from '@/lib/whatsapp/activate-config'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

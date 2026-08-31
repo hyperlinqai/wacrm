@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildSendComponents } from './template-send-builder';
-import type { MessageTemplate } from '@/types';
+import type { MessageTemplate } from '../types';
 
 function row(overrides: Partial<MessageTemplate> = {}): MessageTemplate {
   return {

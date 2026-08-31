@@ -1,5 +1,5 @@
 import { generateReply } from './generate'
-import type { AiConfig } from './types'
+import type { AiConfig } from '@wacrm/shared/ai/types'
 
 /**
  * Cheap liveness + auth check: one tiny generation against the

@@ -1,4 +1,4 @@
-import type { AutomationTriggerType } from '@/types'
+import type { AutomationTriggerType } from '@wacrm/shared/types'
 
 export interface TriggerMeta {
   label: string

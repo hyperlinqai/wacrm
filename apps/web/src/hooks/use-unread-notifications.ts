@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { Notification } from "@/types";
+import type { Notification } from "@wacrm/shared/types";
 
 /**
  * Count of unread notifications for the current user. Used by the

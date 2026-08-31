@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { generateReply, parseGeneration } from './generate'
-import { AiError, type AiConfig } from './types'
+import { AiError, type AiConfig } from '@wacrm/shared/ai/types'
 
 function config(overrides: Partial<AiConfig> = {}): AiConfig {
   return {

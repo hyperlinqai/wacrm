@@ -1,0 +1,26 @@
+{
+  "name": "@wacrm/shared",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Pure domain logic shared by the wacrm API and web apps — WhatsApp template rules, flow validation, contact dedupe, session JWTs and the isomorphic query builder.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    "./db": "./src/db/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@wacrm/roles": "*",
+    "date-fns": "^4.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26",
+    "typescript": "^6",
+    "vitest": "^4.1.10"
+  }
+}

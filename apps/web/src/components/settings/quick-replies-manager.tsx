@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { VariablePicker } from "@/components/shared/variable-picker";
-import { buildVariableCatalog, insertAtSelection } from "@/lib/messaging/variables";
+import { buildVariableCatalog, insertAtSelection } from "@wacrm/shared/messaging/variables";
 import {
   Dialog,
   DialogContent,
@@ -24,8 +24,8 @@ import {
 import {
   interactivePayloadPreviewText,
   type InteractiveMessagePayload,
-} from "@/lib/whatsapp/interactive";
-import type { QuickReply, QuickReplyKind } from "@/types";
+} from "@wacrm/shared/whatsapp/interactive";
+import type { QuickReply, QuickReplyKind } from "@wacrm/shared/types";
 
 interface DraftState {
   id?: string;

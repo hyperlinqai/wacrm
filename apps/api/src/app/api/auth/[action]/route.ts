@@ -7,8 +7,8 @@ import {
   signUp,
   updateUser,
 } from '@/lib/db/auth-server';
-import { SESSION_COOKIE, sessionCookieOptions } from '@/lib/db/jwt';
-import type { Session } from '@/lib/db/types';
+import { SESSION_COOKIE, sessionCookieOptions } from '@wacrm/shared/db/jwt';
+import type { Session } from '@wacrm/shared/db/types';
 
 // Auth endpoints for the browser client: login, signup, logout, user,
 // update. Sessions are stateless JWTs in an httpOnly cookie.

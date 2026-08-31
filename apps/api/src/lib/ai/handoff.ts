@@ -1,4 +1,4 @@
-import type { ChatMessage } from './types'
+import type { ChatMessage } from '@wacrm/shared/ai/types'
 
 /** Longest the quoted customer message runs before we ellipsize it —
  *  keeps the internal note to a glanceable one-liner. */

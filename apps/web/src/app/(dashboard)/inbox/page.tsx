@@ -7,8 +7,8 @@ import { createClient } from "@/lib/supabase/client";
 import {
   CONVERSATION_SELECT,
   normalizeConversation,
-} from "@/lib/inbox/conversations";
-import type { Conversation, Message, Contact, ConversationStatus } from "@/types";
+} from "@wacrm/shared/inbox/conversations";
+import type { Conversation, Message, Contact, ConversationStatus } from "@wacrm/shared/types";
 import { useRealtime } from "@/hooks/use-realtime";
 import { ConversationList } from "@/components/inbox/conversation-list";
 import { MessageThread } from "@/components/inbox/message-thread";

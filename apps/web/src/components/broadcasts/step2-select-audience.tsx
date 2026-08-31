@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { ContactList, CustomField, Tag } from '@/types';
+import { ContactList, CustomField, Tag } from '@wacrm/shared/types';
 import { Button } from '@/components/ui/button';
 import {
   Users,

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { MessageTemplate } from '@/types';
+import { MessageTemplate } from '@wacrm/shared/types';
 import { Button } from '@/components/ui/button';
 import { Loader2, FileText, ArrowRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -92,16 +92,18 @@ export function Step1ChooseTemplate({ selectedTemplate, onSelect, onNext, onBack
               <button
                 key={template.id}
                 onClick={() => onSelect(template)}
-                className={`flex flex-col gap-3 rounded-xl border p-4 text-left transition-all ${
+                className={`flex flex-col gap-3 rounded-xl border p-4 text-left transition-all min-w-0 ${
                   isSelected
                     ? 'border-primary bg-primary/5 ring-1 ring-primary/30'
                     : 'border-border bg-card/50 hover:border-border hover:bg-card'
                 }`}
               >
-                <div className="flex items-start justify-between">
-                  <h3 className="text-sm font-medium text-foreground">{template.name}</h3>
+                <div className="flex items-start justify-between gap-3 w-full min-w-0">
+                  <h3 className="text-sm font-medium text-foreground truncate flex-1" title={template.name}>
+                    {template.name}
+                  </h3>
                   <span
-                    className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${catColor}`}
+                    className={`inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${catColor}`}
                   >
                     {template.category}
                   </span>

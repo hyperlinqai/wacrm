@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireRole, toErrorResponse } from '@/lib/auth/account'
 import { runAutomationsForTrigger } from '@/lib/automations/engine'
-import type { AutomationTriggerType } from '@/types'
+import type { AutomationTriggerType } from '@wacrm/shared/types'
 
 /**
  * Manual trigger for testing or for external integrations that want

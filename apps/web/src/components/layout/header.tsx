@@ -26,7 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ModeToggle } from "@/components/layout/mode-toggle";
+
 import { useTranslations } from "next-intl";
 
 interface HeaderProps {
@@ -81,7 +81,15 @@ export function Header({ onOpenSidebar }: HeaderProps) {
         <Menu className="h-5 w-5" />
       </button>
 
-      <form onSubmit={onSearch} className="relative mx-auto hidden min-w-0 flex-1 max-w-xl sm:block">
+      {account?.name && (
+        <div className="flex h-full items-end pt-2 shrink-0">
+          <div className="bg-[#E2F9C4] text-[#083B3C] font-semibold text-[13px] px-4 py-2.5 rounded-t-lg select-none flex items-center justify-center border-t border-x border-border shadow-xs relative z-10 leading-none">
+            {account.name}
+          </div>
+        </div>
+      )}
+
+      <form onSubmit={onSearch} className="relative mx-auto hidden min-w-0 flex-1 max-w-md sm:block">
         <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
         <input
           ref={searchRef}
@@ -97,12 +105,6 @@ export function Header({ onOpenSidebar }: HeaderProps) {
       </form>
 
       <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
-        {account?.name ? (
-          <span className="hidden items-center gap-2 rounded-full border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground md:inline-flex">
-            <span className="size-1.5 rounded-full bg-emerald-500" />
-            {account.name}
-          </span>
-        ) : null}
 
         <Link
           href="/agents"
@@ -129,8 +131,6 @@ export function Header({ onOpenSidebar }: HeaderProps) {
             <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-primary" />
           ) : null}
         </Link>
-
-        <ModeToggle className="h-9 w-9" />
 
         <DropdownMenu>
         <DropdownMenuTrigger

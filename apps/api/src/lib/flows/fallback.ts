@@ -14,7 +14,7 @@
 import {
   DEFAULT_FALLBACK_POLICY,
   type FlowFallbackPolicy,
-} from "./types";
+} from "@wacrm/shared/flows/types";
 
 export type FallbackAction =
   /** Re-send the same prompt and wait again. */

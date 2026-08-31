@@ -8,7 +8,7 @@
 // endpoint's response vocabulary.
 // ============================================================
 
-import type { Conversation, Message } from '@/types';
+import type { Conversation, Message } from '@wacrm/shared/types';
 
 export interface ApiConversation {
   id: string;

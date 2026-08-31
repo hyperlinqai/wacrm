@@ -31,7 +31,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { TemplateLibrary } from "@/components/templates/template-library";
-import type { CatalogEntry } from "@/lib/templates/catalog-types";
+import type { CatalogEntry } from "@wacrm/shared/templates/catalog-types";
 
 /**
  * Flows list page.

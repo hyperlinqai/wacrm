@@ -30,7 +30,7 @@
   },
   "packageManager": "npm@10.9.9",
   "scripts": {
-    "dev": "next dev",
+    "dev": "ulimit -n 65536 2>/dev/null || true; next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -47,6 +47,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@wacrm/roles": "*",
+    "@wacrm/shared": "*",
     "@xyflow/react": "^12.11.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

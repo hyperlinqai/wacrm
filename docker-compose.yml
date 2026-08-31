@@ -1,30 +1,53 @@
 name: wacrm
 
+# Three containers, one origin. `proxy` is the only one that publishes a
+# port; it routes /api/* to `api` and everything else to `web` (see
+# Caddyfile). Splitting the API out means the two can be built, deployed
+# and scaled independently without the browser — or Meta's webhook, or an
+# embedded lead-form widget — ever seeing a second hostname.
+
+x-app-env: &app-env
+  # Runtime secrets. Later files override earlier ones. A production
+  # host typically has only .env.production; local docker still
+  # prefers .env.local when both exist.
+  env_file:
+    - path: apps/web/.env.production
+      required: false
+    - path: apps/web/.env.local
+      required: false
+
 services:
-  app:
-    build:
-      context: .
-    # Runtime secrets. Later files override earlier ones. A production
-    # host typically has only .env.production; local docker still
-    # prefers .env.local when both exist.
-    env_file:
-      - path: apps/web/.env.production
-        required: false
-      - path: apps/web/.env.local
-        required: false
-    # The server always listens on 3000 inside the container. Pinned
-    # here because `environment` wins over `env_file`, so a stray PORT
-    # in .env.local can't desync the app from the mapping and the
-    # healthcheck below.
-    environment:
-      PORT: 3000
-      # Uploaded media (avatars, chat/flow media) lives on this volume.
-      STORAGE_DIR: /var/lib/wacrm-storage
+  proxy:
+    image: caddy:2-alpine
+    depends_on:
+      - web
+      - api
     volumes:
-      - storage-data:/var/lib/wacrm-storage
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
     # Host side only — HOST_PORT=8080 publishes the app on :8080.
     ports:
-      - '${HOST_PORT:-3000}:3000'
+      - '${HOST_PORT:-3000}:80'
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    <<: *app-env
+    environment:
+      # The server always listens on 3000 inside the container. Pinned
+      # here because `environment` wins over `env_file`, so a stray PORT
+      # in .env.local can't desync the app from the proxy and the
+      # healthcheck below.
+      #
+      # There is deliberately no API_ORIGIN here. Next bakes rewrites into
+      # routes-manifest.json at build time, so setting it at run time does
+      # nothing — /api/* routing is the proxy's job and only the proxy's.
+      PORT: 3000
+    expose:
+      - '3000'
     restart: unless-stopped
     healthcheck:
       test:
@@ -39,5 +62,36 @@ services:
       retries: 3
       start_period: 15s
 
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    <<: *app-env
+    environment:
+      PORT: 3001
+      # Uploaded media (avatars, chat/flow media) lives on this volume.
+      # The API app serves it at /api/storage/object/public/*, which is
+      # the URL shape already stored on rows in the database.
+      STORAGE_DIR: /var/lib/wacrm-storage
+    volumes:
+      - storage-data:/var/lib/wacrm-storage
+    expose:
+      - '3001'
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3001/api/health').then((r)=>process.exit(r.ok||r.status<500?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
 volumes:
   storage-data:
+  caddy-data:
+  caddy-config:

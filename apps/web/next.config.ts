@@ -88,7 +88,7 @@ const nextConfig: NextConfig = {
 
   // Workspace packages ship raw TypeScript (no build step) — Next
   // transpiles them itself rather than expecting compiled JS.
-  transpilePackages: ["@wacrm/roles"],
+  transpilePackages: ["@wacrm/roles", "@wacrm/shared"],
 
   /**
    * Cross-origin dev access (Next.js 16).
@@ -155,30 +155,39 @@ const nextConfig: NextConfig = {
    * they apply to every response regardless of which cache rule
    * matched.
    */
+  /**
+   * Where /api/* lives — development only.
+   *
+   * In production the reverse proxy in front of both containers routes
+   * /api/* straight to the API app, so nothing here is exercised and the
+   * browser never learns that two services exist. That single origin is
+   * not cosmetic: absolute URLs built from NEXT_PUBLIC_SITE_URL are
+   * persisted in the database (profiles.avatar_url, the media URLs on
+   * message rows), the Meta webhook is registered against it, and
+   * lead-form widgets are already embedded on customer pages pointing at
+   * it. Splitting the hostname would break all three.
+   *
+   * `next dev` has no such proxy, so API_ORIGIN (http://localhost:3001,
+   * set in .env.local) makes it forward instead — `npm run dev` starts
+   * both apps.
+   *
+   * Note this is read at BUILD time, not run time: Next evaluates
+   * rewrites() during `next build` and bakes the result into
+   * routes-manifest.json. Setting API_ORIGIN on a running container does
+   * nothing, which is why docker-compose.yml does not pretend otherwise
+   * and leaves the routing to the proxy.
+   */
+  async rewrites() {
+    const apiOrigin = process.env.API_ORIGIN?.trim();
+    if (!apiOrigin) return [];
+    return [{ source: "/api/:path*", destination: `${apiOrigin}/api/:path*` }];
+  },
+
   async headers() {
     return [
       {
         source: "/api/:path*",
         headers: [{ key: "Cache-Control", value: "no-store" }],
-      },
-      {
-        // Overrides the no-store rule above for one specific public,
-        // unauthenticated route: the Web Forms embed widget script.
-        // Unlike every other /api/* response, this one isn't per-user —
-        // the same organization's form config produces the same script
-        // for every visitor — so it's safe (and, on a high-traffic
-        // landing page, important) to let it sit in a shared/edge cache
-        // briefly. Matches the widget route's own Cache-Control header;
-        // this rule exists only because the broader /api/* rule above
-        // would otherwise win. Later-matching rules override earlier
-        // ones for the same header key (Next.js headers() semantics).
-        source: "/api/public/lead-forms/:formId/widget.js",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=300, s-maxage=300, stale-while-revalidate=600",
-          },
-        ],
       },
       {
         source: "/:path((?!_next/static|_next/image|api).*)",

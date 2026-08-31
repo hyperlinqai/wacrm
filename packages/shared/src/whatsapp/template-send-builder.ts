@@ -30,7 +30,7 @@
  * not a 400 from Meta that doesn't say which field broke.
  */
 
-import type { MessageTemplate, TemplateButton } from '@/types';
+import type { MessageTemplate, TemplateButton } from '../types';
 import { extractVariableIndices } from './template-validators';
 
 export interface SendTimeParams {

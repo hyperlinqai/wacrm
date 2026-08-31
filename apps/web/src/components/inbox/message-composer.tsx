@@ -52,10 +52,10 @@ import {
   InteractiveBuilder,
   blankButtonsPayload,
 } from "@/components/interactive/interactive-builder";
-import { validateInteractivePayload } from "@/lib/whatsapp/interactive";
-import type { Contact, InteractiveMessagePayload, QuickReply } from "@/types";
+import { validateInteractivePayload } from "@wacrm/shared/whatsapp/interactive";
+import type { Contact, InteractiveMessagePayload, QuickReply } from "@wacrm/shared/types";
 import { VariablePicker } from "@/components/shared/variable-picker";
-import { buildVariableCatalog, insertAtSelection, renderVariables } from "@/lib/messaging/variables";
+import { buildVariableCatalog, insertAtSelection, renderVariables } from "@wacrm/shared/messaging/variables";
 import { QuickReplyPicker } from "./quick-reply-picker";
 
 /** Media content types an agent can send from the composer. */

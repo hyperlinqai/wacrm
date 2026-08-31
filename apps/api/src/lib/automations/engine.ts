@@ -17,14 +17,14 @@ import type {
   WaitStepConfig,
   CreateDealStepConfig,
   AssignConversationStepConfig,
-} from '@/types'
+} from '@wacrm/shared/types'
 import { supabaseAdmin } from './admin-client'
 import { addContactTagIfAbsent } from '@/lib/contacts/tag-write'
-import { hasVariables, renderVariables, type ContactVariables } from '@/lib/messaging/variables'
+import { hasVariables, renderVariables, type ContactVariables } from '@wacrm/shared/messaging/variables'
 import { loadContactVariables } from '@/lib/messaging/load-contact-variables'
 import { MAX_TAG_CHAIN_DEPTH, getTagChainDepth } from '@/lib/contacts/tag-chain'
 import { engineSendText, engineSendTemplate, engineSendInteractive } from './meta-send'
-import { validateInteractivePayload } from '@/lib/whatsapp/interactive'
+import { validateInteractivePayload } from '@wacrm/shared/whatsapp/interactive'
 import { isDeliverableUrl } from '@/lib/webhooks/ssrf'
 
 // ------------------------------------------------------------

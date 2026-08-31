@@ -16,7 +16,7 @@ import type {
   MessageTemplate,
   Profile,
   InteractiveMessagePayload,
-} from "@/types";
+} from "@wacrm/shared/types";
 import {
   MessageSquare,
   ChevronDown,
@@ -52,7 +52,7 @@ import { deleteAccountMedia } from "@/lib/storage/upload-media";
 import { TemplatePicker } from "./template-picker";
 import { AiThreadBanner } from "./ai-thread-banner";
 import { buildReplyPreview } from "./reply-quote";
-import { renderTemplateBody } from "@/lib/whatsapp/template-body";
+import { renderTemplateBody } from "@wacrm/shared/whatsapp/template-body";
 import { toast } from "sonner";
 
 interface ReplyDraft {

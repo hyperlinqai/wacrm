@@ -48,10 +48,10 @@ import { toast } from "sonner";
 import {
   validateFlowForActivation,
   type ValidationIssue,
-} from "@/lib/flows/validate";
+} from "@wacrm/shared/flows/validate";
 import { useTranslations } from "next-intl";
 import { unlinkNodeReferences } from "@/lib/flows/edges";
-import type { FlowNodeRow, FlowRow } from "@/lib/flows/types";
+import type { FlowNodeRow, FlowRow } from "@wacrm/shared/flows/types";
 import { NODE_META, slugify, type BuilderNode, type NodeType } from "./shared";
 
 // ============================================================

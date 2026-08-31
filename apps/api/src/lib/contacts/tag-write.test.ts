@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { SupabaseClient } from '@/lib/db';
+import type { SupabaseClient } from '@wacrm/shared/db';
 
 import { addContactTagIfAbsent } from './tag-write';
 

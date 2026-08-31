@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { Conversation } from "@/types";
+import type { Conversation } from "@wacrm/shared/types";
 
 /**
  * Count of conversations with at least one unread inbound message for

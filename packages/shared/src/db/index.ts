@@ -1,5 +1,5 @@
 // Type-only barrel for the direct-Postgres data layer — the codemod
-// target for every `import type { … } from '@/lib/db'`.
+// target for every `import type { … } from './index'`.
 // Keep this file free of runtime exports: it is imported from both
 // server and browser modules.
 

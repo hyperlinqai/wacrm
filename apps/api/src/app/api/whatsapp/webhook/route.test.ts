@@ -170,11 +170,11 @@ vi.mock('@/lib/whatsapp/encryption', () => ({
   encrypt: (v: string) => v,
   isLegacyFormat: () => false,
 }))
-vi.mock('@/lib/whatsapp/meta-api', () => ({
+vi.mock('@wacrm/shared/whatsapp/meta-api', () => ({
   getMediaUrl: vi.fn(),
   downloadMedia: vi.fn(),
 }))
-vi.mock('@/lib/contacts/dedupe', () => ({
+vi.mock('@wacrm/shared/contacts/dedupe', () => ({
   findExistingContact: vi.fn(async () => ({
     id: 'contact-1',
     name: 'Ada',
@@ -203,7 +203,7 @@ vi.mock('@/lib/webhooks/deliver', () => ({
 }))
 
 import { POST } from './route'
-import { getMediaUrl, downloadMedia } from '@/lib/whatsapp/meta-api'
+import { getMediaUrl, downloadMedia } from '@wacrm/shared/whatsapp/meta-api'
 
 const mockGetMediaUrl = vi.mocked(getMediaUrl)
 const mockDownloadMedia = vi.mocked(downloadMedia)

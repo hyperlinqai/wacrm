@@ -6,13 +6,16 @@ import {
   sessionCookieOptions,
   signJwt,
   verifyJwt,
-} from '@/lib/db/jwt'
+} from '@wacrm/shared/db/jwt'
 
-// Route gating for the direct-Postgres auth layer. The JWT is verified
+// Page gating for the direct-Postgres auth layer. The JWT is verified
 // locally (WebCrypto, no network) — the authoritative check including
-// global sign-out revocation happens in the data endpoints; here we only
-// gate navigation. Sessions slide: tokens older than SESSION_RENEW_AFTER
-// are transparently re-issued so active users never hit the 7-day expiry.
+// global sign-out revocation happens in the data endpoints, which live
+// in apps/api; here we only decide which pages a visitor may see.
+// Sessions slide: tokens older than SESSION_RENEW_AFTER are transparently
+// re-issued so active users never hit the 7-day expiry. The API app does
+// the same on its own responses, since a user can spend a long session in
+// the inbox without ever requesting a document from this app.
 
 export async function proxy(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE)?.value
@@ -66,15 +69,6 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return withCookies(NextResponse.redirect(url))
-  }
-
-  // API routes that need auth (not webhooks).
-  if (
-    !claims &&
-    request.nextUrl.pathname.startsWith('/api/whatsapp/') &&
-    !request.nextUrl.pathname.includes('/webhook')
-  ) {
-    return withCookies(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }
 
   return response

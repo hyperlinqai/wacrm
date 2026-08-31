@@ -1,10 +1,27 @@
 # Running with Docker
 
-The repo ships a multi-stage `Dockerfile` (Next.js standalone output,
-runs as a non-root user) and a `docker-compose.yml` with a single
-`app` service. The database is external — point `DATABASE_URL` at your
-Postgres (schema applied with `scripts/apply-postgres.sh`); no database
-container is included.
+The repo ships two multi-stage Dockerfiles (Next.js standalone output,
+both run as a non-root user) and a `docker-compose.yml` with three
+services:
+
+| Service | Image | Role |
+| --- | --- | --- |
+| `proxy` | `caddy:2-alpine` | The only service that publishes a port. Routes `/api/*` to `api` and everything else to `web` (see `Caddyfile`). |
+| `web` | `Dockerfile` | The UI. No database credentials. |
+| `api` | `Dockerfile.api` | The HTTP API. Owns `DATABASE_URL` and the media volume. |
+
+Splitting the API out lets the two build, deploy and scale
+independently. Keeping them behind one origin is deliberate and not
+negotiable in an existing deployment: absolute URLs built from
+`NEXT_PUBLIC_SITE_URL` are stored in the database (`profiles.avatar_url`
+and the media URLs on message rows), the Meta webhook is registered
+against that host, and lead-form widgets are already embedded on
+customer pages pointing at it. Give the API its own hostname and all
+three break.
+
+The database is external — point `DATABASE_URL` at your Postgres
+(schema applied with `scripts/apply-postgres.sh`); no database container
+is included.
 
 ## Quick start
 
@@ -24,6 +41,13 @@ container is included.
 
 3. The app is served on [http://localhost:3000](http://localhost:3000)
    (publish it elsewhere with `HOST_PORT=8080` in `apps/web/.env.local`).
+   That port belongs to `proxy`; `web` and `api` are reachable only from
+   inside the Compose network.
+
+Both services read the same `env_file`. They overlap on `JWT_SECRET`
+(the API signs session cookies, the UI's proxy verifies and slides
+them) and `NEXT_PUBLIC_SITE_URL`, so keep one file rather than two —
+a `JWT_SECRET` that differs between them signs everyone out.
 
 > Use `HOST_PORT`, not `PORT`, to move the published port. `PORT` is
 > what the server listens on _inside_ the container, and `env_file`
@@ -44,14 +68,30 @@ container is included.
 
 ## Plain Docker (no Compose)
 
-```bash
-docker build -t wacrm .
+You need both images plus something routing `/api/*` between them. If
+you are doing this by hand, put your own reverse proxy in front:
 
-docker run -d --env-file apps/web/.env.local -e PORT=3000 \
+```bash
+docker build -t wacrm-web -f Dockerfile .
+docker build -t wacrm-api -f Dockerfile.api .
+
+docker network create wacrm
+
+docker run -d --network wacrm --name api --env-file apps/web/.env.local \
+  -e PORT=3001 \
   -e STORAGE_DIR=/var/lib/wacrm-storage \
   -v wacrm-storage:/var/lib/wacrm-storage \
-  -p 3000:3000 wacrm
+  wacrm-api
+
+docker run -d --network wacrm --name web --env-file apps/web/.env.local \
+  -e PORT=3000 wacrm-web
 ```
+
+Then point a proxy at `web:3000`, with `/api/*` going to `api:3001`.
+The bundled `Caddyfile` is a working example — note the SSE settings on
+the `/api/*` route: `/api/realtime` is a long-lived Server-Sent Events
+stream, and a proxy that buffers responses or times idle connections out
+will break realtime updates.
 
 ## Notes
 
@@ -67,6 +107,9 @@ docker run -d --env-file apps/web/.env.local -e PORT=3000 \
   Settings → WhatsApp → Attachment Storage; attachments received while
   it's off become unviewable once Meta drops them. Files over 16 MB
   (the bucket's limit) are never copied.
+- Uploaded media is served by the **api** service, at the
+  `/api/storage/object/public/*` URL shape already stored on rows in the
+  database. The `storage-data` volume mounts there, not on `web`.
 - Nothing inside the container is scheduled. If you use automation
   Wait steps or flows, point an external scheduler at
   `GET /api/automations/cron` and `GET /api/flows/cron` on this

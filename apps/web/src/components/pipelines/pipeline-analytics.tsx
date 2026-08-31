@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import type { Deal, PipelineStage } from "@/types";
+import type { Deal, PipelineStage } from "@wacrm/shared/types";
 import {
   DollarSign,
   TrendingUp,

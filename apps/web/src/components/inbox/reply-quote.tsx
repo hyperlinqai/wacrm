@@ -2,7 +2,7 @@
 
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Message } from "@/types";
+import type { Message } from "@wacrm/shared/types";
 import { useTranslations } from "next-intl";
 
 interface ReplyQuoteProps {

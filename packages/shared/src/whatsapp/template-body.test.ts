@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { SupabaseClient } from '@/lib/db';
+import type { SupabaseClient } from '../db/index';
 
 import {
   renderTemplateBody,
@@ -7,7 +7,7 @@ import {
   templateBodyParams,
   templateContentText,
 } from './template-body';
-import type { MessageTemplate } from '@/types';
+import type { MessageTemplate } from '../types';
 
 function row(over: Partial<MessageTemplate>): MessageTemplate {
   return {

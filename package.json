@@ -2,7 +2,7 @@
   "name": "wacrm-monorepo",
   "version": "0.0.0",
   "private": true,
-  "description": "wacrm monorepo — the Next.js app (apps/web), the MCP server (apps/mcp-server), and shared packages.",
+  "description": "wacrm monorepo \u2014 the UI (apps/web), the HTTP API (apps/api), the MCP server (apps/mcp-server), and shared packages.",
   "license": "MIT",
   "author": "Arnas Donauskas",
   "homepage": "https://github.com/ArnasDon/wacrm",
@@ -22,7 +22,9 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "turbo run dev --filter=!wacrm-mcp",
+    "dev": "ulimit -n 65536 2>/dev/null || true; turbo run dev --filter=!wacrm-mcp",
+    "dev:web": "ulimit -n 65536 2>/dev/null || true; npm run dev --workspace=apps/web",
+    "dev:api": "ulimit -n 65536 2>/dev/null || true; npm run dev --workspace=apps/api",
     "build": "turbo run build",
     "start": "turbo run start --filter=!wacrm-mcp",
     "lint": "turbo run lint",

@@ -6,9 +6,9 @@ import {
   CONVERSATION_SELECT,
   matchesContactFilters,
   normalizeConversations,
-} from "@/lib/inbox/conversations";
+} from "@wacrm/shared/inbox/conversations";
 import { cn } from "@/lib/utils";
-import type { Conversation, ConversationStatus, Tag } from "@/types";
+import type { Conversation, ConversationStatus, Tag } from "@wacrm/shared/types";
 import { Search, ChevronDown, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useTranslations } from "next-intl";

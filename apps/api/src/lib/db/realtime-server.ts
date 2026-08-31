@@ -2,7 +2,7 @@ import 'server-only';
 import { Client } from 'pg';
 import { withRls, type RlsContext } from './exec';
 import { getTableInfo } from './schema';
-import type { RealtimeEventType } from './types';
+import type { RealtimeEventType } from '@wacrm/shared/db/types';
 
 // Replaces Supabase Realtime's postgres_changes: migration 040 attaches
 // pg_notify triggers to the subscribed tables; this module holds one

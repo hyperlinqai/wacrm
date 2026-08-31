@@ -4,9 +4,9 @@ import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit
 import { loadAiConfig } from '@/lib/ai/config'
 import { retrieveKnowledge } from '@/lib/ai/knowledge'
 import { generateReply } from '@/lib/ai/generate'
-import { buildSystemPrompt } from '@/lib/ai/defaults'
+import { buildSystemPrompt } from '@wacrm/shared/ai/defaults'
 import { latestUserMessage } from '@/lib/ai/query'
-import { AiError, type ChatMessage } from '@/lib/ai/types'
+import { AiError, type ChatMessage } from '@wacrm/shared/ai/types'
 
 // Keep the tested transcript bounded, mirroring the live context window.
 const MAX_TURNS = 20

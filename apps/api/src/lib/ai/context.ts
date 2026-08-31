@@ -1,6 +1,6 @@
-import type { SupabaseClient } from '@/lib/db'
-import type { ChatMessage } from './types'
-import { aiContextMessageLimit } from './defaults'
+import type { SupabaseClient } from '@wacrm/shared/db'
+import type { ChatMessage } from '@wacrm/shared/ai/types'
+import { aiContextMessageLimit } from '@wacrm/shared/ai/defaults'
 
 interface DbMessage {
   sender_type: 'customer' | 'agent' | 'bot'

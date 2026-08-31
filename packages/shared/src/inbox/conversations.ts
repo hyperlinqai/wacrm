@@ -1,4 +1,4 @@
-import type { Conversation, Contact, Tag } from "@/types";
+import type { Conversation, Contact, Tag } from "../types";
 
 /**
  * Conversation select that embeds the contact plus its tags, so the Inbox

@@ -2,7 +2,7 @@
 
 import { List, Reply } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { InteractiveMessagePayload } from "@/lib/whatsapp/interactive";
+import type { InteractiveMessagePayload } from "@wacrm/shared/whatsapp/interactive";
 
 /**
  * WhatsApp-style read-only render of an interactive message. Used both

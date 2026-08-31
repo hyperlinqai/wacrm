@@ -27,12 +27,12 @@
 // past its own account because the account is fixed at lookup time.
 // ============================================================
 
-import type { SupabaseClient } from '@/lib/db';
+import type { SupabaseClient } from '@wacrm/shared/db';
 
 import { supabaseAdmin } from '@/lib/flows/admin-client';
 import { findActiveKeyByHash, touchLastUsed } from '@/lib/api-keys/store';
 import { hashApiKey, looksLikeApiKey } from '@/lib/api-keys/keys';
-import { hasScope, type ApiScope } from '@/lib/api-keys/scopes';
+import { hasScope, type ApiScope } from '@wacrm/shared/api-keys/scopes';
 import { forbidden, rateLimited, unauthorized } from '@/lib/api/v1/respond';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 

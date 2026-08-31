@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SupabaseClient } from './client-types';
+import type { SupabaseClient } from '@wacrm/shared/db/client-types';
 
 // The hub and the in-flight read map are module-level singletons, so each
 // test imports a fresh copy rather than inheriting the previous one's state.

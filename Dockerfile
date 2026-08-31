@@ -11,13 +11,16 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/package.json
+COPY apps/api/package.json apps/api/package.json
 COPY apps/mcp-server/package.json apps/mcp-server/package.json
 COPY packages/roles/package.json packages/roles/package.json
+COPY packages/shared/package.json packages/shared/package.json
 RUN npm ci
 
 # ---------------------------------------------------------------
-# Stage 2 — build (apps/web only — this image serves the Next.js app;
-# apps/mcp-server is published to npm separately, not deployed here)
+# Stage 2 — build (apps/web only — this image serves the UI. The HTTP
+# API is a separate image, Dockerfile.api; apps/mcp-server is published
+# to npm separately and is not deployed here.)
 #
 # NEXT_PUBLIC_* values are inlined into the client bundle at build
 # time from apps/web/env/next-public.production (copied to
@@ -55,10 +58,8 @@ ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0
 
-RUN addgroup -S nextjs && adduser -S nextjs -G nextjs \
-    # Media volume mount point (STORAGE_DIR) — pre-owned by the app user
-    # so the named volume inherits writable permissions on first use.
-    && mkdir -p /var/lib/wacrm-storage && chown nextjs:nextjs /var/lib/wacrm-storage
+# Uploaded media is served by the API image, which owns the volume.
+RUN addgroup -S nextjs && adduser -S nextjs -G nextjs
 
 COPY --from=builder --chown=nextjs:nextjs /app/apps/web/.next/standalone ./
 COPY --from=builder --chown=nextjs:nextjs /app/apps/web/.next/static ./apps/web/.next/static

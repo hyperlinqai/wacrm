@@ -17,7 +17,7 @@ import {
 import { createClient } from "@/lib/supabase/client"
 import { useCan } from "@/hooks/use-can"
 import { useTranslations } from "next-intl"
-import type { LeadForm } from "@/types"
+import type { LeadForm } from "@wacrm/shared/types"
 import { Button } from "@/components/ui/button"
 import { GatedButton } from "@/components/ui/gated-button"
 import { Switch } from "@/components/ui/switch"

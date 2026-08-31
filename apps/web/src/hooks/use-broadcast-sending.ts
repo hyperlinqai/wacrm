@@ -7,7 +7,7 @@ import {
   BATCH_SEND_ATTEMPTS,
   batchRetryDelayMs,
 } from '@/lib/broadcast-retry';
-import { Contact, MessageTemplate } from '@/types';
+import { Contact, MessageTemplate } from '@wacrm/shared/types';
 
 export type CustomFieldOperator = 'is' | 'is_not' | 'contains';
 

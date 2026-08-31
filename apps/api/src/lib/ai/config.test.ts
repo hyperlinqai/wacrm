@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import type { SupabaseClient } from '@/lib/db'
+import type { SupabaseClient } from '@wacrm/shared/db'
 
 // decrypt is identity in tests so we don't depend on real ciphertext.
 vi.mock('@/lib/whatsapp/encryption', () => ({

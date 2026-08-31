@@ -40,7 +40,7 @@ import {
   type ContactSource,
   type CustomField,
   type Tag,
-} from '@/types';
+} from '@wacrm/shared/types';
 
 interface ContactFilterBarProps {
   filters: ContactFilters;

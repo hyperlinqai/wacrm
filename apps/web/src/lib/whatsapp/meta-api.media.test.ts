@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { sendMediaMessage } from "./meta-api";
+import { sendMediaMessage } from "@wacrm/shared/whatsapp/meta-api";
 
 // Capture the JSON body each helper POSTs to Meta so we can assert the
 // exact payload shape per media kind without hitting the network.

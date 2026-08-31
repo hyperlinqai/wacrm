@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { LeadForm, LeadFormSubmission } from "@/types"
+import type { LeadForm, LeadFormSubmission } from "@wacrm/shared/types"
 
 const PAGE_SIZE = 50
 

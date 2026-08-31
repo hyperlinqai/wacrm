@@ -15,7 +15,7 @@ vi.mock('xlsx', async (importOriginal) => {
 });
 
 import { buildContactExportRow, contactExportFilename, exportContactsToExcel } from './export-contacts';
-import type { Contact } from '@/types';
+import type { Contact } from '@wacrm/shared/types';
 
 function makeContact(overrides: Partial<Contact> = {}): Contact {
   return {

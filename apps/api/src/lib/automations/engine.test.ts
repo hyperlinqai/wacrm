@@ -105,7 +105,7 @@ vi.mock("./meta-send", () => ({
 }));
 
 import { runAutomationsForTrigger, triggerMatches } from "./engine";
-import type { Automation, KeywordMatchTriggerConfig } from "@/types";
+import type { Automation, KeywordMatchTriggerConfig } from "@wacrm/shared/types";
 
 const ACCOUNT = "acct-1";
 

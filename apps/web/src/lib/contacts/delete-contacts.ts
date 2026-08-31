@@ -1,4 +1,4 @@
-import type { PostgrestError, SupabaseClient } from '@/lib/db';
+import type { PostgrestError, SupabaseClient } from '@wacrm/shared/db';
 
 /**
  * Delete contacts after detaching pipeline deals from their threads.

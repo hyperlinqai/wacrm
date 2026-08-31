@@ -16,18 +16,18 @@
 // for API broadcasts exactly as it does for dashboard ones.
 // ============================================================
 
-import type { SupabaseClient } from '@/lib/db';
+import type { SupabaseClient } from '@wacrm/shared/db';
 
-import { sendTemplateMessage } from '@/lib/whatsapp/meta-api';
+import { sendTemplateMessage } from '@wacrm/shared/whatsapp/meta-api';
 import { decrypt } from '@/lib/whatsapp/encryption';
 import {
   sanitizePhoneForMeta,
   isValidE164,
   phoneVariants,
   isRecipientNotAllowedError,
-} from '@/lib/whatsapp/phone-utils';
-import { resolveTemplateRow } from '@/lib/whatsapp/template-body';
-import type { MessageTemplate } from '@/types';
+} from '@wacrm/shared/whatsapp/phone-utils';
+import { resolveTemplateRow } from '@wacrm/shared/whatsapp/template-body';
+import type { MessageTemplate } from '@wacrm/shared/types';
 import { findOrCreateContact } from '@/lib/api/v1/contacts';
 
 /** Thrown by createBroadcast on a caller-visible failure; route maps it. */

@@ -1,5 +1,5 @@
-import type { SupabaseClient } from '@/lib/db'
-import type { AiConfig } from './types'
+import type { SupabaseClient } from '@wacrm/shared/db'
+import type { AiConfig } from '@wacrm/shared/ai/types'
 import { chunkText } from './chunk'
 import { embedTexts, toVectorLiteral } from './embeddings'
 

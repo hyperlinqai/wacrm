@@ -1,5 +1,5 @@
 import type { AccountRole } from "@wacrm/roles";
-import type { InteractiveMessagePayload } from "@/lib/whatsapp/interactive";
+import type { InteractiveMessagePayload } from "./whatsapp/interactive";
 
 export type {
   InteractiveMessagePayload,
@@ -8,7 +8,7 @@ export type {
   InteractiveButton,
   InteractiveListRow,
   InteractiveListSection,
-} from "@/lib/whatsapp/interactive";
+} from "./whatsapp/interactive";
 
 export interface Profile {
   id: string;

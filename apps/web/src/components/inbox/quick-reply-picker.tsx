@@ -10,8 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { QuickReply } from "@/types";
-import { interactivePayloadPreviewText } from "@/lib/whatsapp/interactive";
+import type { QuickReply } from "@wacrm/shared/types";
+import { interactivePayloadPreviewText } from "@wacrm/shared/whatsapp/interactive";
 
 interface QuickReplyPickerProps {
   open: boolean;

@@ -39,7 +39,7 @@ import {
   validateSendMessageParams,
   SendMessageError,
 } from '@/lib/whatsapp/send-message';
-import type { InteractiveMessagePayload } from '@/lib/whatsapp/interactive';
+import type { InteractiveMessagePayload } from '@wacrm/shared/whatsapp/interactive';
 
 export async function POST(request: Request) {
   try {

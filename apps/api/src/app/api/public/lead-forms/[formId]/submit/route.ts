@@ -18,11 +18,11 @@
 import { NextResponse } from 'next/server'
 
 import { supabaseAdmin } from '@/lib/web-forms/admin-client'
-import { isOriginAllowed } from '@/lib/web-forms/domains'
+import { isOriginAllowed } from '@wacrm/shared/web-forms/domains'
 import { ensureLeadFormTag } from '@/lib/web-forms/segment-tag'
 import { addContactTagAndDispatch } from '@/lib/contacts/tag-events'
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit'
-import { sanitizePhoneForMeta, isValidE164 } from '@/lib/whatsapp/phone-utils'
+import { sanitizePhoneForMeta, isValidE164 } from '@wacrm/shared/whatsapp/phone-utils'
 import { resolveAuditUserId, findOrCreateContact, ContactError } from '@/lib/api/v1/contacts'
 
 interface LeadFormField {

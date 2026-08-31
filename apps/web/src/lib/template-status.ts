@@ -7,7 +7,7 @@
  * inbox picker, and broadcast picker stay aligned.
  */
 
-import type { MessageTemplateStatus } from '@/types';
+import type { MessageTemplateStatus } from '@wacrm/shared/types';
 
 export interface TemplateStatusDisplay {
   label: string;

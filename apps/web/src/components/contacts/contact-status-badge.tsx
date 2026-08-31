@@ -4,7 +4,7 @@ import { Pin } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { cn } from '@/lib/utils';
-import type { Contact } from '@/types';
+import type { Contact } from '@wacrm/shared/types';
 
 /**
  * Active / Inactive pill for a contact. A pin icon marks a manual

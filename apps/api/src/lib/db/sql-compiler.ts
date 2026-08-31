@@ -4,7 +4,7 @@ import type { DatabaseError } from 'pg';
 import { getPool } from './pool';
 import { getTableInfo } from './schema';
 import { resolveRelationship } from './relationships';
-import type { FilterStep, QueryDescriptor, QueryResult, PostgrestError } from './types';
+import type { FilterStep, QueryDescriptor, QueryResult, PostgrestError } from '@wacrm/shared/db/types';
 import { withRls, type RlsContext } from './exec';
 
 // Compiles a QueryDescriptor into parameterized SQL with PostgREST
@@ -204,7 +204,7 @@ export function compileOrExpression(table: string, expr: string, params: Params)
 
 function compileOrPart(table: string, part: string, params: Params): string {
   // col.op.value  |  col.not.op.value
-  const first = part.indexOf('.');
+  const first = part.indexOf('@wacrm/shared/db');
   if (first === -1) throw new Error(`Bad or() clause: ${part}`);
   const column = part.slice(0, first);
   let rest = part.slice(first + 1);
@@ -213,7 +213,7 @@ function compileOrPart(table: string, part: string, params: Params): string {
     negate = true;
     rest = rest.slice(4);
   }
-  const second = rest.indexOf('.');
+  const second = rest.indexOf('@wacrm/shared/db');
   const op = second === -1 ? rest : rest.slice(0, second);
   let raw: string | null = second === -1 ? null : rest.slice(second + 1);
 
@@ -256,8 +256,8 @@ function compileFilters(table: string, filters: FilterStep[], params: Params): S
       continue;
     }
     const column = step.column ?? '';
-    if (column.includes('.')) {
-      const [embed, col] = column.split('.', 2);
+    if (column.includes('@wacrm/shared/db')) {
+      const [embed, col] = column.split('@wacrm/shared/db', 2);
       const list = embedded.get(embed) ?? [];
       list.push({ column: col, step });
       embedded.set(embed, list);

@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import type { VariableGroup, VariableItem } from '@/lib/messaging/variables'
+import type { VariableGroup, VariableItem } from '@wacrm/shared/messaging/variables'
 
 interface VariablePickerProps {
   groups: VariableGroup[]

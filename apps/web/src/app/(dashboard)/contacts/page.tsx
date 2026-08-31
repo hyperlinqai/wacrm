@@ -10,7 +10,7 @@ import type {
   ContactTag,
   CustomField,
   Tag,
-} from '@/types';
+} from '@wacrm/shared/types';
 import { Button } from '@/components/ui/button';
 import {
   Table,

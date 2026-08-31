@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@/lib/db';
+import type { SupabaseClient } from '@wacrm/shared/db';
 
 export class ContactTagWriteError extends Error {
   readonly status: number;

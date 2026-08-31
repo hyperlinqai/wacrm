@@ -5,11 +5,11 @@ import { loadAiConfig } from '@/lib/ai/config'
 import { buildConversationContext } from '@/lib/ai/context'
 import { retrieveKnowledge } from '@/lib/ai/knowledge'
 import { generateReply } from '@/lib/ai/generate'
-import { buildSystemPrompt } from '@/lib/ai/defaults'
+import { buildSystemPrompt } from '@wacrm/shared/ai/defaults'
 import { latestUserMessage } from '@/lib/ai/query'
 import { logAiUsage } from '@/lib/ai/usage'
 import { supabaseAdmin } from '@/lib/ai/admin-client'
-import { AiError } from '@/lib/ai/types'
+import { AiError } from '@wacrm/shared/ai/types'
 
 /**
  * POST /api/ai/draft  (agent+)

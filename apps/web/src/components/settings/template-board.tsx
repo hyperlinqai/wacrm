@@ -4,7 +4,7 @@ import { useState } from "react";
 import { BookOpen, ExternalLink, LayoutGrid, Loader2, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import type { MessageTemplate, TemplateButton } from "@/types";
+import type { MessageTemplate, TemplateButton } from "@wacrm/shared/types";
 import { templateStatusConfig } from "@/lib/template-status";
 import {
   STARTER_INDUSTRIES,
@@ -74,7 +74,7 @@ function TemplatePreviewCard({
 }) {
   return (
     <div className="group relative flex w-full flex-col rounded-xl border border-border bg-card p-3.5 shadow-sm transition-colors hover:border-primary/40 hover:bg-card-2">
-      <button type="button" onClick={onClick} className="flex flex-col text-left">
+      <button type="button" onClick={onClick} className="w-full flex flex-col text-left">
         <div className="mb-2 flex items-start justify-between gap-2">
           <h3 className="text-sm font-semibold text-foreground">{title}</h3>
           <span className="mt-0.5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-foreground">
@@ -328,35 +328,42 @@ function ActiveBoard({
   const columns = used.length > 0 ? used : groups;
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-2">
+    <div className="space-y-6">
       {columns.map((category) => {
         const items = templates.filter((row) => row.category === category);
         return (
-          <BoardColumn
-            key={category}
-            label={t(`metaColumns.${category}`)}
-            dotClass={COLUMN_DOT[category]}
-            count={items.length}
-          >
-            {items.map((row) => (
-              <TemplatePreviewCard
-                key={row.id}
-                title={displayTitle(row.name)}
-                body={row.body_text}
-                buttons={row.buttons}
-                slug={row.name}
-                badge={templateStatusConfig[row.status ?? "DRAFT"].label}
-                onClick={() => onOpen(row)}
-                onDelete={onDelete ? () => onDelete(row) : undefined}
-                deleting={deletingId === row.id}
-              />
-            ))}
-          </BoardColumn>
+          <div key={category} className="space-y-3">
+            <div className="flex items-center gap-2 px-0.5">
+              <span className={cn("size-2 rounded-full", COLUMN_DOT[category])} />
+              <h2 className="text-[11px] font-semibold tracking-[0.12em] text-muted-foreground uppercase">
+                {t(`metaColumns.${category}`)}
+              </h2>
+              <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                {items.length}
+              </span>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {items.map((row) => (
+                <TemplatePreviewCard
+                  key={row.id}
+                  title={displayTitle(row.name)}
+                  body={row.body_text}
+                  buttons={row.buttons}
+                  slug={row.name}
+                  badge={templateStatusConfig[row.status ?? "DRAFT"].label}
+                  onClick={() => onOpen(row)}
+                  onDelete={onDelete ? () => onDelete(row) : undefined}
+                  deleting={deletingId === row.id}
+                />
+              ))}
+            </div>
+          </div>
         );
       })}
     </div>
   );
 }
+
 
 function IndustryChip({
   active,

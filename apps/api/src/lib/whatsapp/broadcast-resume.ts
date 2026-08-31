@@ -16,12 +16,12 @@
 // wizard still owns that; this makes an abandoned one recoverable.
 // ============================================================
 
-import type { SupabaseClient } from '@/lib/db';
+import type { SupabaseClient } from '@wacrm/shared/db';
 
 import { BroadcastError, type BroadcastPlan } from '@/lib/whatsapp/broadcast-core';
 import { decrypt } from '@/lib/whatsapp/encryption';
-import { resolveTemplateRow } from '@/lib/whatsapp/template-body';
-import { sanitizePhoneForMeta, isValidE164 } from '@/lib/whatsapp/phone-utils';
+import { resolveTemplateRow } from '@wacrm/shared/whatsapp/template-body';
+import { sanitizePhoneForMeta, isValidE164 } from '@wacrm/shared/whatsapp/phone-utils';
 
 /** Which recipients a resume pass picks up. */
 export type ResumeScope = 'pending' | 'failed' | 'all';

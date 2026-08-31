@@ -25,7 +25,7 @@ import {
   toErrorResponse,
 } from '@/lib/auth/account';
 import { generateApiKey } from '@/lib/api-keys/keys';
-import { normalizeScopes } from '@/lib/api-keys/scopes';
+import { normalizeScopes } from '@wacrm/shared/api-keys/scopes';
 import {
   checkRateLimit,
   rateLimitResponse,

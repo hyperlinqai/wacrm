@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { embedTexts, toVectorLiteral } from './embeddings'
-import { AiError } from './types'
+import { AiError } from '@wacrm/shared/ai/types'
 
 function okEmbeddings(count: number, shuffle = false): Response {
   const rows = Array.from({ length: count }, (_, i) => ({

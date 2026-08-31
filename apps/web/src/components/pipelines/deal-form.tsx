@@ -12,7 +12,7 @@ import type {
   DealStatus,
   PipelineStage,
   Profile,
-} from "@/types";
+} from "@wacrm/shared/types";
 import {
   Sheet,
   SheetContent,

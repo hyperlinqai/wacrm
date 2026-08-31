@@ -1,4 +1,4 @@
-import type { CatalogIcon, TemplateBadge, TemplateGoal } from "@/lib/templates/catalog-types";
+import type { CatalogIcon, TemplateBadge, TemplateGoal } from "../templates/catalog-types";
 import type {
   CollectInputNodeConfig,
   ConditionNodeConfig,

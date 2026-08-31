@@ -7,7 +7,7 @@ import {
   dedupeByPhone,
   isUniqueViolation,
   normalizeKey,
-} from '@/lib/contacts/dedupe';
+} from '@wacrm/shared/contacts/dedupe';
 import {
   parseContactCsv,
   type ParsedContactRow,
@@ -17,13 +17,13 @@ import {
   assignImportedContactTags,
   resolveImportTagIds,
   type ContactTagAssignment,
-} from '@/lib/contacts/resolve-import-tags';
+} from '@wacrm/shared/contacts/resolve-import-tags';
 import { cn } from '@/lib/utils';
 import {
   addContactsToList,
   findOrCreateListByName,
 } from '@/lib/contacts/lists-api';
-import type { ContactActivationOverride, ContactList } from '@/types';
+import type { ContactActivationOverride, ContactList } from '@wacrm/shared/types';
 import { toast } from 'sonner';
 import {
   Dialog,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getFlowTemplate, listFlowTemplates } from "./templates";
-import { filterCatalog, listCatalog } from "@/lib/templates/catalog";
+import { filterCatalog, listCatalog } from "../templates/catalog";
 
 describe("flow templates", () => {
   it("registers unique slugs including industry packs", () => {

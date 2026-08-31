@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import type { ContentType } from "@/types";
+import type { ContentType } from "../types";
 
 /**
  * Works out the filename to save a chat attachment under.

@@ -3,7 +3,7 @@ import { requireRole, toErrorResponse } from '@/lib/auth/account'
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit'
 import { loadEmbeddingsKey } from '@/lib/ai/config'
 import { ingestDocument } from '@/lib/ai/knowledge'
-import { AiError } from '@/lib/ai/types'
+import { AiError } from '@wacrm/shared/ai/types'
 
 /**
  * POST /api/ai/knowledge/reindex  (admin+)

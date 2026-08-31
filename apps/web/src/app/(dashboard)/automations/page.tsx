@@ -21,7 +21,7 @@ import {
 import { createClient } from "@/lib/supabase/client"
 import { useCan } from "@/hooks/use-can"
 import { useTranslations } from "next-intl"
-import type { Automation } from "@/types"
+import type { Automation } from "@wacrm/shared/types"
 import { Button } from "@/components/ui/button"
 import { GatedButton } from "@/components/ui/gated-button"
 import { Switch } from "@/components/ui/switch"
@@ -40,11 +40,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { AUTOMATION_TEMPLATES } from "@/lib/automations/templates"
+import { AUTOMATION_TEMPLATES } from "@wacrm/shared/automations/templates"
 import { triggerMeta, formatRelative } from "@/lib/automations/trigger-meta"
 import { cn } from "@/lib/utils"
 import { TemplateLibrary } from "@/components/templates/template-library"
-import type { CatalogEntry } from "@/lib/templates/catalog-types"
+import type { CatalogEntry } from "@wacrm/shared/templates/catalog-types"
 
 const TEMPLATE_ORDER = [
   "welcome_message",

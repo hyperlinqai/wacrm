@@ -11,7 +11,7 @@
  * light mode (a solid slate-400 would be too faint on white).
  */
 
-import type { BroadcastStatus, RecipientStatus } from "@/types";
+import type { BroadcastStatus, RecipientStatus } from "@wacrm/shared/types";
 
 export interface StatusDisplay {
   label: string;

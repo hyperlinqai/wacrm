@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import type { LeadFormField, LeadFormFieldType } from "@/types"
+import type { LeadFormField, LeadFormFieldType } from "@wacrm/shared/types"
 
 const FIELD_TYPES: LeadFormFieldType[] = ["text", "email", "phone", "textarea", "select"]
 

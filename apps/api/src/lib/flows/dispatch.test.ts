@@ -96,7 +96,7 @@ vi.mock("./meta-send", () => ({
 }));
 
 import { dispatchInboundToFlows, entryTriggerTexts } from "./engine";
-import type { ParsedInbound } from "./types";
+import type { ParsedInbound } from "@wacrm/shared/flows/types";
 
 const KEYWORD_FLOW = {
   id: "flow-1",

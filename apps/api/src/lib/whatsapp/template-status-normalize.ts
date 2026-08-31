@@ -1,4 +1,4 @@
-import type { MessageTemplateStatus } from '@/types'
+import type { MessageTemplateStatus } from '@wacrm/shared/types'
 
 const ALLOWED: ReadonlyArray<MessageTemplateStatus> = [
   'DRAFT',

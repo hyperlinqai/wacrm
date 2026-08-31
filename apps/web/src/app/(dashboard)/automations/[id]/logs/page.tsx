@@ -17,7 +17,7 @@ import type {
   Automation,
   AutomationLog,
   AutomationLogStepResult,
-} from "@/types"
+} from "@wacrm/shared/types"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { formatRelative } from "@/lib/automations/trigger-meta"

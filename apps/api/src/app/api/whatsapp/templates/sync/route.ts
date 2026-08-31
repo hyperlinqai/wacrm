@@ -7,7 +7,7 @@ import {
 } from '@/lib/auth/account'
 import { decrypt } from '@/lib/whatsapp/encryption'
 import { normalizeStatus } from '@/lib/whatsapp/template-status-normalize'
-import type { TemplateButton, TemplateSampleValues } from '@/types'
+import type { TemplateButton, TemplateSampleValues } from '@wacrm/shared/types'
 
 /**
  * Sync message templates from Meta → local message_templates table.

@@ -1,6 +1,6 @@
-import type { SupabaseClient } from '@/lib/db'
+import type { SupabaseClient } from '@wacrm/shared/db'
 import { decrypt } from '@/lib/whatsapp/encryption'
-import type { AiConfig } from './types'
+import type { AiConfig } from '@wacrm/shared/ai/types'
 
 interface AiConfigRow {
   provider: 'openai' | 'anthropic'

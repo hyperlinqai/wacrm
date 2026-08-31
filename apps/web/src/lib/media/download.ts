@@ -1,6 +1,6 @@
-import type { Message } from "@/types";
+import type { Message } from "@wacrm/shared/types";
 import { loadMediaBlob, MediaResponseError } from "./blob-cache";
-import { mediaFilename } from "./filename";
+import { mediaFilename } from "@wacrm/shared/media/filename";
 
 /**
  * Save a chat attachment to the agent's machine.

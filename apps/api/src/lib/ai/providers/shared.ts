@@ -1,4 +1,4 @@
-import { AiError, type AiUsage, type ChatMessage } from '../types'
+import { AiError, type AiUsage, type ChatMessage } from '@wacrm/shared/ai/types'
 
 // ============================================================
 // Bits shared by the OpenAI + Anthropic adapters.

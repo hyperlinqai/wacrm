@@ -19,7 +19,7 @@
 // without duplicating ~250 lines of Meta plumbing.
 // ============================================================
 
-import type { SupabaseClient } from '@/lib/db';
+import type { SupabaseClient } from '@wacrm/shared/db';
 
 import {
   sendTextMessage,
@@ -28,12 +28,12 @@ import {
   sendInteractiveButtons,
   sendInteractiveList,
   type MediaKind,
-} from '@/lib/whatsapp/meta-api';
+} from '@wacrm/shared/whatsapp/meta-api';
 import {
   validateInteractivePayload,
   interactivePayloadPreviewText,
   type InteractiveMessagePayload,
-} from '@/lib/whatsapp/interactive';
+} from '@wacrm/shared/whatsapp/interactive';
 import { decrypt, encrypt, isLegacyFormat } from '@/lib/whatsapp/encryption';
 import { supabaseAdmin } from '@/lib/flows/admin-client';
 import {
@@ -41,13 +41,13 @@ import {
   isValidE164,
   phoneVariants,
   isRecipientNotAllowedError,
-} from '@/lib/whatsapp/phone-utils';
-import type { MessageTemplate } from '@/types';
+} from '@wacrm/shared/whatsapp/phone-utils';
+import type { MessageTemplate } from '@wacrm/shared/types';
 import {
   resolveTemplateRow,
   templateBodyParams,
   templateContentText,
-} from '@/lib/whatsapp/template-body';
+} from '@wacrm/shared/whatsapp/template-body';
 
 export const MEDIA_KINDS = ['image', 'video', 'document', 'audio'] as const;
 export const VALID_MESSAGE_TYPES = [

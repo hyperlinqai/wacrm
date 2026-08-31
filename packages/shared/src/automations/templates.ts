@@ -3,12 +3,12 @@ import type {
   AutomationStepType,
   AutomationTriggerConfig,
   AutomationTriggerType,
-} from '@/types'
+} from '../types'
 import type {
   CatalogIcon,
   TemplateBadge,
   TemplateGoal,
-} from '@/lib/templates/catalog-types'
+} from '../templates/catalog-types'
 
 export type TemplateSlug =
   | 'welcome_message'

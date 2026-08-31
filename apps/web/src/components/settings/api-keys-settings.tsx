@@ -39,7 +39,7 @@ import {
   API_SCOPES,
   SCOPE_DESCRIPTIONS,
   type ApiScope,
-} from '@/lib/api-keys/scopes';
+} from '@wacrm/shared/api-keys/scopes';
 import { useTranslations } from 'next-intl';
 import { SettingsPanelHead } from './settings-panel-head';
 

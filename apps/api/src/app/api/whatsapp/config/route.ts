@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { makeAdminClient } from '@/lib/db/server-client'
-import { verifyPhoneNumber } from '@/lib/whatsapp/meta-api'
+import { verifyPhoneNumber } from '@wacrm/shared/whatsapp/meta-api'
 import { decrypt } from '@/lib/whatsapp/encryption'
 import { activateWhatsAppConfig, resolveAccountId } from '@/lib/whatsapp/activate-config'
 

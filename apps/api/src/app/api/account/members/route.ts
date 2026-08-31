@@ -16,7 +16,7 @@ import { NextResponse } from "next/server";
 
 import { getCurrentAccount, toErrorResponse } from "@/lib/auth/account";
 import { canManageMembers, isAccountRole } from "@wacrm/roles";
-import type { AccountMember } from "@/types";
+import type { AccountMember } from "@wacrm/shared/types";
 
 interface ProfileRow {
   user_id: string;

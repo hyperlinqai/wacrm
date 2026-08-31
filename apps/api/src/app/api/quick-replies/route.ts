@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getCurrentAccount, requireRole, toErrorResponse } from '@/lib/auth/account'
 import { supabaseAdmin } from '@/lib/automations/admin-client'
-import { validateInteractivePayload } from '@/lib/whatsapp/interactive'
+import { validateInteractivePayload } from '@wacrm/shared/whatsapp/interactive'
 
 // Quick replies — reusable snippets (plain text or a saved interactive
 // message) shared across the account. GET lists; POST creates. Mirrors

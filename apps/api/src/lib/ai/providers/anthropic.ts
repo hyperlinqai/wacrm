@@ -1,5 +1,5 @@
-import { AiError, type ChatMessage, type ProviderResult } from '../types'
-import { MAX_OUTPUT_TOKENS } from '../defaults'
+import { AiError, type ChatMessage, type ProviderResult } from '@wacrm/shared/ai/types'
+import { MAX_OUTPUT_TOKENS } from '@wacrm/shared/ai/defaults'
 import {
   mergeConsecutive,
   normalizeUsage,

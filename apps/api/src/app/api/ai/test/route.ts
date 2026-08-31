@@ -3,7 +3,7 @@ import { requireRole, toErrorResponse } from '@/lib/auth/account'
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit'
 import { decrypt } from '@/lib/whatsapp/encryption'
 import { validateAiCredentials } from '@/lib/ai/validate'
-import { AiError, type AiProvider } from '@/lib/ai/types'
+import { AiError, type AiProvider } from '@wacrm/shared/ai/types'
 
 /**
  * POST /api/ai/test  (admin+)

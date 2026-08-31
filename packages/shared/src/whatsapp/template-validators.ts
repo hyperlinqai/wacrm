@@ -19,7 +19,7 @@ import type {
   MessageTemplate,
   TemplateButton,
   TemplateSampleValues,
-} from '@/types';
+} from '../types';
 
 export const TEMPLATE_LIMITS = {
   bodyMaxLength: 1024,

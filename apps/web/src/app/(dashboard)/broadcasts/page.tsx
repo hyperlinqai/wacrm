@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Broadcast } from '@/types';
+import { Broadcast } from '@wacrm/shared/types';
 import { Button } from '@/components/ui/button';
 import {
   Table,

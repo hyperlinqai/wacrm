@@ -84,18 +84,44 @@ git clone https://github.com/<your-username>/wacrm.git
 cd wacrm
 npm install
 cp apps/web/.env.local.example apps/web/.env.local   # fill in database + Meta creds
+ln -s ../web/.env.local apps/api/.env.local          # both apps read one file
 npm run dev
 ```
 
 Open <http://localhost:3000>. You'll be redirected to `/login` (or
-`/dashboard` if already signed in).
+`/dashboard` if already signed in). `npm run dev` starts two servers —
+the UI on 3000 and the API on 3001 — and the UI forwards `/api/*` to the
+API via `API_ORIGIN` in `.env.local`.
 
-This is an npm-workspaces monorepo: the Next.js app lives in
-[apps/web](./apps/web), the [MCP server](./apps/mcp-server) is a
-separate published package (`wacrm-mcp`), and shared code lives under
-`packages/*`. The root `npm run <script>` commands (`dev`, `build`,
-`typecheck`, `test`, …) delegate to [Turborepo](https://turbo.build/repo),
-which runs each workspace's own script.
+### Layout
+
+This is an npm-workspaces monorepo:
+
+| Workspace | What it is |
+| --- | --- |
+| [apps/web](./apps/web) | The UI. Every page is a client component; it holds no database credentials and reaches Postgres only over HTTP. |
+| [apps/api](./apps/api) | The HTTP API — data, auth, storage, realtime (SSE), WhatsApp, automations, flows, cron. Owns `DATABASE_URL` and the media volume. |
+| [packages/shared](./packages/shared) | Pure domain logic both apps need: WhatsApp template rules, flow validation, contact dedupe, session JWTs, the isomorphic query builder. |
+| [packages/roles](./packages/roles) | Role types and permission helpers. |
+| [apps/mcp-server](./apps/mcp-server) | Separately published package (`wacrm-mcp`), not deployed with the app. |
+
+**The two apps are deployed behind one origin.** A reverse proxy sends
+`/api/*` to the API and everything else to the UI, so they build, deploy
+and scale independently while the browser only ever sees one hostname.
+That matters beyond tidiness: absolute URLs built from
+`NEXT_PUBLIC_SITE_URL` are stored in the database (avatars, chat media),
+the Meta webhook is registered against that host, and lead-form widgets
+are already embedded on customer pages pointing at it.
+
+The root `npm run <script>` commands (`dev`, `build`, `typecheck`,
+`test`, …) delegate to [Turborepo](https://turbo.build/repo), which runs
+each workspace's own script.
+
+If pages 404 with `Watchpack Error … EMFILE` in the log, the machine has
+run out of file watchers and the dev server came up with no routes — see
+[docs/local-development.md](./docs/local-development.md), which also
+covers running one app at a time with `npm run dev:web` / `npm run
+dev:api`.
 
 Prefer containers? See [docs/docker.md](./docs/docker.md) for the
 Dockerfile + Docker Compose setup.
@@ -163,7 +189,8 @@ Key pages:
 
 ## Stack
 
-- **App** — Next.js 16 (App Router), React 19, TypeScript, Tailwind v4.
+- **UI** — Next.js 16 (App Router), React 19, TypeScript, Tailwind v4.
+- **API** — Next.js 16 route handlers, deployed as its own service behind the same origin.
 - **Data** — PostgreSQL, accessed directly (auth, storage and realtime built in; RLS enforced per session).
 - **WhatsApp** — Meta Cloud API (official WhatsApp Business API).
 

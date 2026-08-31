@@ -5,7 +5,7 @@ import {
   debugAccessToken,
   getSubscribedApps,
   verifyPhoneNumber,
-} from '@/lib/whatsapp/meta-api'
+} from '@wacrm/shared/whatsapp/meta-api'
 
 const META_API_BASE = 'https://graph.facebook.com/v21.0'
 

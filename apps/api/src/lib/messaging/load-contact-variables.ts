@@ -1,5 +1,5 @@
-import type { SupabaseClient } from '@/lib/db'
-import type { ContactVariables } from './variables'
+import type { SupabaseClient } from '@wacrm/shared/db'
+import type { ContactVariables } from '@wacrm/shared/messaging/variables'
 
 /**
  * Snapshot the variables a contact can supply to message text:

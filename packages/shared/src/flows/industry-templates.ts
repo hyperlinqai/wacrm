@@ -8,7 +8,7 @@ import type {
   StartNodeConfig,
 } from "./types";
 import type { FlowTemplate, FlowTemplateNode } from "./template-types";
-import type { CatalogIcon, TemplateBadge, TemplateGoal } from "@/lib/templates/catalog-types";
+import type { CatalogIcon, TemplateBadge, TemplateGoal } from "../templates/catalog-types";
 
 interface LinearOpts {
   slug: string;

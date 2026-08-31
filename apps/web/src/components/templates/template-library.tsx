@@ -37,14 +37,14 @@ import {
   filterCatalog,
   listCatalog,
   recommendedCatalog,
-} from "@/lib/templates/catalog";
+} from "@wacrm/shared/templates/catalog";
 import type {
   CatalogEntry,
   CatalogIcon,
   TemplateGoal,
   TemplateTriggerFilter,
-} from "@/lib/templates/catalog-types";
-import { TEMPLATE_GOALS, TEMPLATE_TRIGGERS } from "@/lib/templates/catalog-types";
+} from "@wacrm/shared/templates/catalog-types";
+import { TEMPLATE_GOALS, TEMPLATE_TRIGGERS } from "@wacrm/shared/templates/catalog-types";
 
 const ICONS: Record<CatalogIcon, typeof MessageSquare> = {
   MessageSquare,

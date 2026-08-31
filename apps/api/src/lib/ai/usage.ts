@@ -1,5 +1,5 @@
-import type { SupabaseClient } from '@/lib/db'
-import type { AiProvider, AiUsage } from './types'
+import type { SupabaseClient } from '@wacrm/shared/db'
+import type { AiProvider, AiUsage } from '@wacrm/shared/ai/types'
 
 export interface LogAiUsageArgs {
   accountId: string

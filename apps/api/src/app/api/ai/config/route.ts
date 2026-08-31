@@ -8,7 +8,7 @@ import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit
 import { encrypt, decrypt } from '@/lib/whatsapp/encryption'
 import { validateAiCredentials } from '@/lib/ai/validate'
 import { embedTexts } from '@/lib/ai/embeddings'
-import { AiError, type AiProvider } from '@/lib/ai/types'
+import { AiError, type AiProvider } from '@wacrm/shared/ai/types'
 
 function bad(message: string) {
   return NextResponse.json({ error: message }, { status: 400 })

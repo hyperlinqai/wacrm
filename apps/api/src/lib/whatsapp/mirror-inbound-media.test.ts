@@ -5,7 +5,7 @@ import {
   mirrorInboundMedia,
   normalizeMimeType,
 } from "./mirror-inbound-media";
-import { MEDIA_MAX_BYTES } from "@/lib/storage/upload-media";
+import { MEDIA_MAX_BYTES } from "@wacrm/shared/media/paths";
 
 const ACCOUNT = "11111111-2222-3333-4444-555555555555";
 const MEDIA_ID = "1234567890123456";

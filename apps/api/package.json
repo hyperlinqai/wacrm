@@ -1,0 +1,38 @@
+{
+  "name": "wacrm-api",
+  "version": "0.8.0",
+  "private": true,
+  "description": "HTTP API for wacrm — data, auth, storage, realtime, WhatsApp, automations and flows. Deployed alongside the web app behind one origin.",
+  "license": "MIT",
+  "engines": { "node": ">=20.0.0" },
+  "scripts": {
+    "dev": "ulimit -n 65536 2>/dev/null || true; next dev --port 3001",
+    "build": "next build",
+    "start": "next start --port 3001",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@wacrm/roles": "*",
+    "@wacrm/shared": "*",
+    "next": "16.2.12",
+    "pg": "^8.23.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.12",
+    "prettier": "^3.9.6",
+    "typescript": "^6",
+    "vitest": "^4.1.10"
+  }
+}

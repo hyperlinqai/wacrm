@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useCallback, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { Message, Conversation } from "@/types";
-import type { RealtimeChannel } from '@/lib/db';
+import type { Message, Conversation } from "@wacrm/shared/types";
+import type { RealtimeChannel } from '@wacrm/shared/db';
 
 interface RealtimeEvent<T> {
   eventType: "INSERT" | "UPDATE" | "DELETE";

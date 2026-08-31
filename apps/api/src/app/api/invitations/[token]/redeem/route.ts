@@ -18,7 +18,7 @@
 // ============================================================
 
 import { NextResponse } from "next/server";
-import type { PostgrestError } from '@/lib/db';
+import type { PostgrestError } from '@wacrm/shared/db';
 
 import { hashInviteToken } from "@/lib/auth/invitations";
 import {

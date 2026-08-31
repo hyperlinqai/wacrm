@@ -1,0 +1,69 @@
+# syntax=docker/dockerfile:1
+
+# ---------------------------------------------------------------
+# The HTTP API — data, auth, storage, realtime, WhatsApp, automations
+# and flows. Deployed beside the UI image (Dockerfile) behind one
+# origin; see docker-compose.yml and Caddyfile for the path routing
+# that keeps /api/* on this service without the browser ever learning
+# there are two.
+# ---------------------------------------------------------------
+
+# ---------------------------------------------------------------
+# Stage 1 — install dependencies (cached until any package.json changes)
+#
+# Copy every workspace's package.json (not the whole tree) before
+# `npm ci` so Docker's layer cache survives source-only changes —
+# only editing a package.json anywhere invalidates this layer.
+# ---------------------------------------------------------------
+FROM node:20-alpine AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY apps/web/package.json apps/web/package.json
+COPY apps/api/package.json apps/api/package.json
+COPY apps/mcp-server/package.json apps/mcp-server/package.json
+COPY packages/roles/package.json packages/roles/package.json
+COPY packages/shared/package.json packages/shared/package.json
+RUN npm ci
+
+# ---------------------------------------------------------------
+# Stage 2 — build
+#
+# This app has no client bundle, so nothing is inlined at build time.
+# Every value it reads — DATABASE_URL, JWT_SECRET, ENCRYPTION_KEY,
+# META_APP_SECRET, NEXT_PUBLIC_SITE_URL — is read from the environment
+# at runtime and must NOT be baked into the image.
+# ---------------------------------------------------------------
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+ENV NEXT_TELEMETRY_DISABLED=1 \
+    NODE_ENV=production
+RUN npm run build --workspace=apps/api
+
+# ---------------------------------------------------------------
+# Stage 3 — minimal runtime (standalone output)
+#
+# `outputFileTracingRoot` (apps/api/next.config.ts) points Next's
+# tracer at the monorepo root, so `apps/api/.next/standalone`
+# reproduces the whole relevant subtree — hoisted node_modules,
+# apps/api/server.js, apps/api/package.json — rooted at /app.
+# ---------------------------------------------------------------
+FROM node:20-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=3001 \
+    HOSTNAME=0.0.0.0
+
+RUN addgroup -S nextjs && adduser -S nextjs -G nextjs \
+    # Media volume mount point (STORAGE_DIR) — pre-owned by the app user
+    # so the named volume inherits writable permissions on first use.
+    # This image owns it: /api/storage/* lives here.
+    && mkdir -p /var/lib/wacrm-storage && chown nextjs:nextjs /var/lib/wacrm-storage
+
+COPY --from=builder --chown=nextjs:nextjs /app/apps/api/.next/standalone ./
+
+USER nextjs
+EXPOSE 3001
+CMD ["node", "apps/api/server.js"]

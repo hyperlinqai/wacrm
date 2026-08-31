@@ -8,8 +8,8 @@ import {
   type BuilderInitial,
   type BuilderStep,
 } from "@/components/automations/automation-builder"
-import { AUTOMATION_TEMPLATES, type TemplateSlug } from "@/lib/automations/templates"
-import type { AutomationStepType, AutomationTriggerType } from "@/types"
+import { AUTOMATION_TEMPLATES, type TemplateSlug } from "@wacrm/shared/automations/templates"
+import type { AutomationStepType, AutomationTriggerType } from "@wacrm/shared/types"
 
 // `useSearchParams` requires a Suspense boundary or the production build
 // bails to CSR and errors out. Thin wrapper supplies it; the inner

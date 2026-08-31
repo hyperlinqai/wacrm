@@ -1,5 +1,5 @@
-import { AUTOMATION_TEMPLATES } from "@/lib/automations/templates";
-import { listFlowTemplates } from "@/lib/flows/templates";
+import { AUTOMATION_TEMPLATES } from "../automations/templates";
+import { listFlowTemplates } from "../flows/templates";
 import type { CatalogEntry, TemplateGoal, TemplateTriggerFilter } from "./catalog-types";
 
 const TRIGGER_LABEL: Record<CatalogEntry["trigger"], string> = {

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Stub the Meta resumable upload so the helper is tested in isolation.
-vi.mock('./meta-api', () => ({
+vi.mock('@wacrm/shared/whatsapp/meta-api', () => ({
   uploadResumableMedia: vi.fn(async () => ({ handle: 'HANDLE123' })),
 }));
 
@@ -12,9 +12,9 @@ vi.mock('@/lib/webhooks/ssrf', () => ({
 }));
 
 import { ensureImageHeaderHandle } from './template-header-handle';
-import { uploadResumableMedia } from './meta-api';
+import { uploadResumableMedia } from '@wacrm/shared/whatsapp/meta-api';
 import { isDeliverableUrl } from '@/lib/webhooks/ssrf';
-import type { TemplatePayload } from './template-validators';
+import type { TemplatePayload } from '@wacrm/shared/whatsapp/template-validators';
 
 function payload(over: Partial<TemplatePayload> = {}): TemplatePayload {
   return {

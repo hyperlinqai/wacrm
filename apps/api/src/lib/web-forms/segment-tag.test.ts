@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { SupabaseClient } from '@/lib/db'
+import type { SupabaseClient } from '@wacrm/shared/db'
 
 import { SEGMENT_TAG_COLOR, ensureLeadFormTag, tagBelongsToAccount } from './segment-tag'
 

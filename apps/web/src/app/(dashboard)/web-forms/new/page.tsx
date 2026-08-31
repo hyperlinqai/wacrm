@@ -4,7 +4,7 @@ import { Suspense, useMemo } from "react"
 import { useSearchParams } from "next/navigation"
 
 import { LeadFormBuilder } from "@/components/web-forms/lead-form-builder"
-import type { LeadFormField } from "@/types"
+import type { LeadFormField } from "@wacrm/shared/types"
 
 type TemplateSlug = "contact-us" | "newsletter"
 

@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
-import type { Tag } from '@/types';
+import type { Tag } from '@wacrm/shared/types';
 import {
   INDUSTRY_PRESETS,
   getIndustryPreset,

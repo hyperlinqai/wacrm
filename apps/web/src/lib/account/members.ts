@@ -1,4 +1,4 @@
-import type { AccountMember } from '@/types';
+import type { AccountMember } from '@wacrm/shared/types';
 
 /**
  * Fetch the current account's members from the API (which applies the

@@ -1,5 +1,5 @@
-import { sendTextMessage, sendTemplateMessage } from '@/lib/whatsapp/meta-api'
-import type { InteractiveMessagePayload } from '@/lib/whatsapp/interactive'
+import { sendTextMessage, sendTemplateMessage } from '@wacrm/shared/whatsapp/meta-api'
+import type { InteractiveMessagePayload } from '@wacrm/shared/whatsapp/interactive'
 import {
   engineSendInteractiveButtons,
   engineSendInteractiveList,
@@ -10,11 +10,11 @@ import {
   isValidE164,
   phoneVariants,
   isRecipientNotAllowedError,
-} from '@/lib/whatsapp/phone-utils'
+} from '@wacrm/shared/whatsapp/phone-utils'
 import {
   resolveTemplateRow,
   templateContentText,
-} from '@/lib/whatsapp/template-body'
+} from '@wacrm/shared/whatsapp/template-body'
 import { supabaseAdmin } from './admin-client'
 
 // ------------------------------------------------------------

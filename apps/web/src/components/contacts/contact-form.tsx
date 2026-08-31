@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { addContactTag, deleteContactTag } from '@/lib/contacts/tag-api';
 import { toast } from 'sonner';
-import type { Contact, Tag, ContactTag } from '@/types';
+import type { Contact, Tag, ContactTag } from '@wacrm/shared/types';
 import {
   findContactByEmail,
   findDuplicateContacts,
@@ -15,7 +15,7 @@ import {
   isUniqueViolation,
   type DuplicateMatches,
   type ExistingContact,
-} from '@/lib/contacts/dedupe';
+} from '@wacrm/shared/contacts/dedupe';
 import {
   Dialog,
   DialogContent,

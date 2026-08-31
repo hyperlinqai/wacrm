@@ -3,7 +3,7 @@ import {
   deleteMessageTemplate,
   editMessageTemplate,
   submitMessageTemplate,
-} from './meta-api';
+} from '@wacrm/shared/whatsapp/meta-api';
 
 // We mock fetch and assert on the request URL/method/body — these
 // helpers have no validation of their own (they trust the validators

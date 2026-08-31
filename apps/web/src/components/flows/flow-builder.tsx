@@ -47,7 +47,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { type ValidationIssue } from '@/lib/flows/validate';
+import { type ValidationIssue } from '@wacrm/shared/flows/validate';
 import {
   NODE_META,
   NodeIconChip,

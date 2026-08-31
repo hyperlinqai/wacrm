@@ -17,7 +17,7 @@
  * of object at all" check.
  */
 
-import type { MessageTemplate } from '@/types';
+import type { MessageTemplate } from '../types';
 
 export function isMessageTemplate(row: unknown): row is MessageTemplate {
   if (!row || typeof row !== 'object') return false;

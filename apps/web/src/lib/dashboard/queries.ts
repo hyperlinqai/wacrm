@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@/lib/db'
+import type { SupabaseClient } from '@wacrm/shared/db'
 import {
   daysAgoStart,
   DOW_SHORT_MON_FIRST,
@@ -6,7 +6,7 @@ import {
   localDayKey,
   mondayIndex,
   startOfLocalDay,
-} from './date-utils'
+} from '@wacrm/shared/dashboard/date-utils'
 import type {
   ActivityItem,
   ChannelSlice,

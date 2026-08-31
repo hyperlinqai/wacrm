@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { Conversation, Message } from '@/types';
+import type { Conversation, Message } from '@wacrm/shared/types';
 import { serializeConversation, serializeMessage } from './conversations';
 
 describe('serializeConversation', () => {

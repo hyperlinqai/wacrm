@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@/lib/db'
+import type { SupabaseClient } from '@wacrm/shared/db'
 
 /**
  * Re-open a closed conversation because the customer wrote again

@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { makeServerClient } from '@/lib/db/server-client';
-import { SESSION_COOKIE, sessionCookieOptions } from '@/lib/db/jwt';
-import type { SupabaseClient } from '@/lib/db';
+import { SESSION_COOKIE, sessionCookieOptions } from '@wacrm/shared/db/jwt';
+import type { SupabaseClient } from '@wacrm/shared/db';
 
 // Server data client — direct Postgres under the session's RLS context.
 // The session JWT lives in an httpOnly cookie.

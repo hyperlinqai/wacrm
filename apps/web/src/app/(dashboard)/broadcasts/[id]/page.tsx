@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Broadcast, BroadcastRecipient, RecipientStatus } from '@/types';
+import { Broadcast, BroadcastRecipient, RecipientStatus } from '@wacrm/shared/types';
 import { Button } from '@/components/ui/button';
 import {
   Table,

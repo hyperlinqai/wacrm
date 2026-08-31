@@ -3,7 +3,7 @@ import {
   getSubscribedApps,
   registerPhoneNumber,
   subscribeWabaToApp,
-} from './meta-api';
+} from '@wacrm/shared/whatsapp/meta-api';
 
 function okResponse(body: unknown): Response {
   return new Response(JSON.stringify(body), {

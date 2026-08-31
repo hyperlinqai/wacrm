@@ -13,7 +13,7 @@
 // page's initial bundle — only loaded when an export actually runs.
 // ============================================================
 
-import type { Contact } from '@/types';
+import type { Contact } from '@wacrm/shared/types';
 
 export interface ContactExportRow {
   Name: string;

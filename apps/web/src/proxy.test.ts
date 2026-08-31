@@ -2,12 +2,15 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
 import { createHmac } from "node:crypto";
 import { proxy } from "./proxy";
-import { SESSION_COOKIE, SESSION_MAX_AGE } from "@/lib/db/jwt";
+import { SESSION_COOKIE, SESSION_MAX_AGE } from "@wacrm/shared/db/jwt";
 
 // Sessions are stateless HS256 JWTs; the proxy verifies them locally and
 // slides (re-issues) tokens older than a day. These tests mint tokens with
-// a controlled iat to exercise both paths, plus the routing rules the old
-// Supabase middleware enforced (which must survive the migration).
+// a controlled iat to exercise both paths, plus the page-routing rules the
+// old Supabase middleware enforced (which must survive the migration).
+//
+// API-route gating is asserted in apps/api's own proxy.test.ts — /api/*
+// no longer reaches this app.
 
 const SECRET = "test-secret-for-proxy";
 
@@ -69,16 +72,6 @@ describe("proxy — session gating", () => {
     expect(res.headers.get("location")).toContain("/login");
   });
 
-  it("401s unauthenticated non-webhook whatsapp API calls", async () => {
-    const res = await proxy(requestWithToken("https://app.test/api/whatsapp/send"));
-    expect(res.status).toBe(401);
-  });
-
-  it("lets the webhook through without a session", async () => {
-    const res = await proxy(requestWithToken("https://app.test/api/whatsapp/webhook"));
-    expect(res.status).toBe(200);
-    expect(res.headers.get("location")).toBeNull();
-  });
 });
 
 describe("proxy — sliding renewal", () => {

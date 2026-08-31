@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useTotalUnread } from "@/hooks/use-total-unread";
@@ -10,7 +10,6 @@ import { useUnreadNotifications } from "@/hooks/use-unread-notifications";
 import {
   Bell,
   Bot,
-  Crown,
   FileText,
   GitBranch,
   LayoutDashboard,
@@ -19,54 +18,12 @@ import {
   MessageSquare,
   Radio,
   Settings,
-  Shield,
   User,
-  UserCog,
   Users,
-  UsersRound,
   Workflow,
   X,
   Zap,
-  ChevronDown,
 } from "lucide-react";
-import { BrandMark } from "@/components/brand-mark";
-import type { AccountRole } from "@wacrm/roles";
-
-// Per-role chip metadata used in the sidebar's account strip + the
-// Members tab roster. Keeping this near both consumers in a single
-// place avoids drift between the two surfaces — when a designer
-// wants to recolour "agent" rows, this is the one diff.
-const ROLE_CHIP: Record<
-  AccountRole,
-  { icon: typeof Crown; labelKey: string; className: string }
-> = {
-  owner: {
-    icon: Crown,
-    labelKey: "roleOwner",
-    // Amber: scarce, immutable, "the boss" — gets visual emphasis.
-    className:
-      "border-amber-500/40 bg-amber-500/15 text-amber-800 dark:text-amber-200",
-  },
-  admin: {
-    icon: Shield,
-    labelKey: "roleAdmin",
-    // Primary-tinted: significant but not as scarce as owner.
-    className:
-      "border-primary/40 bg-primary/10 text-primary",
-  },
-  agent: {
-    icon: UserCog,
-    labelKey: "roleAgent",
-    className:
-      "border-border bg-muted text-sidebar-foreground/80",
-  },
-  viewer: {
-    icon: User,
-    labelKey: "roleViewer",
-    className:
-      "border-border bg-transparent text-sidebar-muted",
-  },
-};
 import {
   Avatar,
   AvatarFallback,
@@ -79,103 +36,41 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useTranslations } from "next-intl";
 
-interface NavItem {
+interface NavItemDef {
   href: string;
-  labelKey: string;
+  label: string;
   icon: typeof LayoutDashboard;
-  /**
-   * When true, the nav row renders a small "Beta" chip after the label.
-   * Purely informational — doesn't affect routing or access.
-   */
-  beta?: boolean;
+  isActive: boolean;
+  unreadDot?: boolean;
+  badge?: number;
 }
 
 interface NavGroupDef {
   id: string;
-  labelKey: string;
-  defaultOpen: boolean;
-  items: NavItem[];
+  label: string;
+  items: NavItemDef[];
 }
 
-const NAV_GROUPS: NavGroupDef[] = [
-  {
-    id: "work",
-    labelKey: "groupWork",
-    defaultOpen: true,
-    items: [
-      { href: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
-      { href: "/templates", labelKey: "templates", icon: LayoutTemplate },
-      { href: "/automations", labelKey: "automations", icon: Zap },
-      { href: "/contacts", labelKey: "contacts", icon: Users },
-      { href: "/inbox", labelKey: "inbox", icon: MessageSquare },
-    ],
-  },
-  {
-    id: "channels",
-    labelKey: "groupChannels",
-    defaultOpen: true,
-    items: [
-      { href: "/broadcasts", labelKey: "broadcasts", icon: Radio },
-      { href: "/flows", labelKey: "flows", icon: Workflow, beta: true },
-      { href: "/web-forms", labelKey: "webForms", icon: FileText, beta: true },
-    ],
-  },
-  {
-    id: "commerce",
-    labelKey: "groupCommerce",
-    defaultOpen: false,
-    items: [{ href: "/pipelines", labelKey: "pipelines", icon: GitBranch }],
-  },
-  {
-    id: "system",
-    labelKey: "groupSystem",
-    defaultOpen: false,
-    items: [
-      { href: "/agents", labelKey: "aiAgents", icon: Bot },
-      { href: "/notifications", labelKey: "notifications", icon: Bell },
-      { href: "/settings", labelKey: "settings", icon: Settings },
-    ],
-  },
-];
-
 interface SidebarProps {
-  /** Controlled on mobile by the Header's hamburger button. Ignored on lg+. */
   open?: boolean;
   onClose?: () => void;
 }
 
-import { useTranslations } from "next-intl";
-
 export function Sidebar({ open = false, onClose }: SidebarProps) {
   const t = useTranslations("Sidebar");
   const pathname = usePathname();
-  const { profile, profileLoading, account, accountRole, signOut } = useAuth();
+  const { profile, account, accountRole, signOut } = useAuth();
   const totalUnread = useTotalUnread();
   const unreadNotifications = useUnreadNotifications();
-  // Only surface the account-name strip when it actually carries
-  // information. A solo user's personal account is named after them
-  // (the 017 signup trigger seeds it from `full_name`), so showing it
-  // here would just duplicate the user name in the footer below. Once
-  // the account is renamed or the user joins a shared account, the
-  // name diverges and the strip becomes meaningful — that's the signal
-  // we gate on. Wait for the profile fetch to settle first, otherwise
-  // the strip flashes in once the row resolves (a layout jump).
-  const showAccountStrip =
-    !profileLoading &&
-    !!account?.name &&
-    account.name !== profile?.full_name;
 
-  // Close the drawer when route changes — users opened it to navigate,
-  // so once they pick a destination the drawer should get out of the way.
+  // Close drawer on path change (mobile)
   useEffect(() => {
     onClose?.();
-    // Only pathname drives this — onClose identity doesn't need to re-run it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
+  }, [pathname, onClose]);
 
-  // Lock body scroll and allow Escape to close while the drawer is open on
-  // mobile. No-ops on desktop because the sidebar isn't positioned there.
+  // Lock scroll and handle Escape (mobile)
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -190,11 +85,119 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
     };
   }, [open, onClose]);
 
+  const initial = account?.name?.charAt(0)?.toUpperCase() ?? "T";
+
+  // Navigation Menu groups organized by functional areas
+  const navGroups: NavGroupDef[] = [
+    {
+      id: "work",
+      label: "Work & Inbox",
+      items: [
+        {
+          href: "/dashboard",
+          label: t("dashboard") || "Dashboard",
+          icon: LayoutDashboard,
+          isActive: pathname === "/dashboard",
+        },
+        {
+          href: "/inbox",
+          label: "Live Chat",
+          icon: MessageSquare,
+          isActive: pathname.startsWith("/inbox"),
+          unreadDot: totalUnread > 0,
+        },
+        {
+          href: "/contacts",
+          label: t("contacts") || "Contacts",
+          icon: Users,
+          isActive: pathname.startsWith("/contacts"),
+        },
+      ],
+    },
+    {
+      id: "campaigns",
+      label: "Campaigns & Outbound",
+      items: [
+        {
+          href: "/broadcasts",
+          label: t("broadcasts") || "Broadcasts",
+          icon: Radio,
+          isActive: pathname.startsWith("/broadcasts"),
+        },
+        {
+          href: "/templates",
+          label: t("templates") || "Templates",
+          icon: LayoutTemplate,
+          isActive: pathname.startsWith("/templates"),
+        },
+        {
+          href: "/web-forms",
+          label: t("webForms") || "Web Forms",
+          icon: FileText,
+          isActive: pathname.startsWith("/web-forms"),
+        },
+      ],
+    },
+    {
+      id: "automations",
+      label: "Automations & AI",
+      items: [
+        {
+          href: "/automations",
+          label: t("automations") || "Automations",
+          icon: Zap,
+          isActive: pathname.startsWith("/automations"),
+        },
+        {
+          href: "/flows",
+          label: t("flows") || "Flows",
+          icon: Workflow,
+          isActive: pathname.startsWith("/flows"),
+        },
+        {
+          href: "/agents",
+          label: t("aiAgents") || "AI Agents",
+          icon: Bot,
+          isActive: pathname.startsWith("/agents"),
+        },
+      ],
+    },
+    {
+      id: "sales",
+      label: "Sales & Deals",
+      items: [
+        {
+          href: "/pipelines",
+          label: t("pipelines") || "Pipelines",
+          icon: GitBranch,
+          isActive: pathname.startsWith("/pipelines"),
+        },
+      ],
+    },
+    {
+      id: "system",
+      label: "System",
+      items: [
+        {
+          href: "/notifications",
+          label: t("notifications") || "Notifications",
+          icon: Bell,
+          isActive: pathname.startsWith("/notifications"),
+          badge: unreadNotifications,
+        },
+        {
+          href: "/settings",
+          label: t("settings") || "Settings",
+          icon: Settings,
+          isActive: pathname.startsWith("/settings"),
+        },
+      ],
+    },
+  ];
+
   return (
     <>
-      {/* Backdrop — only exists on mobile and only when open. Clicking
-          it closes the drawer. Hidden from lg+ since the sidebar is
-          part of the main flex row there. */}
+      {/* Mobile Backdrop */}
       <button
         type="button"
         aria-label={t("closeMenu")}
@@ -203,108 +206,90 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
           "fixed inset-0 z-30 bg-background/70 backdrop-blur-sm transition-opacity lg:hidden",
           open
             ? "pointer-events-auto opacity-100"
-            : "pointer-events-none opacity-0",
+            : "pointer-events-none opacity-0"
         )}
       />
 
       <aside
         className={cn(
-          // Mobile: fixed drawer that slides in from the left.
-          "fixed inset-y-0 left-0 z-40 flex h-full w-64 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground",
+          "fixed inset-y-0 left-0 z-40 flex h-full w-60 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground",
           "transition-transform duration-200 ease-out will-change-transform",
           open ? "translate-x-0" : "-translate-x-full",
-          // Desktop: static, always visible — reset all the mobile framing.
-          "lg:static lg:z-0 lg:w-60 lg:translate-x-0 lg:transition-none",
+          "lg:static lg:z-0 lg:w-60 lg:translate-x-0 lg:transition-none"
         )}
         aria-label="Primary"
       >
-        {/* Logo row. On mobile we put a close button here; on desktop the
-            close button is hidden since the sidebar is always-visible. */}
-        <div className="flex h-14 shrink-0 items-center justify-between gap-2 px-4">
-          <Link href="/dashboard" className="flex min-w-0 items-center gap-2.5">
-            <BrandMark />
-            <span className="truncate text-[13px] font-semibold tracking-tight text-sidebar-foreground">
-              {t("title")}
-            </span>
-          </Link>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t("closeMenu")}
-            className="flex h-9 w-9 items-center justify-center rounded-md text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground lg:hidden"
-          >
-            <X className="h-5 w-5" />
-          </button>
+        {/* Brand Logo and Title Row */}
+        <div className="flex h-16 shrink-0 items-center gap-3 px-4 border-b border-sidebar-border/30">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#E2F9C4] text-[#083B3C] font-extrabold text-sm select-none shadow-sm shrink-0">
+            {initial}
+          </div>
+          <span className="truncate text-sm font-semibold tracking-tight text-white font-sans">
+            {t("title") || "WA-CRM"}
+          </span>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={t("closeMenu")}
+              className="ml-auto flex h-7 w-7 items-center justify-center rounded-md text-[#9FBAB8] hover:bg-white/10 hover:text-white lg:hidden"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
-        {/* Main navigation */}
-        <nav className="flex-1 overflow-y-auto px-3 py-3">
-          {NAV_GROUPS.map((group) => (
-            <NavGroup
-              key={group.id}
-              label={t(group.labelKey)}
-              defaultOpen={group.defaultOpen}
-            >
-              {group.items.map((item) => (
-                <NavLink
-                  key={item.href}
-                  item={item}
-                  pathname={pathname}
-                  label={t(item.labelKey)}
-                  betaLabel={t("beta")}
-                  totalUnread={totalUnread}
-                  unreadNotifications={unreadNotifications}
-                  unreadConversationsLabel={t("unreadConversations", {
-                    count: totalUnread,
-                  })}
-                  unreadNotificationsLabel={t("unreadNotifications", {
-                    count: unreadNotifications,
-                  })}
-                />
-              ))}
-            </NavGroup>
+        {/* Scrollable Navigation Groups */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+          {navGroups.map((group) => (
+            <div key={group.id} className="space-y-1.5">
+              <h4 className="px-3 text-[10px] font-semibold tracking-wider text-[#9FBAB8]/60 uppercase">
+                {group.label}
+              </h4>
+              <ul className="space-y-0.5">
+                {group.items.map((item) => (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors w-full",
+                        item.isActive
+                          ? "bg-white/10 text-white"
+                          : "text-[#9FBAB8] hover:bg-white/5 hover:text-white"
+                      )}
+                    >
+                      <item.icon className="h-4 w-4 shrink-0" />
+                      <span className="flex-1 truncate">{item.label}</span>
+                      {item.unreadDot && (
+                        <span className="relative flex h-2 w-2">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                          <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                        </span>
+                      )}
+                      {item.badge !== undefined && item.badge > 0 && (
+                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[#10B981] px-1 text-[10px] font-semibold text-white">
+                          {item.badge > 9 ? "9+" : item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
         </nav>
 
-        {/* User section */}
+        {/* User Account / Profile Dropdown at the bottom */}
         <div className="shrink-0 border-t border-sidebar-border p-3">
-          {/* Account name display — surfaced only when the account
-              name differs from the user's own name (see
-              `showAccountStrip`). For a default solo account the two
-              match, so we hide it to avoid duplicating the user name
-              below; for renamed or shared accounts it tells the user
-              which account they're acting in. */}
-          {showAccountStrip && account?.name ? (
-            <div className="mb-2 flex items-center gap-2 px-3 text-xs text-sidebar-muted">
-              <UsersRound className="size-3.5 shrink-0" />
-              {/* `title=` exposes the full name on hover when it
-                  gets truncated (long account names + narrow
-                  sidebars). Cheap a11y win. */}
-              <span className="truncate" title={account.name}>
-                {account.name}
-              </span>
-              {accountRole ? (
-                // Always render the chip — owners used to be
-                // invisible here, which made them indistinguishable
-                // from admins at a glance. Now everyone sees their
-                // role (with a colour cue) regardless of tier.
-                (() => {
-                  const meta = ROLE_CHIP[accountRole];
-                  const Icon = meta.icon;
-                  return (
-                    <span
-                      className={`ml-auto inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${meta.className}`}
-                    >
-                      <Icon className="size-3" />
-                      {t(meta.labelKey as string)}
-                    </span>
-                  );
-                })()
-              ) : null}
-            </div>
-          ) : null}
           <DropdownMenu>
-            <DropdownMenuTrigger className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-sidebar-accent focus:bg-sidebar-accent focus:outline-none data-popup-open:bg-sidebar-accent">
+            <DropdownMenuTrigger
+              render={
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-white/5 focus:outline-none"
+                />
+              }
+            >
               <Avatar className="size-8 shrink-0">
                 {profile?.avatar_url ? (
                   <AvatarImage
@@ -312,32 +297,46 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                     alt={profile.full_name ?? t("defaultAvatar")}
                   />
                 ) : null}
-                <AvatarFallback className="bg-sidebar-accent text-sm font-medium text-sidebar-accent-foreground">
+                <AvatarFallback className="bg-white/10 text-xs font-semibold text-white">
                   {profile?.full_name?.charAt(0)?.toUpperCase() ??
                     profile?.email?.charAt(0)?.toUpperCase() ??
                     "U"}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-sidebar-foreground">
+                <p className="truncate text-xs font-semibold text-white">
                   {profile?.full_name ?? t("defaultUser")}
                 </p>
-                <p className="truncate text-xs text-sidebar-muted">
+                <p className="truncate text-[10px] text-[#9FBAB8]/80">
                   {profile?.email ?? ""}
                 </p>
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              side="top"
-              sideOffset={6}
-              className="min-w-56 bg-popover text-popover-foreground ring-border"
+              side="right"
+              sideOffset={12}
+              className="min-w-56 bg-popover text-popover-foreground border-border rounded-xl shadow-lg"
             >
+              <div className="px-3 py-2 text-xs border-b border-border/50">
+                <p className="font-semibold text-foreground truncate">
+                  {profile?.full_name ?? t("defaultUser")}
+                </p>
+                <p className="text-muted-foreground truncate text-[11px] mt-0.5">
+                  {profile?.email ?? ""}
+                </p>
+                {account?.name && (
+                  <p className="text-primary font-medium text-[10px] uppercase tracking-wide mt-1.5 flex items-center gap-1.5">
+                    <span className="size-1.5 rounded-full bg-[#10B981]" />
+                    {account.name} ({accountRole})
+                  </p>
+                )}
+              </div>
+
               <DropdownMenuItem
                 render={
                   <Link
                     href="/settings?tab=profile"
-                    onClick={onClose}
                     className="text-popover-foreground focus:bg-accent focus:text-accent-foreground"
                   />
                 }
@@ -349,7 +348,6 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                 render={
                   <Link
                     href="/settings?tab=whatsapp"
-                    onClick={onClose}
                     className="text-popover-foreground focus:bg-accent focus:text-accent-foreground"
                   />
                 }
@@ -370,101 +368,5 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
         </div>
       </aside>
     </>
-  );
-}
-
-function NavGroup({
-  label,
-  defaultOpen,
-  children,
-}: {
-  label: string;
-  defaultOpen: boolean;
-  children: ReactNode;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <details
-      className="group/nav mb-3"
-      open={open}
-      onToggle={(e) => setOpen(e.currentTarget.open)}
-    >
-      <summary className="flex cursor-pointer list-none items-center justify-between px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-sidebar-muted select-none [&::-webkit-details-marker]:hidden">
-        {label}
-        <ChevronDown className="size-3.5 shrink-0 transition-transform group-open/nav:rotate-180" />
-      </summary>
-      <ul className="mt-0.5 flex flex-col gap-0.5">{children}</ul>
-    </details>
-  );
-}
-
-function NavLink({
-  item,
-  pathname,
-  label,
-  betaLabel,
-  totalUnread,
-  unreadNotifications,
-  unreadConversationsLabel,
-  unreadNotificationsLabel,
-}: {
-  item: NavItem;
-  pathname: string;
-  label: string;
-  betaLabel: string;
-  totalUnread: number;
-  unreadNotifications: number;
-  unreadConversationsLabel: string;
-  unreadNotificationsLabel: string;
-}) {
-  const isActive =
-    pathname === item.href ||
-    (item.href !== "/dashboard" && pathname.startsWith(item.href));
-  const showUnreadDot = item.href === "/inbox" && totalUnread > 0 && !isActive;
-  const showNotificationBadge =
-    item.href === "/notifications" && unreadNotifications > 0;
-
-  return (
-    <li>
-      <Link
-        href={item.href}
-        className={cn(
-          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-colors lg:py-2",
-          isActive
-            ? "bg-sidebar-accent text-sidebar-accent-foreground"
-            : "text-sidebar-foreground/80 hover:bg-sidebar-accent/80 hover:text-sidebar-foreground",
-        )}
-      >
-        <item.icon className="h-4 w-4 shrink-0" />
-        <span className="flex-1 truncate">{label}</span>
-        {item.beta && (
-          <span
-            aria-label={betaLabel}
-            className={cn(
-              "rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider",
-              isActive
-                ? "bg-black/10 text-sidebar-accent-foreground"
-                : "border border-amber-600/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-            )}
-          >
-            {betaLabel}
-          </span>
-        )}
-        {showUnreadDot && (
-          <span aria-label={unreadConversationsLabel} className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-          </span>
-        )}
-        {showNotificationBadge && (
-          <span
-            aria-label={unreadNotificationsLabel}
-            className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground"
-          >
-            {unreadNotifications > 9 ? "9+" : unreadNotifications}
-          </span>
-        )}
-      </Link>
-    </li>
   );
 }

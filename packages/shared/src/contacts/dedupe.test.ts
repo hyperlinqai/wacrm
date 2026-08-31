@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { SupabaseClient } from '@/lib/db';
+import type { SupabaseClient } from '../db/index';
 import {
   dedupeByPhone,
   findContactByEmail,

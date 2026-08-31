@@ -6,7 +6,7 @@ import { Loader2 } from "lucide-react"
 import { useTranslations } from "next-intl"
 
 import { LeadFormBuilder } from "@/components/web-forms/lead-form-builder"
-import type { LeadForm } from "@/types"
+import type { LeadForm } from "@wacrm/shared/types"
 
 export default function EditWebFormPage({
   params,

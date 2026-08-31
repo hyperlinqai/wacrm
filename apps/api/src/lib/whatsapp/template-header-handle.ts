@@ -1,5 +1,5 @@
-import { uploadResumableMedia } from '@/lib/whatsapp/meta-api'
-import type { TemplatePayload } from '@/lib/whatsapp/template-validators'
+import { uploadResumableMedia } from '@wacrm/shared/whatsapp/meta-api'
+import type { TemplatePayload } from '@wacrm/shared/whatsapp/template-validators'
 import { isDeliverableUrl } from '@/lib/webhooks/ssrf'
 
 /**

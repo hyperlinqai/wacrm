@@ -14,7 +14,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import type { Deal, PipelineStage } from "@/types";
+import type { Deal, PipelineStage } from "@wacrm/shared/types";
 import { DealCard } from "./deal-card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";

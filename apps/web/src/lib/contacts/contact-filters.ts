@@ -9,7 +9,7 @@
 // without a browser.
 // ============================================================
 
-import type { ContactSource } from '@/types';
+import type { ContactSource } from '@wacrm/shared/types';
 
 export type ContactStatusFilter = 'all' | 'active' | 'inactive';
 

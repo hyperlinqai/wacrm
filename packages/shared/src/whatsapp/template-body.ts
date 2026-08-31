@@ -14,10 +14,10 @@
 // sends landed in the Inbox as empty bubbles.
 // ============================================================
 
-import type { SupabaseClient } from '@/lib/db';
+import type { SupabaseClient } from '../db/index';
 
-import { isMessageTemplate } from '@/lib/whatsapp/template-row-guard';
-import type { MessageTemplate } from '@/types';
+import { isMessageTemplate } from './template-row-guard';
+import type { MessageTemplate } from '../types';
 
 /**
  * Substitute positional `{{1}}`, `{{2}}`… placeholders in a template

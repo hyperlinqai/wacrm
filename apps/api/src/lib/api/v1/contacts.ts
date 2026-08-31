@@ -7,12 +7,12 @@
 // webhook and send path use), and one tag-sync routine.
 // ============================================================
 
-import type { SupabaseClient } from '@/lib/db';
+import type { SupabaseClient } from '@wacrm/shared/db';
 
-import { findExistingContact, isUniqueViolation } from '@/lib/contacts/dedupe';
-import { resolveImportTagIds } from '@/lib/contacts/resolve-import-tags';
+import { findExistingContact, isUniqueViolation } from '@wacrm/shared/contacts/dedupe';
+import { resolveImportTagIds } from '@wacrm/shared/contacts/resolve-import-tags';
 import { addContactTagAndDispatch } from '@/lib/contacts/tag-events';
-import { sanitizePhoneForMeta, isValidE164 } from '@/lib/whatsapp/phone-utils';
+import { sanitizePhoneForMeta, isValidE164 } from '@wacrm/shared/whatsapp/phone-utils';
 
 /** Row select that embeds the contact's tags for serialization. */
 export const CONTACT_SELECT = '*, contact_tags(tags(*))';

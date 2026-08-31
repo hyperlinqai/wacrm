@@ -1,5 +1,5 @@
 import 'server-only';
-import { QueryBuilder, makeRpcDescriptor } from './query-builder';
+import { QueryBuilder, makeRpcDescriptor } from '@wacrm/shared/db/query-builder';
 import { executeDescriptor } from './sql-compiler';
 import { ANON_CONTEXT, SERVICE_CONTEXT, userContext, type RlsContext } from './exec';
 import {
@@ -11,8 +11,8 @@ import {
   updateUser as doUpdateUser,
 } from './auth-server';
 import { makeStorageFacade } from './storage-server';
-import type { SupabaseClient } from './client-types';
-import type { AuthError, Session, User } from './types';
+import type { SupabaseClient } from '@wacrm/shared/db/client-types';
+import type { AuthError, Session, User } from '@wacrm/shared/db/types';
 
 // Server-side drop-in for the supabase-js client: queries run directly
 // against Postgres under the session's RLS context.

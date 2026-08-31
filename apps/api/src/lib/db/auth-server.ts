@@ -1,7 +1,7 @@
 import 'server-only';
 import { getPool } from './pool';
-import { signJwt, verifyJwt, SESSION_MAX_AGE, type SessionClaims } from './jwt';
-import type { Session, User } from './types';
+import { signJwt, verifyJwt, SESSION_MAX_AGE, type SessionClaims } from '@wacrm/shared/db/jwt';
+import type { Session, User } from '@wacrm/shared/db/types';
 
 const NIL_UUID = '00000000-0000-0000-0000-000000000000';
 

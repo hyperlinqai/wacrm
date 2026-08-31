@@ -14,7 +14,7 @@ import {
   buildPage,
 } from '@/lib/api/v1/pagination';
 import { serializeMessage } from '@/lib/api/v1/conversations';
-import type { Message } from '@/types';
+import type { Message } from '@wacrm/shared/types';
 
 export async function GET(
   request: Request,

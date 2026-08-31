@@ -26,7 +26,7 @@
 // ============================================================
 
 import { NextResponse } from "next/server";
-import type { SupabaseClient } from '@/lib/db';
+import type { SupabaseClient } from '@wacrm/shared/db';
 
 import { createClient } from "@/lib/supabase/server";
 import { hasMinRole, isAccountRole, type AccountRole, type OrganizationRole } from "@wacrm/roles";

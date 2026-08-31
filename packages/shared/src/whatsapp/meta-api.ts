@@ -443,7 +443,7 @@ export async function sendMediaMessage(
   return { messageId: data.messages[0].id }
 }
 
-import type { MessageTemplate } from '@/types'
+import type { MessageTemplate } from '../types'
 import {
   buildSendComponents,
   type SendTimeParams,

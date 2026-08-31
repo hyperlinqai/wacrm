@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { requireRole, toErrorResponse } from '@/lib/auth/account';
-import { sendReactionMessage } from '@/lib/whatsapp/meta-api';
+import { sendReactionMessage } from '@wacrm/shared/whatsapp/meta-api';
 import { decrypt } from '@/lib/whatsapp/encryption';
-import { sanitizePhoneForMeta } from '@/lib/whatsapp/phone-utils';
+import { sanitizePhoneForMeta } from '@wacrm/shared/whatsapp/phone-utils';
 import {
   checkRateLimit,
   rateLimitResponse,

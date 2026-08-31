@@ -1,5 +1,5 @@
 import { makeAdminClient } from '@/lib/db/server-client'
-import type { SupabaseClient } from '@/lib/db'
+import type { SupabaseClient } from '@wacrm/shared/db'
 
 // Lazy, shared service-role client (RLS bypass via the service_role DB
 // role). Same shape across ai/, automations/ and flows/ so anyone reading

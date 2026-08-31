@@ -16,9 +16,9 @@ import {
 import {
   CONVERSATION_SELECT,
   normalizeConversation,
-} from '@/lib/inbox/conversations';
+} from '@wacrm/shared/inbox/conversations';
 import { serializeConversation } from '@/lib/api/v1/conversations';
-import type { Conversation } from '@/types';
+import type { Conversation } from '@wacrm/shared/types';
 
 export async function GET(request: Request) {
   try {

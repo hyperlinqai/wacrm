@@ -1,5 +1,5 @@
-import type { AutomationTriggerType } from '@/types'
-import { validateInteractivePayload } from '@/lib/whatsapp/interactive'
+import type { AutomationTriggerType } from '@wacrm/shared/types'
+import { validateInteractivePayload } from '@wacrm/shared/whatsapp/interactive'
 
 // ------------------------------------------------------------
 // Pre-flight config validation for automations about to be activated.

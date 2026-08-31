@@ -7,7 +7,7 @@ const h = vi.hoisted(() => ({
 
 vi.mock('@/lib/db/sql-compiler', () => ({ executeDescriptor: h.executeDescriptor }));
 vi.mock('@/lib/db/auth-server', () => ({ getSessionUser: h.getSessionUser }));
-vi.mock('@/lib/db/jwt', () => ({ SESSION_COOKIE: 'wacrm-session' }));
+vi.mock('@wacrm/shared/db/jwt', () => ({ SESSION_COOKIE: 'wacrm-session' }));
 
 import { POST } from './route';
 

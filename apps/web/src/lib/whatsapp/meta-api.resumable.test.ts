@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { uploadResumableMedia } from './meta-api';
+import { uploadResumableMedia } from '@wacrm/shared/whatsapp/meta-api';
 
 // Capture the two requests the resumable upload makes.
 const calls: Array<{ url: string; init?: RequestInit }> = [];

@@ -49,7 +49,7 @@ import { cn } from "@/lib/utils";
 import { uploadAccountMedia, MEDIA_MAX_BYTES } from "@/lib/storage/upload-media";
 import { slugify, type BuilderNode } from "../shared";
 import { NextNodeRow, NodeKeySelect, TextRow } from "./fields";
-import { buildVariableCatalog, type VariableGroup } from "@/lib/messaging/variables";
+import { buildVariableCatalog, type VariableGroup } from "@wacrm/shared/messaging/variables";
 
 /**
  * Variables a flow prompt can use: the contact's details plus every

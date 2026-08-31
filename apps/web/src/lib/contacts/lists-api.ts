@@ -3,9 +3,9 @@
 // import modal and the contact detail sheet (migration 049).
 // ============================================================
 
-import type { SupabaseClient } from '@/lib/db';
+import type { SupabaseClient } from '@wacrm/shared/db';
 
-import type { ContactActivationOverride, ContactList } from '@/types';
+import type { ContactActivationOverride, ContactList } from '@wacrm/shared/types';
 
 const CHUNK = 500;
 

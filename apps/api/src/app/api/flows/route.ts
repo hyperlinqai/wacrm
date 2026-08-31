@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { requireRole, toErrorResponse } from '@/lib/auth/account'
 import { supabaseAdmin } from '@/lib/flows/admin-client'
-import { getFlowTemplate } from '@/lib/flows/templates'
+import { getFlowTemplate } from '@wacrm/shared/flows/templates'
 
 /**
  * GET /api/flows — list the caller's flows.

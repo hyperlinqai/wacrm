@@ -3,7 +3,7 @@ import {
   matchesContactFilters,
   normalizeConversation,
 } from "./conversations";
-import type { Conversation } from "@/types";
+import type { Conversation } from "../types";
 
 function makeConversation(
   contact: Partial<Conversation["contact"]> | null,

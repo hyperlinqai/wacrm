@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getMediaUrl, downloadMedia } from '@/lib/whatsapp/meta-api'
+import { getMediaUrl, downloadMedia } from '@wacrm/shared/whatsapp/meta-api'
 import { decrypt } from '@/lib/whatsapp/encryption'
 
 export async function GET(

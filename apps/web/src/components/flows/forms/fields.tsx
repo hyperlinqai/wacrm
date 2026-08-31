@@ -20,7 +20,7 @@
 
 import { useRef } from "react";
 import { VariablePicker } from "@/components/shared/variable-picker";
-import { insertAtSelection, type VariableGroup } from "@/lib/messaging/variables";
+import { insertAtSelection, type VariableGroup } from "@wacrm/shared/messaging/variables";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {

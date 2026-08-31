@@ -17,7 +17,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { createClient } from "@/lib/supabase/client";
-import type { Pipeline, PipelineStage } from "@/types";
+import type { Pipeline, PipelineStage } from "@wacrm/shared/types";
 import {
   Dialog,
   DialogContent,

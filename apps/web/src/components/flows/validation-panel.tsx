@@ -20,7 +20,7 @@
 import { CircleAlert, CircleCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import type { ValidationIssue } from "@/lib/flows/validate";
+import type { ValidationIssue } from "@wacrm/shared/flows/validate";
 import { useFlowEditor } from "./flow-editor-state";
 
 export function ValidationPanel() {

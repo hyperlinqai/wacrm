@@ -40,7 +40,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { VariablePicker } from "@/components/shared/variable-picker"
-import { buildVariableCatalog, insertAtSelection } from "@/lib/messaging/variables"
+import { buildVariableCatalog, insertAtSelection } from "@wacrm/shared/messaging/variables"
 import { Switch } from "@/components/ui/switch"
 import {
   DropdownMenu,
@@ -57,13 +57,13 @@ import type {
   KeywordMatchTriggerConfig,
   MessageTemplate,
   Tag as TagRecord,
-} from "@/types"
+} from "@wacrm/shared/types"
 import {
   InteractiveBuilder,
   blankButtonsPayload,
   blankListPayload,
 } from "@/components/interactive/interactive-builder"
-import { interactivePayloadPreviewText } from "@/lib/whatsapp/interactive"
+import { interactivePayloadPreviewText } from "@wacrm/shared/whatsapp/interactive"
 import { createClient } from "@/lib/supabase/client"
 import {
   childPath,

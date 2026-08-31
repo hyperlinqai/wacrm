@@ -3,7 +3,7 @@ import {
   decideFallback,
   resolveFallbackPolicy,
 } from "./fallback";
-import { DEFAULT_FALLBACK_POLICY, type FlowFallbackPolicy } from "./types";
+import { DEFAULT_FALLBACK_POLICY, type FlowFallbackPolicy } from "@wacrm/shared/flows/types";
 
 describe("resolveFallbackPolicy", () => {
   it("returns defaults for null / undefined / non-object", () => {

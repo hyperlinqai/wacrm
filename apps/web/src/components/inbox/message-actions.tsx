@@ -9,7 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import type { Message } from "@/types";
+import type { Message } from "@wacrm/shared/types";
 import { useTranslations } from "next-intl";
 
 // WhatsApp's own quick-reaction bar starts with these six. Picking the same

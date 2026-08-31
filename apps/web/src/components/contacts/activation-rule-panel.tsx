@@ -15,7 +15,7 @@ import type {
   ContactActivationRule,
   ContactList,
   Tag,
-} from '@/types';
+} from '@wacrm/shared/types';
 
 interface ActivationRulePanelProps {
   tags: Tag[];

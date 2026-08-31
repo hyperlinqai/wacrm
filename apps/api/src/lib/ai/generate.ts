@@ -4,8 +4,8 @@ import {
   type AiUsage,
   type ChatMessage,
   type GenerateResult,
-} from './types'
-import { HANDOFF_SENTINEL, aiRequestTimeoutMs } from './defaults'
+} from '@wacrm/shared/ai/types'
+import { HANDOFF_SENTINEL, aiRequestTimeoutMs } from '@wacrm/shared/ai/defaults'
 import { generateOpenAi } from './providers/openai'
 import { generateAnthropic } from './providers/anthropic'
 

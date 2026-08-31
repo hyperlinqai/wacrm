@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TEMPLATE_LIMITS } from "./template-validators";
+import { TEMPLATE_LIMITS } from "@wacrm/shared/whatsapp/template-validators";
 import {
   STARTER_INDUSTRIES,
   STARTER_TEMPLATES,

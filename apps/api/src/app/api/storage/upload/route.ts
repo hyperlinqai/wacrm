@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/db/auth-server';
 import { ANON_CONTEXT, userContext } from '@/lib/db/exec';
-import { SESSION_COOKIE } from '@/lib/db/jwt';
+import { SESSION_COOKIE } from '@wacrm/shared/db/jwt';
 import { StorageError, uploadObject } from '@/lib/db/storage-server';
 
 export async function POST(request: NextRequest) {

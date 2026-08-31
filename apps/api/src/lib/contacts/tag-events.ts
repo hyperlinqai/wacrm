@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@/lib/db';
+import type { SupabaseClient } from '@wacrm/shared/db';
 
 import {
   runAutomationsForTrigger,
