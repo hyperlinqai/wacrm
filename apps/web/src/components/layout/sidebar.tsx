@@ -23,6 +23,7 @@ import {
   Workflow,
   X,
   Zap,
+  ShieldCheck,
 } from "lucide-react";
 import {
   Avatar,
@@ -111,6 +112,15 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
           label: t("contacts") || "Contacts",
           icon: Users,
           isActive: pathname.startsWith("/contacts"),
+        },
+        {
+          // Deliberately no badge: the sidebar is mounted on every page,
+          // and a count here would mean a contacts query on every
+          // navigation. The page itself does the counting.
+          href: "/validation",
+          label: t("validation") || "Validation",
+          icon: ShieldCheck,
+          isActive: pathname.startsWith("/validation"),
         },
       ],
     },
