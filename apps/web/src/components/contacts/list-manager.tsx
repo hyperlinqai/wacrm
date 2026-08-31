@@ -251,7 +251,15 @@ export function ListManager({ refreshKey = 0, onViewContacts, onChanged }: ListM
                 </div>
               </div>
 
-              <div className="flex items-center justify-between gap-2">
+              {/* Wraps rather than spilling out of the card. Every Button is
+                  `shrink-0 whitespace-nowrap`, and the eight swatches are
+                  fixed-size — so on a three-column grid this row wanted
+                  ~436px inside a ~339px card and simply overflowed. The
+                  swatches are invisible until hover but still occupy their
+                  ~140px, which made the actions look like they escaped for
+                  no reason. `mt-auto` also pins the row to the bottom so
+                  footers line up across cards with different name lengths. */}
+              <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
                 <div className="flex gap-1">
                   {LIST_COLORS.map((c) => (
                     <button
@@ -268,7 +276,7 @@ export function ListManager({ refreshKey = 0, onViewContacts, onChanged }: ListM
                     />
                   ))}
                 </div>
-                <div className="flex items-center gap-0.5">
+                <div className="flex flex-wrap items-center justify-end gap-0.5">
                   <Button
                     variant="ghost"
                     size="sm"
