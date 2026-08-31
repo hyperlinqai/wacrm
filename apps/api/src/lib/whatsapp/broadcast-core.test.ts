@@ -51,7 +51,10 @@ describe('createBroadcast validation', () => {
 // Build a Supabase-shaped mock that gets createBroadcast past its config +
 // template lookups and into persistence. `rpcResult` is what the atomic
 // create_broadcast_with_recipients RPC returns.
-function makeDb(rpcResult: { data: unknown; error: unknown }) {
+function makeDb(
+  rpcResult: { data: unknown; error: unknown },
+  defaultCountryCode: string | null = null,
+) {
   const calls = {
     rpc: [] as { name: string; args: unknown }[],
     // Incremented if the OLD non-atomic path (a direct broadcasts /
@@ -60,6 +63,20 @@ function makeDb(rpcResult: { data: unknown; error: unknown }) {
   };
   const database = {
     from(table: string) {
+      if (table === 'accounts') {
+        // The account's default country for numbers with no country code.
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: () =>
+                Promise.resolve({
+                  data: { default_country_code: defaultCountryCode },
+                  error: null,
+                }),
+            }),
+          }),
+        };
+      }
       if (table === 'whatsapp_config') {
         return {
           select: () => ({
@@ -216,5 +233,80 @@ describe('finalizeBroadcastStatus', () => {
       'b-1',
     );
     expect(writes.update?.status).toBe('sent');
+  });
+});
+
+describe('createBroadcast — phone cleaning', () => {
+  const rpcOk = {
+    data: [{ broadcast_id: 'b-1', recipient_id: 'r-1', contact_id: 'c1' }],
+    error: null,
+  };
+
+  it('rejects a bare national number when the account has no country', async () => {
+    // The old check (7-15 digits, non-zero first) passed this, so it
+    // reached Meta with no country code and failed there instead.
+    const { db } = makeDb(rpcOk, null);
+    await expect(
+      createBroadcast(db, 'acc', 'user', {
+        templateName: 'promo',
+        recipients: [{ to: '9831023021' }],
+      })
+    ).rejects.toMatchObject({ code: 'bad_request', status: 400 });
+  });
+
+  it('says so when the country setting is what is missing', async () => {
+    const { db } = makeDb(rpcOk, null);
+    await expect(
+      createBroadcast(db, 'acc', 'user', {
+        templateName: 'promo',
+        recipients: [{ to: '9831023021' }],
+      })
+    ).rejects.toThrow(/no country code.*default country/i);
+  });
+
+  it('accepts the same number once the account has a country', async () => {
+    const { db } = makeDb(rpcOk, 'IN');
+    const plan = await createBroadcast(db, 'acc', 'user', {
+      templateName: 'promo',
+      recipients: [{ to: '9831023021' }],
+    });
+    expect(plan.rejected).toBe(0);
+    expect(plan.planned[0].phone).toBe('919831023021');
+  });
+
+  it('reports why each rejected number was rejected', async () => {
+    const { db } = makeDb(rpcOk, 'IN');
+    const plan = await createBroadcast(db, 'acc', 'user', {
+      templateName: 'promo',
+      recipients: [
+        { to: '9831023021' }, // fine once IN is applied
+        { to: '329' }, // too short
+        { to: '9.18319E+11' }, // Excel destroyed it
+        { to: '6284' }, // too short
+      ],
+    });
+    expect(plan.rejected).toBe(3);
+    expect(plan.rejectedReasons).toEqual({ too_short: 2, excel_scientific: 1 });
+  });
+
+  it('never expands a number Excel flattened', async () => {
+    // Expanding 9.18319E+11 would invent the digits Excel discarded and
+    // message a stranger who happens to own the result.
+    const { db } = makeDb(rpcOk, 'IN');
+    await expect(
+      createBroadcast(db, 'acc', 'user', {
+        templateName: 'promo',
+        recipients: [{ to: '9.18319E+11' }],
+      })
+    ).rejects.toMatchObject({ status: 400 });
+  });
+
+  it('keeps a number that already carries a different country code', async () => {
+    const { db } = makeDb(rpcOk, 'IN');
+    const plan = await createBroadcast(db, 'acc', 'user', {
+      templateName: 'promo',
+      recipients: [{ to: '+44 20 7183 8750' }],
+    });
+    expect(plan.planned[0].phone).toBe('442071838750');
   });
 });

@@ -21,11 +21,10 @@ import type { SupabaseClient } from '@wacrm/shared/db';
 import { sendTemplateMessage } from '@wacrm/shared/whatsapp/meta-api';
 import { decrypt } from '@/lib/whatsapp/encryption';
 import {
-  sanitizePhoneForMeta,
-  isValidE164,
   phoneVariants,
   isRecipientNotAllowedError,
 } from '@wacrm/shared/whatsapp/phone-utils';
+import { cleanPhone, type PhoneRejection } from '@wacrm/shared/whatsapp/phone-clean';
 import { resolveTemplateRow } from '@wacrm/shared/whatsapp/template-body';
 import type { MessageTemplate } from '@wacrm/shared/types';
 import { findOrCreateContact } from '@/lib/api/v1/contacts';
@@ -70,8 +69,16 @@ export interface BroadcastPlan {
   accessToken: string;
   templateRow: MessageTemplate | null;
   planned: PlannedRecipient[];
-  /** Phones rejected up front (invalid E.164) — counted as failed. */
+  /** Phones rejected up front — never sent, never given a recipient row. */
   rejected: number;
+  /**
+   * Why they were rejected, so the caller can act instead of guessing.
+   * A bare national number with no account country is a settings
+   * problem; a number Excel flattened to 9.18319E+11 is a data problem
+   * only a human can fix. Reporting a single "rejected: 11" conflated
+   * the two and told nobody anything.
+   */
+  rejectedReasons: Partial<Record<PhoneRejection, number>>;
 }
 
 const MAX_RECIPIENTS = 1000;
@@ -124,6 +131,17 @@ export async function createBroadcast(
   }
   const accessToken = decrypt(config.access_token);
 
+  // The country to assume for recipient numbers that carry no country
+  // code. Deliberately not defaulted in code: an account that has not
+  // chosen one gets its bare numbers rejected with a reason, rather
+  // than messages delivered to whoever owns that number in a country
+  // nobody picked.
+  const { data: account } = await db
+    .from('accounts')
+    .select('default_country_code')
+    .eq('id', accountId)
+    .maybeSingle();
+
   // Template row (once) for header/button components; guard a
   // malformed local row rather than N identical opaque failures.
   const resolvedTemplate = await resolveTemplateRow(
@@ -141,16 +159,31 @@ export async function createBroadcast(
   }
   const templateRow = resolvedTemplate.row;
 
-  // Resolve each recipient to a contact. Invalid phones are dropped
-  // (counted as rejected) rather than aborting the whole broadcast.
+  // Resolve each recipient to a contact. Unsendable phones are dropped
+  // (counted as rejected, with a reason) rather than aborting the whole
+  // broadcast.
+  //
+  // This used to be `sanitizePhoneForMeta` + `isValidE164`, which only
+  // asked for 7-15 digits starting non-zero — so a bare national number
+  // like "9831023021" passed, went to Meta with no country code, was
+  // read as some other country and failed the send with nothing to
+  // explain it. cleanPhone resolves it against the account's country
+  // instead, and refuses the ones that genuinely cannot be resolved.
   const resolved: { contactId: string; phone: string; params: string[] }[] = [];
   let rejected = 0;
+  const rejectedReasons: Partial<Record<PhoneRejection, number>> = {};
   for (const r of recipients) {
-    const sanitized = sanitizePhoneForMeta(typeof r.to === 'string' ? r.to : '');
-    if (!isValidE164(sanitized)) {
+    const cleaned = cleanPhone(typeof r.to === 'string' ? r.to : '', {
+      defaultCountry: account?.default_country_code ?? null,
+    });
+    if (!cleaned.ok) {
       rejected++;
+      if (cleaned.rejection) {
+        rejectedReasons[cleaned.rejection] = (rejectedReasons[cleaned.rejection] ?? 0) + 1;
+      }
       continue;
     }
+    const sanitized = cleaned.msisdn!;
     const { id } = await findOrCreateContact(db, accountId, auditUserId, {
       phone: sanitized,
     });
@@ -176,9 +209,18 @@ export async function createBroadcast(
   });
 
   if (deduped.length === 0) {
+    // Name the dominant reason: "no country code" is fixed once in
+    // Settings, and saying so beats sending the user back to their CSV.
+    const worst = Object.entries(rejectedReasons).sort((a, b) => b[1] - a[1])[0];
+    const detail =
+      worst?.[0] === 'no_country_code'
+        ? ' — they have no country code, and this account has no default country set (Settings → WhatsApp)'
+        : worst
+          ? ` — every one was rejected as ${worst[0].replace(/_/g, ' ')}`
+          : '';
     throw new BroadcastError(
       'bad_request',
-      'No recipients had a valid E.164 phone number',
+      `No recipients had a sendable phone number${detail}`,
       400
     );
   }
@@ -239,6 +281,7 @@ export async function createBroadcast(
     templateRow,
     planned,
     rejected,
+    rejectedReasons,
   };
 }
 

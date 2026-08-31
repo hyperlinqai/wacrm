@@ -16,7 +16,8 @@
   },
   "dependencies": {
     "@wacrm/roles": "*",
-    "date-fns": "^4.4.0"
+    "date-fns": "^4.4.0",
+    "libphonenumber-js": "^1.13.12"
   },
   "devDependencies": {
     "@types/node": "^26",

@@ -44,6 +44,12 @@ interface AccountSummary {
   /** Default deal currency (ISO-4217). NOT NULL DEFAULT 'USD' in the
    *  DB (migration 021); narrowed to DEFAULT_CURRENCY when absent. */
   default_currency: string;
+  /**
+   * ISO 3166-1 alpha-2 region ("IN") used to resolve contact numbers
+   * that carry no country code. Null means the account has not chosen
+   * one, and such numbers are reported rather than guessed at.
+   */
+  default_country_code: string | null;
 }
 
 /**
@@ -117,6 +123,12 @@ interface AuthContextValue {
    *  while loading or when no account is resolved, so callers can use
    *  it unconditionally. */
   defaultCurrency: string;
+  /**
+   * Region assumed for contact numbers with no country code, or null if
+   * the account has not set one. Callers must handle null rather than
+   * substituting a guess — see `cleanPhone`.
+   */
+  defaultCountryCode: string | null;
   /** True if `accountRole === 'owner'`. */
   isOwner: boolean;
   /** True if `accountRole === 'admin'` (does NOT include owner — use canManageMembers for "admin or above"). */
@@ -259,7 +271,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .from("accounts")
             // default_currency added in migration 021; narrowed to the
             // USD fallback below for older schemas where it reads null.
-            .select("id, name, default_currency")
+            .select("id, name, default_currency, default_country_code")
             .eq("id", data.account_id)
             .maybeSingle();
           if (accountErr) {
@@ -274,6 +286,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               id: account.id,
               name: account.name,
               default_currency: account.default_currency ?? DEFAULT_CURRENCY,
+              default_country_code: account.default_country_code ?? null,
             };
           }
 
@@ -494,6 +507,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refreshProfile,
         account,
         defaultCurrency: account?.default_currency ?? DEFAULT_CURRENCY,
+        defaultCountryCode: account?.default_country_code ?? null,
         accountStatus,
         accountStatusDetail: statusDetail,
         organizationId,
@@ -528,6 +542,7 @@ export function useAuth(): AuthContextValue {
       refreshProfile: async () => {},
       account: null,
       defaultCurrency: DEFAULT_CURRENCY,
+      defaultCountryCode: null,
       // Outside the provider there is nothing to resolve yet — 'loading'
       // keeps the access alert from firing on, say, the login page.
       accountStatus: "loading",

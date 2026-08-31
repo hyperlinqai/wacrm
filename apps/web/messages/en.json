@@ -2156,6 +2156,19 @@
       "reindex": "Reindex",
       "reindexTooltip": "Re-embed all documents (e.g. after adding an embeddings key)",
       "loading": "Loading…"
+    },
+    "phoneFormat": {
+      "title": "Phone number format",
+      "description": "Which country a contact number belongs to when it was saved without one.",
+      "defaultCountry": "Default country",
+      "defaultCountryDesc": "Lists are usually imported as national numbers — 9831023021 rather than +919831023021. WhatsApp needs the country code, so this says which country to add. Numbers that already carry a country code are left alone.",
+      "countryLabel": "Country",
+      "none": "Not set — reject numbers with no country code",
+      "noneHint": "With no country chosen, a number that has no country code is reported as unsendable instead of being guessed at. Guessing wrong sends a real message to a stranger.",
+      "save": "Save",
+      "saveSuccess": "Default country saved",
+      "saveFailed": "Could not save the default country",
+      "adminOnlyHint": "Only account admins can change this."
     }
   },
   "Variables": {

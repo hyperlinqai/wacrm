@@ -247,6 +247,9 @@ export async function planBroadcastResume(
         : [],
     })),
     rejected: 0,
+    // A resume replays rows that already passed validation on the
+    // original send, so nothing can be rejected here.
+    rejectedReasons: {},
   };
 
   return { plan, remaining, unsendable: unsendable.length };
