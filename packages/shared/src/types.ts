@@ -110,8 +110,8 @@ export interface Contact {
   avatar_url?: string;
   created_at: string;
   updated_at: string;
-  /** Where the contact came from (migration 046):
-   *  manual | whatsapp | web_form | import | api. */
+  /** Where the contact came from (migration 046, 'meta_ads' added in 052):
+   *  manual | whatsapp | web_form | import | api | meta_ads. */
   source?: ContactSource;
   source_form_id?: string | null;
   /** Derived "counts as active" flag (migration 049). Maintained by DB
@@ -126,8 +126,8 @@ export interface Contact {
   tags?: Tag[];
 }
 
-export type ContactSource = 'manual' | 'whatsapp' | 'web_form' | 'import' | 'api';
-export const CONTACT_SOURCES: ContactSource[] = ['manual', 'whatsapp', 'web_form', 'import', 'api'];
+export type ContactSource = 'manual' | 'whatsapp' | 'web_form' | 'import' | 'api' | 'meta_ads';
+export const CONTACT_SOURCES: ContactSource[] = ['manual', 'whatsapp', 'web_form', 'import', 'api', 'meta_ads'];
 
 export type ContactActivationOverride = 'active' | 'inactive';
 
@@ -758,6 +758,61 @@ export interface LeadFormSubmission {
   contact_id: string | null;
   payload: Record<string, string>;
   referrer: string | null;
+  created_at: string;
+}
+
+// ============================================================
+// Meta Lead Ads (migration 052)
+// ============================================================
+
+export type MetaLeadPageStatus = 'active' | 'paused';
+
+/** A Facebook Page whose Lead Ads forms feed this CRM. The encrypted
+ *  Page token is never sent to the client — this is the API's shape. */
+export interface MetaLeadPage {
+  id: string;
+  organization_id: string;
+  account_id: string;
+  page_id: string;
+  page_name: string;
+  status: MetaLeadPageStatus;
+  webhook_subscribed: boolean;
+  /** Segment tag applied to every contact from this Page's leads. */
+  tag_id: string | null;
+  lead_count: number;
+  last_lead_at: string | null;
+  last_synced_at: string | null;
+  connected_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type MetaLeadStatus = 'processed' | 'no_phone' | 'invalid_phone' | 'failed';
+
+export interface MetaLead {
+  id: string;
+  page_row_id: string;
+  organization_id: string;
+  contact_id: string | null;
+  leadgen_id: string;
+  form_id: string | null;
+  form_name: string | null;
+  ad_id: string | null;
+  ad_name: string | null;
+  adset_id: string | null;
+  adset_name: string | null;
+  campaign_id: string | null;
+  campaign_name: string | null;
+  platform: string | null;
+  is_organic: boolean | null;
+  field_data: { name: string; values?: unknown[] }[];
+  full_name: string | null;
+  phone: string | null;
+  email: string | null;
+  status: MetaLeadStatus;
+  error: string | null;
+  received_via: 'webhook' | 'sync';
+  lead_created_at: string | null;
   created_at: string;
 }
 

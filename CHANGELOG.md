@@ -13,6 +13,30 @@ and polish.
 
 ### Added
 
+- **Meta Lead Ads integration.** Settings → Meta Lead Ads connects a
+  Facebook Page so every Facebook / Instagram Lead Ads submission is
+  created as a contact the moment Meta delivers it — phone resolved
+  with the account's default country, name/email/company filled in,
+  `source = meta_ads`, tagged with a per-Page segment tag (so
+  `tag_added` / `new_contact_created` automations fire), and every
+  lead kept in a per-Page audit log with campaign / ad / form names.
+  Connect with one click via Facebook Login (needs `META_APP_ID` +
+  `META_APP_SECRET` + `NEXT_PUBLIC_META_APP_ID`) or by pasting a Page
+  access token. A **Sync** button backfills the last 90 days from Meta,
+  so leads received before connecting (or during downtime) aren't lost.
+  New webhook endpoint `/api/meta/leads/webhook` (the WhatsApp webhook
+  URL also accepts Page-object deliveries). Setup guide:
+  `docs/meta-lead-ads.md`. **Migration required:**
+  `supabase/migrations/052_meta_lead_ads.sql`.
+- **Contacts → Source filter** gains a "Meta Lead Ads" option.
+
+### Fixed
+
+- **Web-form leads were stamped `source = api`** instead of `web_form`
+  on first creation (the after-the-fact attribution update only matched
+  rows still marked `manual`). New web-form contacts now carry
+  `web_form` from the insert.
+
 - **Deactivate WhatsApp Account button.** Settings → WhatsApp connection
   now has a clearly-labeled "Deactivate WhatsApp Account" action (with a
   proper confirmation dialog, replacing a bare browser `confirm()`) —

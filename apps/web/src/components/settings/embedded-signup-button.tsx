@@ -6,35 +6,7 @@ import { Loader2, MessageCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 
-// Minimal shape of the global the Facebook JS SDK installs — this app
-// doesn't use it for anything but WhatsApp Embedded Signup, so a full
-// @types/facebook-js-sdk dependency isn't worth adding for one method.
-interface FacebookLoginResponse {
-  authResponse?: { code?: string } | null;
-}
-interface FacebookSdk {
-  init(config: { appId: string; version: string; xfbml?: boolean }): void;
-  login(
-    callback: (response: FacebookLoginResponse) => void,
-    options: {
-      config_id: string;
-      response_type: 'code';
-      override_default_response_type: true;
-      extras: { setup: Record<string, never> };
-    },
-  ): void;
-}
-declare global {
-  interface Window {
-    FB?: FacebookSdk;
-    fbAsyncInit?: () => void;
-  }
-}
-
-const SDK_SRC = 'https://connect.facebook.net/en_US/sdk.js';
-// Kept in sync with meta-api.ts's META_API_VERSION rather than pinned
-// independently — one number to bump if Meta deprecates a version.
-const GRAPH_VERSION = 'v21.0';
+import { loadFacebookSdk } from '@/lib/meta/facebook-sdk';
 
 /** Shape of the WA_EMBEDDED_SIGNUP postMessage Meta's popup sends. */
 interface EmbeddedSignupMessage {
@@ -47,29 +19,6 @@ interface EmbeddedSignupMessage {
     error_message?: string;
     error_code?: string | number;
   };
-}
-
-let sdkLoadPromise: Promise<void> | null = null;
-
-/** Load the Facebook JS SDK exactly once per page, however many times this component mounts. */
-function loadFacebookSdk(appId: string): Promise<void> {
-  if (window.FB) return Promise.resolve();
-  if (sdkLoadPromise) return sdkLoadPromise;
-
-  sdkLoadPromise = new Promise((resolve, reject) => {
-    window.fbAsyncInit = () => {
-      window.FB!.init({ appId, version: GRAPH_VERSION, xfbml: false });
-      resolve();
-    };
-    const script = document.createElement('script');
-    script.src = SDK_SRC;
-    script.async = true;
-    script.defer = true;
-    script.crossOrigin = 'anonymous';
-    script.onerror = () => reject(new Error('Failed to load the Facebook SDK script.'));
-    document.body.appendChild(script);
-  });
-  return sdkLoadPromise;
 }
 
 interface EmbeddedSignupButtonProps {

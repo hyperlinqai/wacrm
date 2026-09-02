@@ -16,6 +16,7 @@ import {
   handleTemplateWebhookChange,
   isTemplateWebhookField,
 } from '@/lib/whatsapp/template-webhook'
+import { handleLeadgenWebhook, isPageWebhookBody } from '@/lib/meta-leads/webhook-handler'
 
 // The `after()` callback in POST runs within this route's max duration.
 // Inbound processing can fan out to per-media Meta verification calls, so
@@ -192,11 +193,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
   }
 
-  let body: { entry?: WhatsAppWebhookEntry[] }
+  let body: { object?: string; entry?: WhatsAppWebhookEntry[] }
   try {
     body = JSON.parse(rawBody)
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
+
+  // Meta Lead Ads (Page object) deliveries. Operators who point a single
+  // Callback URL at this route for every webhook object still get their
+  // ad leads — the dedicated /api/meta/leads/webhook shares this handler.
+  if (isPageWebhookBody(body)) {
+    const pageBody = body
+    after(async () => {
+      try {
+        await handleLeadgenWebhook(pageBody)
+      } catch (error) {
+        console.error('[webhook] leadgen processing error:', error)
+      }
+    })
+    return NextResponse.json({ status: 'received' }, { status: 200 })
   }
 
   // Process AFTER the response so we ack Meta within their ~20s timeout

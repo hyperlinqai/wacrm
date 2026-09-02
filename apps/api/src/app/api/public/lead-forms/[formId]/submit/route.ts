@@ -185,6 +185,7 @@ export async function POST(
       name,
       email,
       company,
+      source: 'web_form',
     })
 
     // First-touch attribution only — don't overwrite a more meaningful

@@ -105,6 +105,9 @@ export interface ContactInput {
   name?: string | null;
   email?: string | null;
   company?: string | null;
+  /** contacts.source to stamp on a *newly created* row (migration 046).
+   *  Defaults to 'api'; existing contacts are never re-attributed here. */
+  source?: 'manual' | 'whatsapp' | 'web_form' | 'import' | 'api' | 'meta_ads';
 }
 
 /**
@@ -139,7 +142,7 @@ export async function findOrCreateContact(
       name: input.name ?? sanitized,
       email: input.email ?? null,
       company: input.company ?? null,
-      source: 'api',
+      source: input.source ?? 'api',
     })
     .select('id')
     .single();

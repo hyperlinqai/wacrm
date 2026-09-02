@@ -55,6 +55,10 @@ anon/authenticated/service_role RLS roles).
   # if WhatsApp Embedded Signup is enabled (§1a below) — the code-exchange
   # route rejects every attempt without it, same value as NEXT_PUBLIC_META_APP_ID.
   META_APP_ID=<same app id as NEXT_PUBLIC_META_APP_ID>
+  # Meta Lead Ads (optional): verify token for the Page webhook handshake.
+  # Falls back to WHATSAPP_WEBHOOK_VERIFY_TOKEN / a connected WhatsApp
+  # config's token if unset. See docs/meta-lead-ads.md.
+  META_LEADS_WEBHOOK_VERIFY_TOKEN=<random string>
   # optional: WHATSAPP_TEMPLATES_DRY_RUN, ALLOWED_INVITE_HOSTS…
   ```
 
