@@ -16,5 +16,5 @@ NEXT_PUBLIC_APP_LOCALE=en
 #                                           Configurations → create one
 #                                           for "WhatsApp Business
 #                                           Signup" → copy its id.
-NEXT_PUBLIC_META_APP_ID=
+NEXT_PUBLIC_META_APP_ID=1060994593141907
 NEXT_PUBLIC_META_WHATSAPP_CONFIG_ID=
