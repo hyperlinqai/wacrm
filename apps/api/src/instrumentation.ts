@@ -1,6 +1,8 @@
 // Runs once when a Next.js server instance starts (Node runtime only).
 // Boots the always-on database listener that fires the
-// "New Contact Created" automation trigger for every creation path.
+// "New Contact Created" automation trigger for every creation path,
+// and the in-process ticker that resumes automations parked at a
+// Wait step (drip sequences) without needing an external cron.
 
 export async function register() {
   if (process.env.NEXT_RUNTIME !== 'nodejs') return
@@ -10,4 +12,10 @@ export async function register() {
   startContactCreatedListener().catch((err) => {
     console.error('[instrumentation] contact listener failed to start:', err)
   })
+  const { startPendingExecutionsTicker } = await import('@/lib/automations/pending-drain')
+  try {
+    startPendingExecutionsTicker()
+  } catch (err) {
+    console.error('[instrumentation] wait-step scheduler failed to start:', err)
+  }
 }

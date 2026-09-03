@@ -34,6 +34,29 @@ describe('renderVariables', () => {
     )
   })
 
+  it('renders the "|fallback" literal when a variable is empty', () => {
+    expect(renderVariables('Hi {{contact.first_name|there}}', ctx)).toBe('Hi Shoaib')
+    expect(renderVariables('Hi {{contact.first_name|there}}', { contact: null })).toBe('Hi there')
+    expect(renderVariables('{{custom.Missing|a|b}}', ctx)).toBe('a|b')
+    expect(renderVariables('{{ contact.company | your company }}', { contact: { company: '' } })).toBe(
+      'your company',
+    )
+  })
+
+  it('exposes contacts.source raw and as a message-friendly label', () => {
+    const c = { contact: { name: 'A', source: 'meta_ads' } }
+    expect(renderVariables('{{contact.source}} / {{contact.source_label}}', c)).toBe(
+      'meta_ads / Facebook / Instagram',
+    )
+    expect(renderVariables('{{contact.source_label}}', { contact: { source: 'api' } })).toBe('our app')
+    expect(renderVariables('{{contact.source_label}}', { contact: { source: 'trade_show' } })).toBe(
+      'trade show',
+    )
+    expect(renderVariables('{{contact.source_label|our website}}', { contact: { source: null } })).toBe(
+      'our website',
+    )
+  })
+
   it('renders unknown or missing variables as empty, never as the raw token', () => {
     expect(renderVariables('a{{contact.nope}}b{{custom.Missing}}c{{vars.x}}d{{bogus}}e', ctx)).toBe('abcde')
     expect(renderVariables('Hi {{contact.name}}!', { contact: null })).toBe('Hi !')

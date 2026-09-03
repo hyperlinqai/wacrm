@@ -13,6 +13,10 @@ const h = vi.hoisted(() => ({
     upsertCalls: [] as { table: string; payload: unknown }[],
     logInserts: [] as Record<string, unknown>[],
     logUpdates: [] as Record<string, unknown>[],
+    contactTags: [] as { tag_id: string }[],
+    conversations: [] as { id: string }[],
+    customerReplies: [] as { id: string }[],
+    pendingUpdates: [] as Record<string, unknown>[],
   },
 }));
 
@@ -58,6 +62,13 @@ vi.mock("./admin-client", () => {
       return { data: { steps_executed: [], status: "success" }, error: null };
     }
     if (table === "automation_steps") return { data: state.steps, error: null };
+    if (table === "contact_tags") return { data: state.contactTags, error: null };
+    if (table === "conversations") return { data: state.conversations, error: null };
+    if (table === "messages") return { data: state.customerReplies, error: null };
+    if (table === "automation_pending_executions") {
+      if (type === "update") state.pendingUpdates.push(ops.payload as Record<string, unknown>);
+      return { data: null, error: null };
+    }
     return { data: null, error: null };
   }
 
@@ -76,6 +87,8 @@ vi.mock("./admin-client", () => {
       upsert: (p: unknown) => ((ops.type = "upsert"), (ops.payload = p), b),
       eq: (k: string, v: unknown) => (ops.filters.push(["eq", k, v]), b),
       gte: () => b,
+      gt: () => b,
+      in: () => b,
       is: () => b,
       order: () => b,
       limit: () => b,
@@ -104,7 +117,8 @@ vi.mock("./meta-send", () => ({
   engineSendInteractive: vi.fn(async () => ({ whatsapp_message_id: "m1" })),
 }));
 
-import { runAutomationsForTrigger, triggerMatches } from "./engine";
+import { runAutomationsForTrigger, resumePendingExecution, triggerMatches } from "./engine";
+import { engineSendTemplate } from "./meta-send";
 import type { Automation, KeywordMatchTriggerConfig } from "@wacrm/shared/types";
 
 const ACCOUNT = "acct-1";
@@ -119,6 +133,146 @@ beforeEach(() => {
   h.state.upsertCalls = [];
   h.state.logInserts = [];
   h.state.logUpdates = [];
+  h.state.contactTags = [];
+  h.state.conversations = [];
+  h.state.customerReplies = [];
+  h.state.pendingUpdates = [];
+  vi.mocked(engineSendTemplate).mockClear();
+});
+
+describe("send_template — variables are rendered at send time", () => {
+  it("maps {{N}} placeholders through the message-variable vocabulary, with fallbacks", async () => {
+    h.state.owned = {
+      id: "c1",
+      name: "Asha Rao",
+      phone: "+919831023021",
+      email: null,
+      company: null,
+      source: "meta_ads",
+    } as unknown as { id: string };
+    h.state.automations = [
+      {
+        id: "a1",
+        account_id: ACCOUNT,
+        user_id: "u1",
+        trigger_type: "new_contact_created",
+        trigger_config: {},
+        is_active: true,
+      },
+    ];
+    h.state.steps = [
+      {
+        id: "s1",
+        automation_id: "a1",
+        parent_step_id: null,
+        branch: null,
+        position: 0,
+        step_type: "send_template",
+        step_config: {
+          template_name: "spx_day_01_welcome",
+          language: "en",
+          variables: {
+            "2": "{{contact.source_label|our website}}",
+            "1": "{{contact.first_name|there}}",
+            "3": "{{custom.City|your city}}",
+          },
+        },
+      },
+    ];
+
+    await runAutomationsForTrigger({
+      accountId: ACCOUNT,
+      triggerType: "new_contact_created",
+      contactId: "c1",
+      context: { conversation_id: "conv1" },
+    });
+
+    expect(engineSendTemplate).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(engineSendTemplate).mock.calls[0][0]).toMatchObject({
+      templateName: "spx_day_01_welcome",
+      language: "en",
+      params: ["Asha", "Facebook / Instagram", "your city"],
+    });
+  });
+});
+
+describe("resumePendingExecution — sequence controls", () => {
+  const pending = {
+    id: "p1",
+    automation_id: "a1",
+    account_id: ACCOUNT,
+    user_id: "u1",
+    contact_id: "c1",
+    log_id: "log1",
+    parent_step_id: null,
+    branch: null,
+    next_step_position: 1,
+    context: {},
+    created_at: "2026-09-01T00:00:00.000Z",
+  };
+
+  function seedAutomation(trigger_config: Record<string, unknown>) {
+    h.state.automations = [
+      {
+        id: "a1",
+        account_id: ACCOUNT,
+        user_id: "u1",
+        trigger_type: "new_contact_created",
+        trigger_config,
+        is_active: true,
+      },
+    ];
+    // The mock's `single()` on automations returns the array; the engine
+    // reads it as one row, so hand it the row directly.
+    const row = h.state.automations[0];
+    h.state.automations = row as unknown as Record<string, unknown>[];
+    h.state.steps = [
+      {
+        id: "s2",
+        automation_id: "a1",
+        parent_step_id: null,
+        branch: null,
+        position: 1,
+        step_type: "send_template",
+        step_config: { template_name: "spx_day_02_how_it_works", language: "en" },
+      },
+    ];
+  }
+
+  it("ends the run instead of sending when the contact replied since it was parked", async () => {
+    seedAutomation({ stop_on_reply: true });
+    h.state.conversations = [{ id: "conv1" }];
+    h.state.customerReplies = [{ id: "m9" }];
+
+    await resumePendingExecution(pending);
+
+    expect(engineSendTemplate).not.toHaveBeenCalled();
+    expect(h.state.pendingUpdates).toContainEqual({ status: "done" });
+    const last = h.state.logUpdates[h.state.logUpdates.length - 1] as { steps_executed: { detail: string }[] };
+    expect(last.steps_executed[0].detail).toContain("contact replied");
+  });
+
+  it("ends the run when the contact carries a stop tag", async () => {
+    seedAutomation({ stop_tag_ids: ["tag-demo"] });
+    h.state.contactTags = [{ tag_id: "tag-demo" }];
+
+    await resumePendingExecution(pending);
+
+    expect(engineSendTemplate).not.toHaveBeenCalled();
+    expect(h.state.pendingUpdates).toContainEqual({ status: "done" });
+  });
+
+  it("resumes normally when no control fires", async () => {
+    seedAutomation({ stop_on_reply: true, stop_tag_ids: ["tag-demo"] });
+    h.state.owned = { id: "c1" };
+    h.state.conversations = [{ id: "conv1" }];
+    h.state.customerReplies = [];
+
+    await resumePendingExecution({ ...pending, context: { conversation_id: "conv1" } });
+
+    expect(engineSendTemplate).toHaveBeenCalledTimes(1);
+    expect(h.state.pendingUpdates).toContainEqual({ status: "done" });
+  });
 });
 
 describe("runAutomationsForTrigger — tenant isolation", () => {

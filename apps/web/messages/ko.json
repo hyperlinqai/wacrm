@@ -1220,7 +1220,12 @@
         "languageLabel": "언어",
         "select": "템플릿 선택…",
         "unknown": "{name} ({lang}) — 승인 목록에 없음",
-        "unknownLang": "알 수 없음"
+        "unknownLang": "알 수 없음",
+        "variablesLabel": "템플릿 변수",
+        "variablePlaceholder": "예: '{{'contact.first_name|there'}}'",
+        "variablePlaceholderSample": "샘플: {sample} — 예: '{{'contact.first_name|there'}}'",
+        "variablesHint": "각 '{{'N'}}'은 전송 시 채워집니다. 값이 비지 않도록 \"|대체값\"을 추가하세요. Meta는 빈 매개변수가 있는 템플릿 전송을 거부합니다.",
+        "addVariable": "+ 변수 추가"
       },
       "branches": {
         "yes": "예",
@@ -1228,6 +1233,14 @@
       },
       "addStep": "단계 추가",
       "delete": "삭제",
+      "sequence": {
+        "title": "시퀀스 제어",
+        "stopOnReply": "연락처가 답장하면 중지",
+        "stopOnReplyHint": "대기 단계에서 기다리는 실행은 연락처가 그 사이 직접 메시지를 작성했다면 다음 메시지를 보내지 않고 종료됩니다. 템플릿 버튼 탭은 포함되지 않습니다 — 버튼/목록 답장 자동화로 중지 태그를 추가하세요.",
+        "stopTags": "태그가 있으면 중지",
+        "stopTagsPlaceholder": "태그 ID, 쉼표로 구분",
+        "stopTagsHint": "연락처에 이 태그 중 하나라도 있으면 대기 중인 실행이 종료됩니다 (예: 데모 요청, 관심 없음)."
+      },
       "config": {
         "messageText": "메시지 텍스트",
         "placeholderMessageText": "안녕하세요! 문의해주셔서 감사합니다…",
@@ -2283,6 +2296,7 @@
       "contactPhone": "전화번호",
       "contactEmail": "이메일",
       "contactCompany": "회사",
+      "contactSource": "리드 소스",
       "customField": "사용자 정의 필드",
       "flowVar": "플로우 변수",
       "messageText": "메시지 내용"

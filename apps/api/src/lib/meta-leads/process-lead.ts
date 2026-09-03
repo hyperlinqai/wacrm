@@ -17,12 +17,13 @@
 import type { SupabaseClient } from '@wacrm/shared/db'
 import { isUniqueViolation } from '@wacrm/shared/contacts/dedupe'
 import { cleanPhone } from '@wacrm/shared/whatsapp/phone-clean'
-import { extractLeadFields } from '@wacrm/shared/meta/lead-fields'
+import { extractLeadFields, mapLeadAnswersToCustomFields } from '@wacrm/shared/meta/lead-fields'
 import type { MetaLead } from '@wacrm/shared/meta/lead-ads-api'
 
 import { findOrCreateContact, resolveAuditUserId, ContactError } from '@/lib/api/v1/contacts'
 import { addContactTagAndDispatch } from '@/lib/contacts/tag-events'
 import { ensureMetaPageTag } from './segment-tag'
+import { loadAccountCustomFields, writeContactCustomValues } from './custom-values'
 
 export interface MetaLeadPageRow {
   id: string
@@ -150,6 +151,26 @@ export async function processMetaLead(input: ProcessLeadInput): Promise<ProcessL
     }
 
     await admin.from('meta_leads').update({ contact_id: contactId }).eq('id', leadRowId)
+
+    // Qualifying answers + campaign attribution → custom fields, so
+    // they show on the contact, filter on the Contacts page, and feed
+    // message variables ({{custom.Sports interested in}}). Fill-blanks
+    // only; a failure here must not lose the lead — log and continue.
+    try {
+      const customFields = await loadAccountCustomFields(admin, page.account_id)
+      if (customFields.length > 0) {
+        const values: Record<string, string> = {}
+        for (const m of mapLeadAnswersToCustomFields(fields.answers, customFields.map((f) => f.field_name))) {
+          values[m.fieldName] = m.value
+        }
+        if (lead.campaign_name) values['Campaign name'] = lead.campaign_name
+        values['Lead source'] = leadSourceLabel(lead.platform)
+        await writeContactCustomValues(admin, contactId, customFields, values)
+      }
+    } catch (err) {
+      console.error(`[meta-leads] custom field enrichment failed for lead ${lead.id}:`, err)
+    }
+
     await admin.rpc('increment_meta_lead_page_count', {
       p_page_row_id: page.id,
       p_lead_at: lead.created_time ?? new Date().toISOString(),
@@ -185,4 +206,12 @@ export async function processMetaLead(input: ProcessLeadInput): Promise<ProcessL
     console.error(`[meta-leads] contact create failed for lead ${lead.id}:`, err)
     return fail('failed', reason)
   }
+}
+
+/** "Lead source" custom-field value for a Meta lead, by platform. */
+export function leadSourceLabel(platform: string | null | undefined): string {
+  const p = (platform ?? '').toLowerCase()
+  if (p === 'ig' || p === 'instagram') return 'Instagram Lead Ad'
+  if (p === 'fb' || p === 'facebook') return 'Facebook Lead Ad'
+  return 'Meta Lead Ad'
 }

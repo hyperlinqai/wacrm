@@ -15,7 +15,7 @@ export async function loadContactVariables(
 ): Promise<ContactVariables | null> {
   const { data: contact } = await db
     .from('contacts')
-    .select('name, phone, email, company')
+    .select('name, phone, email, company, source')
     .eq('id', contactId)
     .maybeSingle()
   if (!contact) return null
@@ -39,6 +39,7 @@ export async function loadContactVariables(
     phone: contact.phone as string | null,
     email: contact.email as string | null,
     company: contact.company as string | null,
+    source: (contact.source as string | null | undefined) ?? null,
     custom,
   }
 }

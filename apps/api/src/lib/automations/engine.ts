@@ -139,6 +139,8 @@ export async function resumePendingExecution(pending: {
   branch: 'yes' | 'no' | null
   next_step_position: number
   context: AutomationContext
+  /** When the run was parked — the reference point for "replied since". */
+  created_at?: string | null
 }): Promise<void> {
   const db = supabaseAdmin()
   const { data: automation, error } = await db
@@ -150,6 +152,31 @@ export async function resumePendingExecution(pending: {
   if (error || !automation) {
     console.error('[automations] resume: missing automation', pending.automation_id, error)
     await markPending(pending.id, 'failed')
+    return
+  }
+
+  // Sequence controls (trigger_config.stop_on_reply / stop_tag_ids):
+  // a drip must not keep messaging someone who has already answered or
+  // been moved to a terminal stage by an agent. Checked here — at the
+  // moment the parked run comes due — rather than when the reply
+  // arrives, so it also covers replies that came in while the API was
+  // down and tags added by hand between two touches.
+  const stopReason = await sequenceStopReason(automation as Automation, pending)
+  if (stopReason) {
+    await appendResults(
+      pending.log_id,
+      [
+        {
+          step_id: 'sequence',
+          step_type: 'wait',
+          status: 'success',
+          detail: `sequence ended: ${stopReason}`,
+        },
+      ],
+      'success',
+      null,
+    )
+    await markPending(pending.id, 'done')
     return
   }
 
@@ -406,19 +433,26 @@ async function runStep(step: AutomationStep, args: ExecuteArgs): Promise<string>
       // we MUST emit params in strict numeric order. Lexicographic sort
       // of "1", "2", …, "10" yields "1", "10", "2", … which silently
       // scrambles every template with ≥10 variables.
+      // Each value goes through the shared variable vocabulary, so a
+      // mapping like {"1": "{{contact.first_name|there}}"} sends the
+      // contact's name rather than the literal token (which is what
+      // reached Meta before — issue: template params were never
+      // interpolated, only send_message text was).
       const params = cfg.variables
-        ? Object.keys(cfg.variables)
-            .sort((a, b) => {
-              const na = Number(a)
-              const nb = Number(b)
-              const aNum = Number.isFinite(na)
-              const bNum = Number.isFinite(nb)
-              if (aNum && bNum) return na - nb
-              if (aNum) return -1
-              if (bNum) return 1
-              return a.localeCompare(b)
-            })
-            .map((k) => String(cfg.variables![k]))
+        ? await Promise.all(
+            Object.keys(cfg.variables)
+              .sort((a, b) => {
+                const na = Number(a)
+                const nb = Number(b)
+                const aNum = Number.isFinite(na)
+                const bNum = Number.isFinite(nb)
+                if (aNum && bNum) return na - nb
+                if (aNum) return -1
+                if (bNum) return 1
+                return a.localeCompare(b)
+              })
+              .map((k) => interpolate(String(cfg.variables![k]), args)),
+          )
         : []
       const { whatsapp_message_id } = await engineSendTemplate({
         accountId: args.automation.account_id,
@@ -785,6 +819,71 @@ async function evaluateCondition(cfg: ConditionStepConfig, args: ExecuteArgs): P
     default:
       return false
   }
+}
+
+/**
+ * Why a parked run should end instead of resuming, or null to resume.
+ * Reads the optional sequence controls off `trigger_config` (see
+ * SequenceControlConfig in @wacrm/shared/types).
+ */
+async function sequenceStopReason(
+  automation: Automation,
+  pending: { contact_id: string | null; created_at?: string | null },
+): Promise<string | null> {
+  const cfg = (automation.trigger_config ?? {}) as {
+    stop_on_reply?: unknown
+    stop_tag_ids?: unknown
+  }
+  const stopOnReply = cfg.stop_on_reply === true
+  const stopTagIds = Array.isArray(cfg.stop_tag_ids)
+    ? cfg.stop_tag_ids.filter((t): t is string => typeof t === 'string' && t.trim() !== '')
+    : []
+  if (!stopOnReply && stopTagIds.length === 0) return null
+  if (!pending.contact_id) return null
+
+  const db = supabaseAdmin()
+
+  if (stopTagIds.length > 0) {
+    const { data: tagged } = await db
+      .from('contact_tags')
+      .select('tag_id')
+      .eq('contact_id', pending.contact_id)
+      .in('tag_id', stopTagIds)
+      .limit(1)
+    if (tagged && tagged.length > 0) {
+      return `contact has stop tag ${(tagged[0] as { tag_id: string }).tag_id}`
+    }
+  }
+
+  if (stopOnReply) {
+    // Any customer-*written* message on any of the contact's
+    // conversations since the run was parked. Button / list taps
+    // (interactive_reply_id set) don't count: a "Just exploring" tap on
+    // a sequence template is the sequence's own choreography, not a
+    // conversation an agent has to take over — those taps route through
+    // interactive_reply automations that add a stop tag when they
+    // should end the run. `created_at` is absent on rows written before
+    // the cron passed it through — treat those as "parked long ago".
+    const { data: convos } = await db
+      .from('conversations')
+      .select('id')
+      .eq('contact_id', pending.contact_id)
+    const ids = (convos ?? []).map((c) => (c as { id: string }).id)
+    if (ids.length > 0) {
+      let q = db
+        .from('messages')
+        .select('id')
+        .in('conversation_id', ids)
+        .eq('sender_type', 'customer')
+        .is('interactive_reply_id', null)
+        .limit(1)
+      if (pending.created_at) q = q.gt('created_at', pending.created_at)
+      const { data: replies } = await q
+      if (replies && replies.length > 0) return 'contact replied'
+    }
+  }
+
+  return null
 }
 
 function waitMs(cfg: WaitStepConfig): number {

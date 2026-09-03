@@ -40,7 +40,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { VariablePicker } from "@/components/shared/variable-picker"
-import { buildVariableCatalog, insertAtSelection } from "@wacrm/shared/messaging/variables"
+import {
+  buildVariableCatalog,
+  insertAtSelection,
+  templatePlaceholderIndices,
+} from "@wacrm/shared/messaging/variables"
 import { Switch } from "@/components/ui/switch"
 import {
   DropdownMenu,
@@ -555,19 +559,29 @@ function DealPipelineFields({
 
 /** Template dropdown showing approved templates by name + language,
  *  storing both template_name and language. Falls back to manual name +
- *  language inputs when no approved templates are synced yet. */
+ *  language inputs when no approved templates are synced yet. Below the
+ *  picker, one input per {{N}} placeholder in the chosen template's body
+ *  maps it to a message variable (rendered at send time). */
 function SendTemplateFields({
   templateName,
   language,
+  variables,
   onChange,
+  onVariablesChange,
   t,
 }: {
   templateName: string
   language: string
+  variables: Record<string, string>
   onChange: (patch: { template_name: string; language: string }) => void
+  onVariablesChange: (variables: Record<string, string>) => void
   t: ReturnType<typeof useTranslations>
 }) {
   const { templates } = useResources()
+
+  const selected = templates.find(
+    (tmpl) => tmpl.name === templateName && (tmpl.language ?? "en_US") === (language || "en_US"),
+  )
 
   if (templates.length === 0) {
     return (
@@ -590,6 +604,12 @@ function SendTemplateFields({
             className="bg-muted text-foreground"
           />
         </FieldBlock>
+        <TemplateVariableMap
+          template={null}
+          variables={variables}
+          onChange={onVariablesChange}
+          t={t}
+        />
       </>
     )
   }
@@ -603,30 +623,132 @@ function SendTemplateFields({
   )
 
   return (
-    <FieldBlock label={t("templates.templateLabel")}>
-      <select
-        value={current}
-        onChange={(e) => {
-          const [name, lang] = e.target.value.split("::")
-          onChange({ template_name: name ?? "", language: lang ?? "" })
-        }}
-        className={SELECT_CLASS}
-      >
-        <option value="">{t("templates.select")}</option>
-        {templates.map((tmpl) => {
-          const lang = tmpl.language ?? "en_US"
-          return (
-            <option key={tmpl.id} value={toValue(tmpl.name, lang)}>
-              {tmpl.name} ({lang})
+    <>
+      <FieldBlock label={t("templates.templateLabel")}>
+        <select
+          value={current}
+          onChange={(e) => {
+            const [name, lang] = e.target.value.split("::")
+            onChange({ template_name: name ?? "", language: lang ?? "" })
+          }}
+          className={SELECT_CLASS}
+        >
+          <option value="">{t("templates.select")}</option>
+          {templates.map((tmpl) => {
+            const lang = tmpl.language ?? "en_US"
+            return (
+              <option key={tmpl.id} value={toValue(tmpl.name, lang)}>
+                {tmpl.name} ({lang})
+              </option>
+            )
+          })}
+          {current && !hasMatch && (
+            <option value={current}>
+              {t("templates.unknown", {
+                name: templateName,
+                lang: language || t("templates.unknownLang"),
+              })}
             </option>
-          )
-        })}
-        {current && !hasMatch && (
-          <option value={current}>
-            {t("templates.unknown", { name: templateName, lang: language || t("templates.unknownLang") })}
-          </option>
+          )}
+        </select>
+      </FieldBlock>
+      <TemplateVariableMap
+        template={selected ?? null}
+        variables={variables}
+        onChange={onVariablesChange}
+        t={t}
+      />
+    </>
+  )
+}
+
+/**
+ * Map each {{N}} body placeholder of a WhatsApp template to a message
+ * variable. With no template row available (manual name entry) the
+ * placeholders already mapped are still editable, and one more row can
+ * be added, so an automation stays authorable before "Sync from Meta".
+ */
+function TemplateVariableMap({
+  template,
+  variables,
+  onChange,
+  t,
+}: {
+  template: MessageTemplate | null
+  variables: Record<string, string>
+  onChange: (variables: Record<string, string>) => void
+  t: ReturnType<typeof useTranslations>
+}) {
+  const { customFields } = useResources()
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({})
+
+  const bodyIndices = template ? templatePlaceholderIndices(template.body_text ?? "") : []
+  const mappedIndices = Object.keys(variables)
+    .map(Number)
+    .filter((n) => Number.isFinite(n) && n >= 1)
+  const indices = [...new Set([...bodyIndices, ...mappedIndices])].sort((a, b) => a - b)
+  const samples = template?.sample_values?.body ?? []
+
+  if (indices.length === 0 && template) return null
+
+  const groups = buildVariableCatalog({
+    customFieldNames: customFields.map((f) => f.field_name),
+    includeMessageText: true,
+  })
+
+  const setVar = (n: number, value: string) => {
+    const next = { ...variables }
+    if (value === "") delete next[String(n)]
+    else next[String(n)] = value
+    onChange(next)
+  }
+
+  return (
+    <FieldBlock label={t("templates.variablesLabel")}>
+      <div className="space-y-2">
+        {indices.map((n) => (
+          <div key={n} className="space-y-1">
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-mono text-[11px] text-muted-foreground">{`{{${n}}}`}</span>
+              <VariablePicker
+                groups={groups}
+                onInsert={(token) => {
+                  const el = inputRefs.current[String(n)]
+                  const { value, caret } = insertAtSelection(variables[String(n)] ?? "", token, el)
+                  setVar(n, value)
+                  requestAnimationFrame(() => {
+                    el?.focus()
+                    el?.setSelectionRange(caret, caret)
+                  })
+                }}
+              />
+            </div>
+            <Input
+              ref={(el) => {
+                inputRefs.current[String(n)] = el
+              }}
+              value={variables[String(n)] ?? ""}
+              onChange={(e) => setVar(n, e.target.value)}
+              placeholder={
+                samples[n - 1]
+                  ? t("templates.variablePlaceholderSample", { sample: samples[n - 1] })
+                  : t("templates.variablePlaceholder")
+              }
+              className="bg-muted font-mono text-xs text-foreground"
+            />
+          </div>
+        ))}
+        {!template && (
+          <button
+            type="button"
+            onClick={() => setVar((indices[indices.length - 1] ?? 0) + 1, "{{contact.first_name|there}}")}
+            className="text-[11px] text-primary hover:underline"
+          >
+            {t("templates.addVariable")}
+          </button>
         )}
-      </select>
+        <p className="text-[11px] text-muted-foreground">{t("templates.variablesHint")}</p>
+      </div>
     </FieldBlock>
   )
 }
@@ -891,8 +1013,101 @@ function TriggerCard({
                 </p>
               </div>
             )}
+            <SequenceControls config={config} onChange={onConfigChange} t={t} />
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Sequence controls — when a run parked at a Wait step comes due, end it
+ * instead of sending the next message if the contact replied or now
+ * carries one of the chosen tags. Stored on trigger_config so no schema
+ * change is needed; the engine reads them in resumePendingExecution.
+ */
+function SequenceControls({
+  config,
+  onChange,
+  t,
+}: {
+  config: Record<string, unknown>
+  onChange: (c: Record<string, unknown>) => void
+  t: ReturnType<typeof useTranslations>
+}) {
+  const { tags } = useResources()
+  const stopOnReply = config.stop_on_reply === true
+  const stopTagIds = Array.isArray(config.stop_tag_ids)
+    ? (config.stop_tag_ids as unknown[]).filter((v): v is string => typeof v === "string")
+    : []
+
+  return (
+    <div className="space-y-2 border-t border-border pt-3">
+      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+        {t("sequence.title")}
+      </div>
+      <label className="flex items-start gap-2 text-xs text-foreground">
+        <input
+          type="checkbox"
+          checked={stopOnReply}
+          onChange={(e) => {
+            const next = { ...config }
+            if (e.target.checked) next.stop_on_reply = true
+            else delete next.stop_on_reply
+            onChange(next)
+          }}
+          className="mt-0.5"
+        />
+        <span>
+          {t("sequence.stopOnReply")}
+          <span className="block text-[11px] text-muted-foreground">
+            {t("sequence.stopOnReplyHint")}
+          </span>
+        </span>
+      </label>
+      <div>
+        <label className="mb-1 block text-xs font-medium text-muted-foreground">
+          {t("sequence.stopTags")}
+        </label>
+        {tags.length === 0 ? (
+          <Input
+            value={stopTagIds.join(", ")}
+            onChange={(e) => {
+              const ids = e.target.value
+                .split(",")
+                .map((v) => v.trim())
+                .filter(Boolean)
+              const next = { ...config }
+              if (ids.length) next.stop_tag_ids = ids
+              else delete next.stop_tag_ids
+              onChange(next)
+            }}
+            placeholder={t("sequence.stopTagsPlaceholder")}
+            className="bg-muted text-foreground"
+          />
+        ) : (
+          <select
+            multiple
+            size={Math.min(6, Math.max(3, tags.length))}
+            value={stopTagIds}
+            onChange={(e) => {
+              const ids = Array.from(e.target.selectedOptions).map((o) => o.value)
+              const next = { ...config }
+              if (ids.length) next.stop_tag_ids = ids
+              else delete next.stop_tag_ids
+              onChange(next)
+            }}
+            className={cn(SELECT_CLASS, "h-auto")}
+          >
+            {tags.map((tag) => (
+              <option key={tag.id} value={tag.id}>
+                {tag.name}
+              </option>
+            ))}
+          </select>
+        )}
+        <p className="mt-1 text-[11px] text-muted-foreground">{t("sequence.stopTagsHint")}</p>
       </div>
     </div>
   )
@@ -1354,7 +1569,9 @@ function StepEditor({
         <SendTemplateFields
           templateName={(cfg.template_name as string) ?? ""}
           language={(cfg.language as string) ?? ""}
+          variables={(cfg.variables as Record<string, string> | undefined) ?? {}}
           onChange={(patch) => set(patch)}
+          onVariablesChange={(variables) => set({ variables })}
           t={t}
         />
       )

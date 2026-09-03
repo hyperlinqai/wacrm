@@ -205,6 +205,18 @@ export function validateTriggerForActivation(
     }
   }
 
+  // Sequence controls are optional on every trigger type; only reject
+  // shapes the engine can't read (see sequenceStopReason in engine.ts).
+  if (cfg.stop_on_reply != null && typeof cfg.stop_on_reply !== 'boolean') {
+    issues.push({ path: 'trigger.stop_on_reply', message: 'stop_on_reply must be true or false' })
+  }
+  if (cfg.stop_tag_ids != null) {
+    const ids = cfg.stop_tag_ids
+    if (!Array.isArray(ids) || ids.some((v) => typeof v !== 'string' || v.trim() === '')) {
+      issues.push({ path: 'trigger.stop_tag_ids', message: 'stop tags must be a list of tag ids' })
+    }
+  }
+
   return issues
 }
 

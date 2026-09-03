@@ -1220,7 +1220,12 @@
         "languageLabel": "Language",
         "select": "Select a template…",
         "unknown": "{name} ({lang}) — not in approved list",
-        "unknownLang": "unknown"
+        "unknownLang": "unknown",
+        "variablesLabel": "Template variables",
+        "variablePlaceholder": "e.g. '{{'contact.first_name|there'}}'",
+        "variablePlaceholderSample": "Sample: {sample} — e.g. '{{'contact.first_name|there'}}'",
+        "variablesHint": "Each '{{'N'}}' is filled at send time. Add \"|fallback\" so the value is never empty — Meta rejects a template send with an empty parameter.",
+        "addVariable": "+ Add variable"
       },
       "branches": {
         "yes": "Yes",
@@ -1228,6 +1233,14 @@
       },
       "addStep": "Add step",
       "delete": "Delete",
+      "sequence": {
+        "title": "Sequence controls",
+        "stopOnReply": "Stop when the contact replies",
+        "stopOnReplyHint": "A run waiting at a Wait step ends instead of sending the next message if the contact has written since. Button taps on your templates don't count — route those with a Button / List Reply automation that adds a stop tag.",
+        "stopTags": "Stop when tagged",
+        "stopTagsPlaceholder": "tag ids, comma-separated",
+        "stopTagsHint": "Waiting runs end if the contact carries any of these tags (e.g. Demo Requested, Not interested)."
+      },
       "config": {
         "messageText": "Message text",
         "placeholderMessageText": "Hi! Thanks for reaching out…",
@@ -2283,6 +2296,7 @@
       "contactPhone": "Phone number",
       "contactEmail": "Email",
       "contactCompany": "Company",
+      "contactSource": "Lead source",
       "customField": "Custom field",
       "flowVar": "Flow variable",
       "messageText": "Message text"

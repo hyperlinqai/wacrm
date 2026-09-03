@@ -6,10 +6,18 @@
 //
 // Syntax: {{contact.name}} {{contact.first_name}} {{contact.phone}}
 //         {{contact.email}} {{contact.company}}
+//         {{contact.source}}        — raw contacts.source (meta_ads, api, …)
+//         {{contact.source_label}}  — the same, phrased for a message
+//                                     ("Facebook / Instagram", "our app")
 //         {{custom.<Field name>}}   — a contact custom field, by name
 //         {{vars.<key>}}            — a value captured earlier in a flow
 //         {{message.text}}          — the inbound message that triggered
-// Unknown or empty variables render as "" (never as the raw token).
+//         {{contact.first_name|there}} — "|fallback" renders the literal
+//                                     fallback when the variable is empty.
+// Unknown or empty variables render as "" (never as the raw token) —
+// unless a fallback is given. Fallbacks matter most for WhatsApp
+// template parameters: Meta rejects a send whose {{N}} value is empty,
+// so every mapped variable should carry one.
 //
 // WhatsApp *templates* are different: Meta requires positional {{1}},
 // {{2}} placeholders that are mapped to values per broadcast, so the
@@ -20,6 +28,8 @@ export interface ContactVariables {
   phone?: string | null
   email?: string | null
   company?: string | null
+  /** contacts.source — manual | whatsapp | web_form | import | api | meta_ads */
+  source?: string | null
   /** Custom field values keyed by the field's display name. */
   custom?: Record<string, string | null | undefined>
 }
@@ -31,6 +41,26 @@ export interface VariableContext {
 }
 
 const TOKEN_RE = /\{\{\s*([^{}]+?)\s*\}\}/g
+
+/**
+ * How each contacts.source value reads inside a customer-facing
+ * message ("thanks for reaching out via …"). Unknown sources fall back
+ * to the raw value so nothing renders empty.
+ */
+export const CONTACT_SOURCE_LABELS: Record<string, string> = {
+  manual: 'our team',
+  whatsapp: 'WhatsApp',
+  web_form: 'our website',
+  import: 'our records',
+  api: 'our app',
+  meta_ads: 'Facebook / Instagram',
+}
+
+export function contactSourceLabel(source: string | null | undefined): string {
+  const key = (source ?? '').trim()
+  if (!key) return ''
+  return CONTACT_SOURCE_LABELS[key] ?? key.replace(/_/g, ' ')
+}
 
 function firstName(name: string | null | undefined): string {
   return (name ?? '').trim().split(/\s+/)[0] ?? ''
@@ -63,6 +93,10 @@ export function resolveVariable(name: string, ctx: VariableContext): string {
           return str(c.email)
         case 'company':
           return str(c.company)
+        case 'source':
+          return str(c.source)
+        case 'source_label':
+          return contactSourceLabel(c.source)
         default:
           return ''
       }
@@ -84,10 +118,25 @@ export function resolveVariable(name: string, ctx: VariableContext): string {
   }
 }
 
+/**
+ * Split "contact.first_name|there" into the variable name and its
+ * literal fallback. No "|" → no fallback. Only the first "|" counts, so
+ * a fallback may itself contain one.
+ */
+export function splitFallback(token: string): { name: string; fallback: string | null } {
+  const bar = token.indexOf('|')
+  if (bar === -1) return { name: token.trim(), fallback: null }
+  return { name: token.slice(0, bar).trim(), fallback: token.slice(bar + 1).trim() }
+}
+
 /** Replace every {{…}} variable in `text` using `ctx`. */
 export function renderVariables(text: string, ctx: VariableContext): string {
   if (!text) return ''
-  return text.replace(TOKEN_RE, (_, name: string) => resolveVariable(name, ctx))
+  return text.replace(TOKEN_RE, (_, token: string) => {
+    const { name, fallback } = splitFallback(token)
+    const value = resolveVariable(name, ctx)
+    return value === '' && fallback !== null ? fallback : value
+  })
 }
 
 /** Does the text reference any {{…}} variable at all? */
@@ -118,6 +167,7 @@ export const CONTACT_VARIABLE_ITEMS: VariableItem[] = [
   { token: '{{contact.phone}}', labelKey: 'contactPhone' },
   { token: '{{contact.email}}', labelKey: 'contactEmail' },
   { token: '{{contact.company}}', labelKey: 'contactCompany' },
+  { token: '{{contact.source_label}}', labelKey: 'contactSource' },
 ]
 
 export interface CatalogOptions {

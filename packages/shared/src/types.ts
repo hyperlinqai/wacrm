@@ -561,12 +561,26 @@ export interface InteractiveReplyTriggerConfig {
   reply_ids: string[];
 }
 
+/**
+ * Sequence controls — optional on every trigger type. They only matter
+ * for automations that park at a `wait` step (drip / nurture sequences):
+ * when a parked run comes due, the engine checks these before resuming
+ * and ends the run instead of sending the next message.
+ */
+export interface SequenceControlConfig {
+  /** End the run if the contact sent any message after it was parked. */
+  stop_on_reply?: boolean;
+  /** End the run if the contact carries any of these tags at resume time. */
+  stop_tag_ids?: string[];
+}
+
 export type AutomationTriggerConfig =
   | Record<string, never>
   | KeywordMatchTriggerConfig
   | TagTriggerConfig
   | TimeBasedTriggerConfig
   | InteractiveReplyTriggerConfig
+  | SequenceControlConfig
   | Record<string, unknown>;
 
 export interface SendMessageStepConfig {
@@ -584,6 +598,13 @@ export type SendListStepConfig = InteractiveMessagePayload;
 export interface SendTemplateStepConfig {
   template_name: string;
   language?: string;
+  /**
+   * Positional body parameters keyed by placeholder index ("1", "2", …).
+   * Values are rendered through the shared message-variable vocabulary
+   * at send time, so `{{contact.first_name|there}}` becomes the
+   * contact's first name (or "there" when blank). Meta rejects a send
+   * with an empty parameter, so mapped values should carry a fallback.
+   */
   variables?: Record<string, string>;
 }
 

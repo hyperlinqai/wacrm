@@ -107,3 +107,118 @@ export function extractLeadFields(fieldData: MetaLeadFieldDatum[] | null | undef
 
   return { phone, name, email, company, answers }
 }
+
+// ============================================================
+// Custom-field enrichment
+//
+// Beyond name / phone / email / company, a Lead Ads form usually asks
+// the qualifying questions a sales team actually wants on the contact
+// ("which sport?", "when are you planning?", "city"). Those answers
+// used to survive only inside meta_leads.field_data — invisible to the
+// Contacts page, to filters and to message variables. The helpers
+// below map them onto the account's custom fields *by field name*, so
+// an admin controls the mapping simply by naming fields sensibly.
+//
+// Matching, in order:
+//   1. a rule whose question pattern matches the normalised question
+//      key AND whose field pattern matches a custom field name;
+//   2. the normalised question key equals the normalised field name;
+//   3. every word of the field name appears in the question key.
+// The first match wins; a field receives at most one answer.
+// ============================================================
+
+const MAPPING_RULES: { question: RegExp; field: RegExp }[] = [
+  // "which sport…" / "select your sport category" — not "have you worked in sports events before?"
+  { question: /(which|select|choose|prefer|interest|favou?rite|main|primary).*sport|sport.*(categor|interest|prefer)/, field: /sport/ },
+  { question: /categor.*describ|describes_you|type_of_organi|organi[sz]ation_type|company_type|you_are_a|i_am_a/, field: /company.?type|organi[sz]ation.?type|category/ },
+  { question: /(^|_)city($|_)/, field: /^city$/ },
+  { question: /(^|_)state($|_)/, field: /^state$/ },
+  { question: /(^|_)country($|_)/, field: /^country$/ },
+  { question: /when.*(plan|organi|host|conduct)|timeline|how_soon|planning_to/, field: /next.*(tournament|event|league).*plan|timeline|when/ },
+  { question: /tournament.*type|type.*tournament|league.*type|event.*type/, field: /tournament.?type|event.?type/ },
+  { question: /feature/, field: /feature/ },
+  { question: /service/, field: /service/ },
+  { question: /budget/, field: /budget/ },
+]
+
+function normaliseFieldName(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+}
+
+/**
+ * Turn a Lead Ads option key into something a person can read in a
+ * message: "badminton____" → "Badminton", "within_30_days" →
+ * "Within 30 days", "club_" → "Club". Free-text answers (with spaces
+ * or capitals) are only trimmed — the person typed them on purpose.
+ */
+export function humanizeLeadValue(value: string): string {
+  const v = value.trim()
+  if (!v) return ''
+  // Option keys: no spaces, no capitals — "badminton____", "school_/_college",
+  // "within_30_days", "others". Anything with a space or a capital was typed.
+  const looksLikeOptionKey = /^[^\sA-Z]+$/.test(v)
+  if (!looksLikeOptionKey) return v
+  const words = v.replace(/_+/g, ' ').trim()
+  return words.charAt(0).toUpperCase() + words.slice(1)
+}
+
+export interface LeadCustomFieldMapping {
+  /** Custom field display name (as stored in custom_fields.field_name). */
+  fieldName: string
+  /** The human-readable answer to store. */
+  value: string
+  /** The raw question label the answer came from. */
+  question: string
+}
+
+/**
+ * Map raw form answers (question label → joined value) onto the
+ * account's custom field names. `fieldNames` is the account's
+ * custom_fields.field_name list; questions already consumed as contact
+ * columns (name / phone / email / company) are skipped.
+ */
+export function mapLeadAnswersToCustomFields(
+  answers: Record<string, string>,
+  fieldNames: string[],
+): LeadCustomFieldMapping[] {
+  const fields = fieldNames
+    .map((name) => ({ name, key: normaliseFieldName(name) }))
+    .filter((f) => f.key)
+  const taken = new Set<string>()
+  const out: LeadCustomFieldMapping[] = []
+
+  const CORE = /^(full_name|first_name|last_name|name|your_name|phone|phone_number|mobile|mobile_number|whatsapp|whatsapp_number|email|email_address|work_email|company_name|company|business_name)$/
+
+  for (const [question, raw] of Object.entries(answers)) {
+    const qKey = normaliseKey(question)
+    if (!qKey || CORE.test(qKey)) continue
+    const value = humanizeLeadValue(raw)
+    if (!value) continue
+
+    let target: { name: string; key: string } | undefined
+    for (const rule of MAPPING_RULES) {
+      if (!rule.question.test(qKey)) continue
+      target = fields.find((f) => !taken.has(f.name) && rule.field.test(f.key))
+      if (target) break
+    }
+    if (!target) target = fields.find((f) => !taken.has(f.name) && f.key === qKey)
+    if (!target) {
+      // Whole-token match, not substring: "name" must not hit "tournaments".
+      const qTokens = new Set(qKey.split('_'))
+      target = fields.find((f) => {
+        if (taken.has(f.name)) return false
+        const words = f.key.split('_').filter((w) => w.length > 2)
+        return words.length > 0 && words.every((w) => qTokens.has(w))
+      })
+    }
+    if (!target) continue
+
+    taken.add(target.name)
+    out.push({ fieldName: target.name, value, question })
+  }
+  return out
+}
