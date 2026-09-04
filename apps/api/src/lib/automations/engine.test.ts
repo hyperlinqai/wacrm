@@ -15,6 +15,7 @@ const h = vi.hoisted(() => ({
     logUpdates: [] as Record<string, unknown>[],
     contactTags: [] as { tag_id: string }[],
     conversations: [] as { id: string }[],
+    conversationInserts: [] as Record<string, unknown>[],
     customerReplies: [] as { id: string }[],
     pendingUpdates: [] as Record<string, unknown>[],
   },
@@ -63,7 +64,13 @@ vi.mock("./admin-client", () => {
     }
     if (table === "automation_steps") return { data: state.steps, error: null };
     if (table === "contact_tags") return { data: state.contactTags, error: null };
-    if (table === "conversations") return { data: state.conversations, error: null };
+    if (table === "conversations") {
+      if (type === "insert") {
+        state.conversationInserts.push(ops.payload as Record<string, unknown>);
+        return { data: { id: "conv-new" }, error: null };
+      }
+      return { data: state.conversations, error: null };
+    }
     if (table === "messages") return { data: state.customerReplies, error: null };
     if (table === "automation_pending_executions") {
       if (type === "update") state.pendingUpdates.push(ops.payload as Record<string, unknown>);
@@ -135,6 +142,7 @@ beforeEach(() => {
   h.state.logUpdates = [];
   h.state.contactTags = [];
   h.state.conversations = [];
+  h.state.conversationInserts = [];
   h.state.customerReplies = [];
   h.state.pendingUpdates = [];
   vi.mocked(engineSendTemplate).mockClear();
@@ -567,6 +575,80 @@ describe("triggerMatches — tag_added", () => {
     expect(triggerMatches(automation(), { tag_id: "tag-a" })).toBe(false);
     expect(triggerMatches(automation("tag-a"), {})).toBe(false);
     expect(triggerMatches(automation("tag-a"), undefined)).toBe(false);
+  });
+});
+
+describe("send_template — opens a conversation for a fresh lead", () => {
+  it("creates the thread and sends when the contact has none yet", async () => {
+    h.state.owned = { id: "c1" };
+    h.state.conversations = [];
+    h.state.automations = [{
+      id: "a1",
+      account_id: ACCOUNT,
+      user_id: "u1",
+      name: "lead nurture",
+      trigger_type: "new_contact_created",
+      trigger_config: {},
+      is_active: true,
+    }];
+    h.state.steps = [{
+      id: "s1",
+      automation_id: "a1",
+      step_type: "send_template",
+      position: 0,
+      parent_step_id: null,
+      step_config: { template_name: "spx_day_01_welcome", language: "en" },
+    }];
+
+    await runAutomationsForTrigger({
+      accountId: ACCOUNT,
+      triggerType: "new_contact_created",
+      contactId: "c1",
+      context: {},
+    });
+
+    expect(h.state.conversationInserts).toEqual([
+      { account_id: ACCOUNT, user_id: "u1", contact_id: "c1" },
+    ]);
+    expect(engineSendTemplate).toHaveBeenCalledWith(
+      expect.objectContaining({ conversationId: "conv-new", templateName: "spx_day_01_welcome" }),
+    );
+    expect(h.state.logUpdates).toContainEqual(expect.objectContaining({ status: "success" }));
+  });
+
+  it("still refuses a free-text send to a contact with no conversation", async () => {
+    h.state.owned = { id: "c1" };
+    h.state.conversations = [];
+    h.state.automations = [{
+      id: "a1",
+      account_id: ACCOUNT,
+      user_id: "u1",
+      name: "text to new lead",
+      trigger_type: "new_contact_created",
+      trigger_config: {},
+      is_active: true,
+    }];
+    h.state.steps = [{
+      id: "s1",
+      automation_id: "a1",
+      step_type: "send_message",
+      position: 0,
+      parent_step_id: null,
+      step_config: { text: "Hello" },
+    }];
+
+    await runAutomationsForTrigger({
+      accountId: ACCOUNT,
+      triggerType: "new_contact_created",
+      contactId: "c1",
+      context: {},
+    });
+
+    expect(h.state.conversationInserts).toEqual([]);
+    expect(h.state.logUpdates).toContainEqual(expect.objectContaining({
+      status: "failed",
+      error_message: "cannot send: contact has no existing conversation",
+    }));
   });
 });
 

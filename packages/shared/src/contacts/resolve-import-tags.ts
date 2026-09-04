@@ -3,7 +3,14 @@ import type { SupabaseClient } from '../db/index';
 const DEFAULT_TAG_COLOR = '#3b82f6';
 
 export interface ResolveImportTagsResult {
-  /** Lowercase tag name → tag id. */
+  /**
+   * Lowercase tag name → tag id, for the names that were asked for and
+   * nothing else. Callers treat `.values()` as "the tags this request
+   * means" (the public API's tag sync does exactly that), so the map
+   * must never carry the account's other tags along for the ride — it
+   * did once, and every API-created contact received every tag in the
+   * account.
+   */
   tagIdByKey: Map<string, string>;
   /** Names that could not be matched and were not created. */
   skippedNames: string[];
@@ -53,18 +60,25 @@ export async function resolveImportTagIds(
 
   if (fetchError) throw fetchError;
 
-  const tagIdByKey = new Map<string, string>();
+  // Every tag the account has, by name — the lookup table. Kept apart
+  // from the result so only the requested names are returned below.
+  const accountTagIdByKey = new Map<string, string>();
   for (const tag of existing ?? []) {
     const key = tag.name.trim().toLowerCase();
-    if (!tagIdByKey.has(key)) tagIdByKey.set(key, tag.id);
+    if (!accountTagIdByKey.has(key)) accountTagIdByKey.set(key, tag.id);
   }
+  const tagIdByKey = new Map<string, string>();
 
   const skippedNames: string[] = [];
   const toCreate: string[] = [];
 
   for (const name of uniqueNames) {
     const key = name.toLowerCase();
-    if (tagIdByKey.has(key)) continue;
+    const id = accountTagIdByKey.get(key);
+    if (id) {
+      tagIdByKey.set(key, id);
+      continue;
+    }
     if (canCreateTags) toCreate.push(name);
     else skippedNames.push(name);
   }

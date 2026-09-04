@@ -428,7 +428,12 @@ async function runStep(step: AutomationStep, args: ExecuteArgs): Promise<string>
       const cfg = step.step_config as SendTemplateStepConfig
       if (!args.contactId) throw new Error('send_template needs a contact')
       if (!cfg.template_name) throw new Error('send_template needs template_name')
-      const conversationId = await resolveConversationId(args)
+      // A template is the one message a business may send first, so a
+      // brand-new lead (new_contact_created, no inbound yet) gets a
+      // conversation opened for it here. Free-text and interactive
+      // sends keep requiring an existing thread — outside the 24-hour
+      // window Meta would reject them anyway.
+      const conversationId = await resolveConversationId(args, { createIfMissing: true })
       // Meta templates use positional {{1}}, {{2}}, … placeholders, so
       // we MUST emit params in strict numeric order. Lexicographic sort
       // of "1", "2", …, "10" yields "1", "10", "2", … which silently
@@ -668,27 +673,60 @@ async function runStep(step: AutomationStep, args: ExecuteArgs): Promise<string>
  * Pick the conversation a send-type step should use. Prefer the id the
  * webhook handed us (it's the one that just got the inbound message);
  * fall back to the contact's conversation for resumed/wait paths and
- * manual engine POSTs. Throws if none exists — send steps have
- * no meaningful target without a conversation.
+ * manual engine POSTs. With `createIfMissing` a contact that has never
+ * had a thread gets one opened (template sends to fresh leads);
+ * otherwise a missing conversation is an error — send steps have no
+ * meaningful target without one.
  */
-async function resolveConversationId(args: ExecuteArgs): Promise<string> {
+async function resolveConversationId(
+  args: ExecuteArgs,
+  { createIfMissing = false }: { createIfMissing?: boolean } = {},
+): Promise<string> {
   const fromCtx = args.context.conversation_id
   if (fromCtx) return fromCtx
   if (!args.contactId) throw new Error('cannot resolve conversation: no contact')
-  const { data, error } = await supabaseAdmin()
+  const db = supabaseAdmin()
+  const { data, error } = await db
     .from('conversations')
     .select('id')
     .eq('account_id', args.automation.account_id)
     .eq('contact_id', args.contactId)
     .maybeSingle()
   if (error) throw new Error(`conversation lookup failed: ${error.message}`)
-  if (!data?.id) {
+  if (data?.id) return data.id as string
+
+  if (!createIfMissing) {
     const prefix = args.triggerEvent === 'tag_added'
       ? 'tag_added automation cannot send'
       : 'cannot send'
     throw new Error(`${prefix}: contact has no existing conversation`)
   }
-  return data.id as string
+
+  // Same shape resolve-conversation.ts creates for API sends; the
+  // organization id is filled in by the sync trigger (migration 043).
+  const { data: created, error: createErr } = await db
+    .from('conversations')
+    .insert({
+      account_id: args.automation.account_id,
+      user_id: args.automation.user_id,
+      contact_id: args.contactId,
+    })
+    .select('id')
+    .single()
+  if (created?.id) return created.id as string
+
+  // Lost a race with the webhook opening the same thread (unique on
+  // account + contact, migration 036): use the one that won.
+  if (createErr?.code === '23505') {
+    const { data: raced } = await db
+      .from('conversations')
+      .select('id')
+      .eq('account_id', args.automation.account_id)
+      .eq('contact_id', args.contactId)
+      .maybeSingle()
+    if (raced?.id) return raced.id as string
+  }
+  throw new Error(`conversation create failed: ${createErr?.message ?? 'no row returned'}`)
 }
 
 /** Letter, digit or underscore in any script — the "inside a word" test. */

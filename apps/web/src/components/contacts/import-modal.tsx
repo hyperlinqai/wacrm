@@ -19,6 +19,7 @@ import {
   type ContactTagAssignment,
 } from '@wacrm/shared/contacts/resolve-import-tags';
 import { cn } from '@/lib/utils';
+import { cleanPhone } from '@wacrm/shared/whatsapp/phone-clean';
 import {
   addContactsToList,
   findOrCreateListByName,
@@ -136,7 +137,7 @@ export function ImportModal({
 }: ImportModalProps) {
   const t = useTranslations('Contacts.importModal');
   const supabase = createClient();
-  const { accountId, canEditSettings } = useAuth();
+  const { accountId, canEditSettings, defaultCountryCode } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [file, setFile] = useState<File | null>(null);
@@ -218,10 +219,22 @@ export function ImportModal({
       return;
     }
     const {
-      rows,
+      rows: rawRows,
       hasTagsColumn: csvHasTags,
       hasCompanyColumn: csvHasCompany,
     } = parsed;
+
+    // Resolve each number against the account's default country now —
+    // the same rule the database applies on insert (migration 053) — so
+    // the preview shows the number as it will be stored and the
+    // duplicate checks in handleImport compare like with like:
+    // "9831023021" in the file and "+919831023021" already saved are
+    // one person. A number that cannot be resolved is kept as written
+    // and left for the Validation page.
+    const rows = rawRows.map((row) => {
+      const cleaned = cleanPhone(row.phone, { defaultCountry: defaultCountryCode });
+      return cleaned.ok && cleaned.e164 ? { ...row, phone: cleaned.e164 } : row;
+    });
 
     if (rows.length === 0) {
       toast.error(t('toastNoValidRows'));

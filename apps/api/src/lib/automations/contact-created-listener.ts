@@ -5,6 +5,15 @@
 // hoping each code path remembers to dispatch.
 //
 // Started once per server process from instrumentation.ts.
+//
+// The connection is the whole feature: while it is down, no automation
+// fires for new leads and nothing else notices. So it never gives up —
+// a dropped connection, a database restart, or a failure at boot all
+// schedule another attempt with capped backoff, forever, until the
+// process is asked to stop. (It used to try exactly once, two seconds
+// after a drop; when Postgres was still restarting at that moment the
+// listener stayed dead until the next deploy, and a day of Meta leads
+// went unnurtured.) /api/health reports the current state.
 
 import { Client } from 'pg'
 
@@ -50,13 +59,53 @@ export async function handleContactNotify(
   return true
 }
 
+// ── Connection lifecycle ─────────────────────────────────────────────
+
+const RECONNECT_BASE_MS = 2_000
+const RECONNECT_MAX_MS = 60_000
+
+/**
+ * Delay before reconnect attempt `attempt` (0-based): 2s, 4s, 8s … capped
+ * at a minute, so a long outage is polled once a minute rather than
+ * hammered or abandoned.
+ */
+export function reconnectDelayMs(attempt: number): number {
+  return Math.min(RECONNECT_BASE_MS * 2 ** Math.max(0, attempt), RECONNECT_MAX_MS)
+}
+
+export interface ContactListenerStatus {
+  /** A LISTEN connection is open right now. */
+  connected: boolean
+  /** Reconnect attempts since the connection was last up. */
+  reconnectAttempts: number
+  /** When the connection was last established, if ever. */
+  connectedAt: string | null
+  /** Message of the most recent failure, if any. */
+  lastError: string | null
+}
+
 let client: Client | null = null
 let stopped = false
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+let reconnectAttempts = 0
+let connectedAt: string | null = null
+let lastError: string | null = null
+
+/** For /api/health: is the new-contact trigger actually wired up? */
+export function contactListenerStatus(): ContactListenerStatus {
+  return { connected: client !== null, reconnectAttempts, connectedAt, lastError }
+}
 
 async function connect(): Promise<void> {
   const c = new Client({ connectionString: process.env.DATABASE_URL })
-  await c.connect()
-  await c.query('LISTEN wacrm_changes')
+  try {
+    await c.connect()
+    await c.query('LISTEN wacrm_changes')
+  } catch (err) {
+    await c.end().catch(() => {})
+    throw err
+  }
+
   c.on('notification', (msg) => {
     if (msg.channel !== 'wacrm_changes' || !msg.payload) return
     let payload: NotifyPayload
@@ -69,35 +118,79 @@ async function connect(): Promise<void> {
       console.error('[automations] new_contact_created dispatch failed:', err),
     )
   })
-  const reconnect = () => {
+
+  // pg emits 'error' and then 'end' for one dropped connection; the
+  // timer guard in scheduleReconnect collapses both into one attempt.
+  const dropped = (reason: string) => {
+    if (client !== c) return
     c.removeAllListeners()
     client = null
+    lastError = reason
     if (stopped) return
-    setTimeout(() => {
-      startContactCreatedListener().catch((err) =>
-        console.error('[automations] contact listener reconnect failed:', err.message),
-      )
-    }, 2000)
+    console.error(`[automations] contact listener dropped (${reason}); reconnecting`)
+    scheduleReconnect()
   }
-  c.on('error', (err) => {
-    console.error('[automations] contact listener error, reconnecting:', err.message)
-    reconnect()
-  })
-  c.on('end', reconnect)
+  c.on('error', (err) => dropped(err.message))
+  c.on('end', () => dropped('connection ended'))
+
   client = c
+  connectedAt = new Date().toISOString()
+  reconnectAttempts = 0
+  lastError = null
 }
 
-/** Idempotent: safe to call more than once per process. */
+function scheduleReconnect(): void {
+  if (stopped || reconnectTimer || client) return
+  const delay = reconnectDelayMs(reconnectAttempts)
+  reconnectAttempts += 1
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null
+    if (stopped || client) return
+    connect()
+      .then(() => console.log('[automations] contact listener reconnected'))
+      .catch((err: Error) => {
+        lastError = err.message
+        console.error(
+          `[automations] contact listener reconnect failed (attempt ${reconnectAttempts}, next in ${reconnectDelayMs(reconnectAttempts) / 1000}s):`,
+          err.message,
+        )
+        scheduleReconnect()
+      })
+  }, delay)
+  // Never keep a process alive just to retry.
+  reconnectTimer.unref?.()
+}
+
+/**
+ * Idempotent: safe to call more than once per process. Never throws —
+ * a failure to connect at boot is retried in the background like any
+ * later drop, so a database that comes up after the app does is fine.
+ */
 export async function startContactCreatedListener(): Promise<void> {
-  if (client || !process.env.DATABASE_URL) return
+  if (client) return
+  if (!process.env.DATABASE_URL) {
+    console.warn('[automations] DATABASE_URL is not set; new_contact_created automations will not fire')
+    return
+  }
   stopped = false
-  await connect()
-  console.log('[automations] listening for new contacts')
+  try {
+    await connect()
+    console.log('[automations] listening for new contacts')
+  } catch (err) {
+    lastError = err instanceof Error ? err.message : String(err)
+    console.error('[automations] contact listener failed to start; retrying in background:', lastError)
+    scheduleReconnect()
+  }
 }
 
 export async function stopContactCreatedListener(): Promise<void> {
   stopped = true
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer)
+    reconnectTimer = null
+  }
   const c = client
   client = null
+  c?.removeAllListeners()
   await c?.end().catch(() => {})
 }

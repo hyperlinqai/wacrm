@@ -30,7 +30,41 @@ and polish.
   `supabase/migrations/052_meta_lead_ads.sql`.
 - **Contacts → Source filter** gains a "Meta Lead Ads" option.
 
+- **Contact numbers are cleaned automatically as they are added.** A
+  database trigger now runs the number validator on every new contact
+  and every phone edit, whichever way the contact arrives — manual
+  form, CSV / Excel import, public API, inbound WhatsApp, Meta Lead
+  Ads, flows. A bare national number gets the account's default
+  country code (Settings → Phone format), "0 98310-23021" and
+  "91 98310 23021" become "+919831023021", and a number written two
+  ways is now caught as the same person instead of being saved twice.
+  Nothing is guessed: with no default country set, or where the digits
+  cannot be resolved safely, the number is stored as written and the
+  Validation page still lists it. The contact form and import preview
+  show the resolved number before saving. Contacts saved before this
+  are untouched — open Validation and press **Fix** once.
+  **Migration required:**
+  `supabase/migrations/053_contact_phone_autonormalize.sql`.
+
 ### Fixed
+
+- **Automations now fire for new leads again.** The database listener
+  that fires `new_contact_created` gave up after one failed reconnect
+  (two seconds after a drop), so a Postgres restart left it dead until
+  the next deploy and every automation for new contacts silently
+  stopped. It now retries with capped backoff, forever, including when
+  the database is not up yet at boot. `/api/health` reports
+  `automations.new_contact_listener` so this is visible.
+- **A template step can message a brand-new lead.** `send_template`
+  opens the contact's conversation when none exists yet; before, the
+  first message of a drip to a fresh lead always failed with "contact
+  has no existing conversation". Free-text and interactive steps still
+  require an existing thread.
+- **Public API tag sync no longer applies every tag in the account.**
+  `POST /api/v1/contacts` with a `tags` array set the contact's tags to
+  the whole account's tag list instead of the names sent. Contacts
+  affected between 2026-09-02 and the deploy can be repaired with
+  `scripts/cleanup-bulk-tagged-contacts.sql` (preview first).
 
 - **Web-form leads were stamped `source = api`** instead of `web_form`
   on first creation (the after-the-fact attribution update only matched

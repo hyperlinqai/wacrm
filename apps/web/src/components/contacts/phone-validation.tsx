@@ -48,7 +48,7 @@ const REJECTION_COPY: Record<PhoneRejection, { title: string; detail: string }> 
   no_country_code: {
     title: 'No country code',
     detail:
-      'The number has no country code and this account has no default country set. Choose one in Settings → WhatsApp and these become fixable.',
+      'The number has no country code and this account has no default country set. Choose one in Settings → Phone format and these become fixable.',
   },
   excel_scientific: {
     title: 'Destroyed by a spreadsheet',
@@ -247,8 +247,10 @@ export function PhoneValidation() {
             </CardTitle>
             <CardDescription>
               Numbers saved without a country code cannot be resolved until this account
-              picks a country. Set it in Settings → WhatsApp → Default country, then come
-              back — most of them usually become fixable in one step.
+              picks a country. Set it in Settings → Phone format → Default country, then
+              come back — most of them usually become fixable in one step. New
+              contacts are cleaned automatically as they are added; this page is
+              for the ones saved before that.
             </CardDescription>
           </CardHeader>
         </Card>

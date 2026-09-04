@@ -16,6 +16,7 @@ import {
   type DuplicateMatches,
   type ExistingContact,
 } from '@wacrm/shared/contacts/dedupe';
+import { cleanPhone } from '@wacrm/shared/whatsapp/phone-clean';
 import {
   Dialog,
   DialogContent,
@@ -52,7 +53,7 @@ export function ContactForm({
 }: ContactFormProps) {
   const t = useTranslations('Contacts.form');
   const supabase = createClient();
-  const { accountId } = useAuth();
+  const { accountId, defaultCountryCode } = useAuth();
   const isEdit = !!contact;
 
   const [name, setName] = useState('');
@@ -94,9 +95,22 @@ export function ContactForm({
     }
   }, [open, contact]);
 
+  /** The number as it will be stored. The database resolves a bare
+   *  national number against the account's default country on insert
+   *  (migration 053); doing the same here means the duplicate checks
+   *  compare like with like — "9831023021" and "+919831023021" are
+   *  one person — and the conflict prompt names the right record.
+   *  Anything that cannot be resolved is sent exactly as typed, and
+   *  the Validation page picks it up. */
+  function resolvedPhone(): string {
+    const value = phone.trim();
+    const cleaned = cleanPhone(value, { defaultCountry: defaultCountryCode });
+    return cleaned.ok && cleaned.e164 ? cleaned.e164 : value;
+  }
+
   async function checkDuplicatePhone() {
     if (!accountId) return;
-    const value = phone.trim();
+    const value = resolvedPhone();
     if (!value) {
       setDupMatch(null);
       return;
@@ -177,7 +191,7 @@ export function ContactForm({
       matches = await findDuplicateContacts(
         supabase,
         accountId,
-        { phone: phone.trim(), email: email.trim() },
+        { phone: resolvedPhone(), email: email.trim() },
         contact?.id,
       );
     } finally {
@@ -209,7 +223,7 @@ export function ContactForm({
           .from('contacts')
           .update({
             name: name.trim() || null,
-            phone: phone.trim(),
+            phone: resolvedPhone(),
             email: email.trim() || null,
             company: company.trim() || null,
             updated_at: new Date().toISOString(),
@@ -223,7 +237,7 @@ export function ContactForm({
             user_id: user.id,
             account_id: accountId,
             name: name.trim() || null,
-            phone: phone.trim(),
+            phone: resolvedPhone(),
             email: email.trim() || null,
             company: company.trim() || null,
           })
@@ -249,7 +263,7 @@ export function ContactForm({
       if (isUniqueViolation(err)) {
         toast.error(t('toastConflict'));
         if (accountId) {
-          const existing = await findExistingContact(supabase, accountId, phone.trim());
+          const existing = await findExistingContact(supabase, accountId, resolvedPhone());
           if (existing) {
             setDupPrompt({ phone: existing, phoneExact: true, email: null });
           }

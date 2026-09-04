@@ -1,6 +1,27 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { claimContactCreatedDispatch, handleContactNotify } from './contact-created-listener'
+import {
+  claimContactCreatedDispatch,
+  contactListenerStatus,
+  handleContactNotify,
+  reconnectDelayMs,
+} from './contact-created-listener'
+
+describe('reconnectDelayMs', () => {
+  it('backs off exponentially from 2s and caps at a minute', () => {
+    expect(reconnectDelayMs(0)).toBe(2_000)
+    expect(reconnectDelayMs(1)).toBe(4_000)
+    expect(reconnectDelayMs(3)).toBe(16_000)
+    expect(reconnectDelayMs(5)).toBe(60_000)
+    expect(reconnectDelayMs(50)).toBe(60_000)
+  })
+})
+
+describe('contactListenerStatus', () => {
+  it('reports not connected before the listener is started', () => {
+    expect(contactListenerStatus()).toMatchObject({ connected: false, reconnectAttempts: 0 })
+  })
+})
 
 describe('claimContactCreatedDispatch', () => {
   it('lets only the first claimant through, then expires the claim', () => {
