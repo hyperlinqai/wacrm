@@ -60,6 +60,12 @@ and polish.
   first message of a drip to a fresh lead always failed with "contact
   has no existing conversation". Free-text and interactive steps still
   require an existing thread.
+- **Meta leads that the customer's own app pushed first now show
+  "Meta Lead Ads" as their source.** When an integration receives the
+  same leadgen webhook and creates the contact through the public API
+  milliseconds before the CRM processes the lead, that is one lead
+  arriving twice, not an API-sourced contact — the lead pipeline now
+  re-attributes an `api` contact created within 15 minutes of the lead.
 - **Public API tag sync no longer applies every tag in the account.**
   `POST /api/v1/contacts` with a `tags` array set the contact's tags to
   the whole account's tag list instead of the names sent. Contacts

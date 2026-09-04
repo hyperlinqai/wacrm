@@ -134,7 +134,7 @@ export async function processMetaLead(input: ProcessLeadInput): Promise<ProcessL
     if (!created) {
       const { data: existing } = await admin
         .from('contacts')
-        .select('name, email, company, phone, source')
+        .select('name, email, company, phone, source, created_at')
         .eq('id', contactId)
         .maybeSingle()
       if (existing) {
@@ -143,7 +143,7 @@ export async function processMetaLead(input: ProcessLeadInput): Promise<ProcessL
         if (fields.name && nameIsPlaceholder) patch.name = fields.name
         if (fields.email && !existing.email) patch.email = fields.email
         if (fields.company && !existing.company) patch.company = fields.company
-        if (existing.source === 'manual') patch.source = 'meta_ads'
+        if (isSameLeadArrivingTwice(existing, lead.created_time)) patch.source = 'meta_ads'
         if (Object.keys(patch).length > 0) {
           await admin.from('contacts').update(patch).eq('id', contactId)
         }
@@ -206,6 +206,38 @@ export async function processMetaLead(input: ProcessLeadInput): Promise<ProcessL
     console.error(`[meta-leads] contact create failed for lead ${lead.id}:`, err)
     return fail('failed', reason)
   }
+}
+
+/**
+ * How close an API-created contact must be to the lead for the two to
+ * count as the same submission rather than two separate touches.
+ */
+const SAME_LEAD_WINDOW_MS = 15 * 60_000
+
+/**
+ * Whether a matched contact's source should become `meta_ads`.
+ *
+ * `manual` always yields: the ad is the real origin of a contact an
+ * agent typed in by hand. `api` yields only when the contact was
+ * created within minutes of the lead — the customer's own app also
+ * receives Meta's leadgen webhook and pushes the same person through
+ * the public API, and it routinely wins that race by a few
+ * milliseconds. That is one lead arriving twice, not a first touch
+ * through the API; an API contact that existed for days before the
+ * lead keeps its source.
+ */
+export function isSameLeadArrivingTwice(
+  existing: { source?: string | null; created_at?: string | null },
+  leadCreatedTime: string | null | undefined,
+  now = Date.now(),
+): boolean {
+  if (existing.source === 'manual') return true
+  if (existing.source !== 'api' || !existing.created_at) return false
+  const createdAt = Date.parse(existing.created_at)
+  if (Number.isNaN(createdAt)) return false
+  const leadAt = leadCreatedTime ? Date.parse(leadCreatedTime) : NaN
+  const reference = Number.isNaN(leadAt) ? now : leadAt
+  return Math.abs(reference - createdAt) <= SAME_LEAD_WINDOW_MS
 }
 
 /** "Lead source" custom-field value for a Meta lead, by platform. */
