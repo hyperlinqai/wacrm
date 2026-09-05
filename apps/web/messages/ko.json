@@ -1079,7 +1079,7 @@
       "deactivate": "비활성화",
       "edit": "수정",
       "duplicate": "복제",
-      "viewLogs": "로그 보기",
+      "viewLogs": "리포트 보기",
       "delete": "삭제",
       "cancel": "취소",
       "deleteTitle": "자동화 삭제",
@@ -1100,8 +1100,8 @@
       "back": "자동화로 돌아가기"
     },
     "logs": {
-      "title": "실행 로그",
-      "loadError": "로그를 불러오지 못했습니다",
+      "title": "자동화 리포트",
+      "loadError": "리포트를 불러오지 못했습니다",
       "emptyTitle": "아직 실행 기록이 없습니다",
       "emptyDesc": "이 자동화를 실행시켜 여기서 결과를 확인하세요.",
       "unknownContact": "알 수 없는 연락처",
@@ -1114,7 +1114,61 @@
         "failed": "실패"
       },
       "back": "뒤로",
-      "backAria": "뒤로"
+      "backAria": "자동화 목록으로 돌아가기",
+      "refresh": "새로고침",
+      "exportCsv": "CSV 내보내기",
+      "truncated": "최근 실행 {limit}건을 표시합니다. 집계도 같은 범위를 기준으로 합니다.",
+      "trigger": "트리거: {name}",
+      "lastRun": "마지막 실행 {when}",
+      "neverRun": "실행 기록 없음",
+      "paused": "일시중지",
+      "active": "활성",
+      "stats": {
+        "totalRuns": "전체 실행",
+        "completed": "완료",
+        "waiting": "대기 중",
+        "failed": "실패",
+        "contactsReached": "도달한 연락처",
+        "messagesSent": "발송 메시지",
+        "successRate": "성공률"
+      },
+      "waitingHint": "{count}건이 대기 단계에 있습니다. 다음 재개는 {when}입니다.",
+      "waitingHintNone": "대기 중인 실행이 없습니다.",
+      "outcome": {
+        "completed": "완료",
+        "waiting": "대기 중",
+        "failed": "실패"
+      },
+      "outcomeHelp": {
+        "completed": "모든 단계가 완료되었습니다.",
+        "waiting": "대기 단계에 멈춰 있으며 자동으로 재개됩니다.",
+        "failed": "단계에서 오류가 발생해 실행이 중단되었습니다."
+      },
+      "errorsTitle": "주요 실패 원인",
+      "errorsEmpty": "이 범위에서는 실패가 없습니다.",
+      "errorsCount": "{count}회",
+      "errorsLastSeen": "최근 {when}",
+      "stepsTitle": "단계",
+      "stepsEmpty": "아직 기록된 단계가 없습니다.",
+      "stepsOk": "성공 {count}",
+      "stepsFailed": "실패 {count}",
+      "activityTitle": "일별 실행",
+      "runsTitle": "실행 ({total})",
+      "runsFiltered": "실행 ({total}건 중 {filtered})",
+      "allOutcomes": "전체 결과",
+      "noRuns": "아직 실행 기록이 없습니다",
+      "noRunsDesc": "이 자동화를 실행하면 여기에 표시됩니다.",
+      "noRunsFilter": "이 필터에 해당하는 실행이 없습니다.",
+      "table": {
+        "contact": "연락처",
+        "phone": "전화번호",
+        "outcome": "결과",
+        "trigger": "트리거",
+        "messages": "메시지",
+        "when": "시각",
+        "nextRun": "다음 단계",
+        "error": "오류"
+      }
     },
     "builder": {
       "steps": {

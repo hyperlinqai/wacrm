@@ -3,8 +3,8 @@ import { makeAdminClient } from '@/lib/db/server-client'
 import { decrypt, encrypt, isLegacyFormat } from '@/lib/whatsapp/encryption'
 import { getMediaUrl, downloadMedia } from '@wacrm/shared/whatsapp/meta-api'
 import { mirrorInboundMedia } from '@/lib/whatsapp/mirror-inbound-media'
-import { normalizePhone } from '@wacrm/shared/whatsapp/phone-utils'
 import { findExistingContact, isUniqueViolation } from '@wacrm/shared/contacts/dedupe'
+import { contactPhoneFromWaId } from '@wacrm/shared/contacts/store-phone'
 import { reopenClosedConversation } from '@/lib/conversations/reopen'
 import { verifyMetaWebhookSignature } from '@/lib/whatsapp/webhook-signature'
 import { runAutomationsForTrigger } from '@/lib/automations/engine'
@@ -602,7 +602,15 @@ async function processMessage(
   // See parseMessageContent for what it turns off.
   mirrorMedia: boolean
 ) {
-  const senderPhone = normalizePhone(message.from)
+  // `message.from` is a wa_id: the full international number in digits.
+  // Store it as +E.164 — NOT via the default-country resolver, which
+  // would read the US wa_id "14155550123" as an Indian national number
+  // on an IN-defaulted account and rewrite it to a stranger's number.
+  const senderPhone = contactPhoneFromWaId(message.from)
+  if (!senderPhone) {
+    console.error('[webhook] unusable wa_id on inbound message:', message.from)
+    return
+  }
   const contactName = contact.profile.name
 
   // Find or create contact

@@ -22,6 +22,7 @@ import type { SupabaseClient } from '@wacrm/shared/db';
 
 import { findExistingContact, isUniqueViolation } from '@wacrm/shared/contacts/dedupe';
 import { sanitizePhoneForMeta, isValidE164 } from '@wacrm/shared/whatsapp/phone-utils';
+import { contactPhoneFromWaId } from '@wacrm/shared/contacts/store-phone';
 import { SendMessageError } from '@/lib/whatsapp/send-message';
 import { resolveAuditUserId, ContactError } from '@/lib/api/v1/contacts';
 
@@ -45,8 +46,20 @@ export async function resolveConversationByPhone(
   phone: string,
   name?: string | null
 ): Promise<ResolvedConversation> {
+  // `sanitized` is the Meta send form (bare digits); `stored` is what
+  // goes on the contact row (+E.164). Writing the send form to the row
+  // is what left contacts as "918208103317" — see
+  // @wacrm/shared/contacts/store-phone.
   const sanitized = sanitizePhoneForMeta(phone);
   if (!isValidE164(sanitized)) {
+    throw new SendMessageError(
+      'bad_request',
+      "'to' must be a valid phone number in E.164 format (e.g. +14155550123)",
+      400
+    );
+  }
+  const stored = contactPhoneFromWaId(sanitized);
+  if (!stored) {
     throw new SendMessageError(
       'bad_request',
       "'to' must be a valid phone number in E.164 format (e.g. +14155550123)",
@@ -104,8 +117,8 @@ export async function resolveConversationByPhone(
       .insert({
         account_id: accountId,
         user_id: ownerUserId,
-        phone: sanitized,
-        name: name || sanitized,
+        phone: stored,
+        name: name || stored,
         source: 'whatsapp',
       })
       .select('id')

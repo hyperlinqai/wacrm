@@ -183,9 +183,12 @@ export async function createBroadcast(
       }
       continue;
     }
+    // Two different forms on purpose: the contact row stores canonical
+    // +E.164, the send payload takes Meta's bare digits.
     const sanitized = cleaned.msisdn!;
     const { id } = await findOrCreateContact(db, accountId, auditUserId, {
-      phone: sanitized,
+      phone: cleaned.e164!,
+      defaultCountry: account?.default_country_code ?? null,
     });
     resolved.push({
       contactId: id,

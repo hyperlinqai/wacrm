@@ -16,6 +16,7 @@ import {
   templateContentText,
 } from '@wacrm/shared/whatsapp/template-body'
 import { supabaseAdmin } from './admin-client'
+import { contactPhoneFromWaId } from '@wacrm/shared/contacts/store-phone'
 
 // ------------------------------------------------------------
 // Automation-side Meta sender.
@@ -205,7 +206,11 @@ async function sendViaMeta(input: SendInput): Promise<{ whatsapp_message_id: str
   if (lastError) throw lastError
 
   if (workingPhone !== sanitized) {
-    await db.from('contacts').update({ phone: workingPhone }).eq('id', contact.id)
+    // Canonical +E.164 on the row; Meta's API took the bare digits.
+    await db
+      .from('contacts')
+      .update({ phone: contactPhoneFromWaId(workingPhone) ?? workingPhone })
+      .eq('id', contact.id)
   }
 
   // Persist the sent message so it appears in the inbox with a real

@@ -123,6 +123,7 @@ export async function processMetaLead(input: ProcessLeadInput): Promise<ProcessL
     const auditUserId = await resolveAuditUserId(admin, page.organization_id, page.account_id)
     const { id: contactId, created } = await findOrCreateContact(admin, page.account_id, auditUserId, {
       phone: cleaned.e164,
+      defaultCountry: (account?.default_country_code as string | null | undefined) ?? null,
       name: fields.name,
       email: fields.email,
       company: fields.company,

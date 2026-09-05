@@ -16,6 +16,7 @@ import {
   isRecipientNotAllowedError,
 } from '@wacrm/shared/whatsapp/phone-utils'
 import { supabaseAdmin } from './admin-client'
+import { contactPhoneFromWaId } from '@wacrm/shared/contacts/store-phone'
 
 // ------------------------------------------------------------
 // Flows-side Meta sender (interactive variants).
@@ -122,7 +123,11 @@ export async function engineSendText(
   if (lastError) throw lastError
 
   if (workingPhone !== sanitized) {
-    await db.from('contacts').update({ phone: workingPhone }).eq('id', contact.id)
+    // Canonical +E.164 on the row; Meta's API took the bare digits.
+    await db
+      .from('contacts')
+      .update({ phone: contactPhoneFromWaId(workingPhone) ?? workingPhone })
+      .eq('id', contact.id)
   }
 
   const { error: msgErr } = await db.from('messages').insert({
@@ -235,7 +240,11 @@ export async function engineSendMedia(
   if (lastError) throw lastError
 
   if (workingPhone !== sanitized) {
-    await db.from('contacts').update({ phone: workingPhone }).eq('id', contact.id)
+    // Canonical +E.164 on the row; Meta's API took the bare digits.
+    await db
+      .from('contacts')
+      .update({ phone: contactPhoneFromWaId(workingPhone) ?? workingPhone })
+      .eq('id', contact.id)
   }
 
   // content_type='image'|'video'|'document' — these are already in the
@@ -403,7 +412,11 @@ async function sendInteractiveViaMeta(
   if (lastError) throw lastError
 
   if (workingPhone !== sanitized) {
-    await db.from('contacts').update({ phone: workingPhone }).eq('id', contact.id)
+    // Canonical +E.164 on the row; Meta's API took the bare digits.
+    await db
+      .from('contacts')
+      .update({ phone: contactPhoneFromWaId(workingPhone) ?? workingPhone })
+      .eq('id', contact.id)
   }
 
   // Persist the bot's prompt to the messages table so it appears in

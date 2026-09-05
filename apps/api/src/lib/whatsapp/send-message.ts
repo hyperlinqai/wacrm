@@ -43,6 +43,7 @@ import {
   isRecipientNotAllowedError,
 } from '@wacrm/shared/whatsapp/phone-utils';
 import type { MessageTemplate } from '@wacrm/shared/types';
+import { contactPhoneFromWaId } from '@wacrm/shared/contacts/store-phone';
 import {
   resolveTemplateRow,
   templateBodyParams,
@@ -441,9 +442,11 @@ export async function sendMessageToConversation(
     console.log(
       `[send-message] Auto-corrected contact phone: ${sanitizedPhone} → ${workingPhone}`
     );
+    // Store the accepted variant in the row's canonical +E.164 form,
+    // not the bare-digits form Meta's API takes.
     await db
       .from('contacts')
-      .update({ phone: workingPhone })
+      .update({ phone: contactPhoneFromWaId(workingPhone) ?? workingPhone })
       .eq('id', contact.id);
   }
 

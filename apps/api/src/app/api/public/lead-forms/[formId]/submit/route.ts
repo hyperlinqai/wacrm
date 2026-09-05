@@ -22,7 +22,6 @@ import { isOriginAllowed } from '@wacrm/shared/web-forms/domains'
 import { ensureLeadFormTag } from '@/lib/web-forms/segment-tag'
 import { addContactTagAndDispatch } from '@/lib/contacts/tag-events'
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit'
-import { sanitizePhoneForMeta, isValidE164 } from '@wacrm/shared/whatsapp/phone-utils'
 import { resolveAuditUserId, findOrCreateContact, ContactError } from '@/lib/api/v1/contacts'
 
 interface LeadFormField {
@@ -145,12 +144,17 @@ export async function POST(
     if (!value) continue
 
     if (field.type === 'phone') {
-      const sanitized = sanitizePhoneForMeta(value)
-      if (!isValidE164(sanitized)) {
+      // Keep the visitor's value verbatim — including a leading "+", which
+      // stripping here would throw away along with the country they told
+      // us. findOrCreateContact resolves it against the account's default
+      // country and stores canonical +E.164; the only check worth doing at
+      // this point is "are there enough digits to be a number at all",
+      // so an obvious typo still fails the field rather than the request.
+      if (value.replace(/\D/g, '').length < 7) {
         errors[field.id] = 'invalid_phone'
         continue
       }
-      phone = sanitized
+      phone = value
     } else if (field.type === 'email') {
       if (!EMAIL_RE.test(value)) {
         errors[field.id] = 'invalid_email'
@@ -180,13 +184,27 @@ export async function POST(
 
   try {
     const auditUserId = await resolveAuditUserId(admin, organizationId, accountId)
-    const { id: contactId } = await findOrCreateContact(admin, accountId, auditUserId, {
-      phone,
-      name,
-      email,
-      company,
-      source: 'web_form',
-    })
+    let contactId: string
+    try {
+      ;({ id: contactId } = await findOrCreateContact(admin, accountId, auditUserId, {
+        phone,
+        name,
+        email,
+        company,
+        source: 'web_form',
+      }))
+    } catch (err) {
+      // An unresolvable number is the visitor's field to fix, not a
+      // server fault — surface it the same way the checks above do.
+      if (err instanceof ContactError && err.status === 400) {
+        const phoneField = fields.find((f) => f.type === 'phone')
+        return NextResponse.json(
+          { ok: false, errors: { [phoneField?.id ?? 'phone']: 'invalid_phone' } },
+          { status: 400, headers: cors },
+        )
+      }
+      throw err
+    }
 
     // First-touch attribution only — don't overwrite a more meaningful
     // existing source (e.g. an already-WhatsApp-sourced contact) on a

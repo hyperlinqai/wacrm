@@ -1079,7 +1079,7 @@
       "deactivate": "Deactivate",
       "edit": "Edit",
       "duplicate": "Duplicate",
-      "viewLogs": "View Logs",
+      "viewLogs": "View report",
       "delete": "Delete",
       "cancel": "Cancel",
       "deleteTitle": "Delete automation",
@@ -1114,7 +1114,61 @@
         "failed": "failed"
       },
       "back": "Back",
-      "backAria": "Back"
+      "backAria": "Back",
+      "refresh": "Refresh",
+      "exportCsv": "Export CSV",
+      "truncated": "Showing the most recent {limit} runs. Counts cover the same window.",
+      "trigger": "Trigger: {name}",
+      "lastRun": "Last run {when}",
+      "neverRun": "Never run",
+      "paused": "Paused",
+      "active": "Active",
+      "stats": {
+        "totalRuns": "Total runs",
+        "completed": "Completed",
+        "waiting": "Waiting",
+        "failed": "Failed",
+        "contactsReached": "Contacts reached",
+        "messagesSent": "Messages sent",
+        "successRate": "Success rate"
+      },
+      "waitingHint": "{count} parked at a Wait step. Next resumes {when}.",
+      "waitingHintNone": "No runs are waiting.",
+      "outcome": {
+        "completed": "Completed",
+        "waiting": "Waiting",
+        "failed": "Failed"
+      },
+      "outcomeHelp": {
+        "completed": "Every step finished.",
+        "waiting": "Parked at a Wait step; will resume automatically.",
+        "failed": "A step errored and the run stopped."
+      },
+      "errorsTitle": "Top failure reasons",
+      "errorsEmpty": "No failures in this window.",
+      "errorsCount": "{count}x",
+      "errorsLastSeen": "last {when}",
+      "stepsTitle": "Steps",
+      "stepsEmpty": "No steps recorded yet.",
+      "stepsOk": "{count} ok",
+      "stepsFailed": "{count} failed",
+      "activityTitle": "Runs per day",
+      "runsTitle": "Runs ({total})",
+      "runsFiltered": "Runs ({filtered} of {total})",
+      "allOutcomes": "All outcomes",
+      "noRuns": "No runs yet",
+      "noRunsDesc": "Trigger this automation to see runs here.",
+      "noRunsFilter": "No runs match this filter.",
+      "table": {
+        "contact": "Contact",
+        "phone": "Phone",
+        "outcome": "Outcome",
+        "trigger": "Trigger",
+        "messages": "Messages",
+        "when": "When",
+        "nextRun": "Next step",
+        "error": "Error"
+      }
     },
     "builder": {
       "steps": {

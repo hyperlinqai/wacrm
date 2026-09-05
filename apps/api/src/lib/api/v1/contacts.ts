@@ -12,7 +12,7 @@ import type { SupabaseClient } from '@wacrm/shared/db';
 import { findExistingContact, isUniqueViolation } from '@wacrm/shared/contacts/dedupe';
 import { resolveImportTagIds } from '@wacrm/shared/contacts/resolve-import-tags';
 import { addContactTagAndDispatch } from '@/lib/contacts/tag-events';
-import { sanitizePhoneForMeta, isValidE164 } from '@wacrm/shared/whatsapp/phone-utils';
+import { contactPhoneFromInput } from '@wacrm/shared/contacts/store-phone';
 
 /** Row select that embeds the contact's tags for serialization. */
 export const CONTACT_SELECT = '*, contact_tags(tags(*))';
@@ -108,7 +108,26 @@ export interface ContactInput {
   /** contacts.source to stamp on a *newly created* row (migration 046).
    *  Defaults to 'api'; existing contacts are never re-attributed here. */
   source?: 'manual' | 'whatsapp' | 'web_form' | 'import' | 'api' | 'meta_ads';
+  /**
+   * ISO 3166-1 alpha-2 country to assume for a number with no country
+   * code. Callers that already hold the account row (the broadcast
+   * resolver, the Meta Lead Ads processor) pass it so a batch does not
+   * re-read `accounts` once per recipient; everyone else can omit it and
+   * let the lookup below find it.
+   */
+  defaultCountry?: string | null;
 }
+
+/** Human-readable half of a cleanPhone rejection, for the 400 body. */
+const PHONE_REJECTION_HELP: Record<string, string> = {
+  empty: 'it is blank',
+  excel_scientific:
+    'a spreadsheet rewrote it as scientific notation (9.18E+11) and the last digits are gone',
+  no_country_code:
+    "it has no country code and this account has no default country set (Settings → set a default country, or send it as +E.164)",
+  too_short: 'it has fewer digits than any real number',
+  not_a_valid_number: 'it is not a real number for its country',
+};
 
 /**
  * Find (by fuzzy phone match) or create a contact in `accountId`.
@@ -122,15 +141,37 @@ export async function findOrCreateContact(
   auditUserId: string,
   input: ContactInput
 ): Promise<{ id: string; created: boolean }> {
-  const sanitized = sanitizePhoneForMeta(input.phone);
-  if (!isValidE164(sanitized)) {
+  // Resolve to canonical +E.164 before anything else. Callers each used
+  // to hand over whatever shape they had — Meta Lead Ads a clean "+91…",
+  // the broadcast resolver bare digits, the web form whatever the
+  // visitor typed — and this function stored the digits with the "+"
+  // stripped, which is Meta's *send* format, not the storage format.
+  // Doing it here is what makes all four agree without each remembering.
+  //
+  // The caller's own value is tried first: an already-international
+  // number needs no country, so the `accounts` lookup below is skipped
+  // for the common case and only runs for the one that needs it — a bare
+  // national number from a caller that did not pass `defaultCountry`.
+  let resolved = contactPhoneFromInput(input.phone, input.defaultCountry ?? null);
+  if (!resolved.ok && resolved.rejection === 'no_country_code' && input.defaultCountry == null) {
+    const { data: account } = await db
+      .from('accounts')
+      .select('default_country_code')
+      .eq('id', accountId)
+      .maybeSingle();
+    const defaultCountry = (account?.default_country_code as string | null) ?? null;
+    if (defaultCountry) resolved = contactPhoneFromInput(input.phone, defaultCountry);
+  }
+  if (!resolved.ok) {
+    const why = PHONE_REJECTION_HELP[resolved.rejection] ?? 'it is not a valid number';
     throw new ContactError(
-      "'phone' must be a valid phone number in E.164 format (e.g. +14155550123)",
+      `'phone' could not be resolved to an international number: ${why}`,
       400
     );
   }
+  const phone = resolved.phone;
 
-  const existing = await findExistingContact(db, accountId, sanitized);
+  const existing = await findExistingContact(db, accountId, phone);
   if (existing) return { id: existing.id, created: false };
 
   const { data: created, error } = await db
@@ -138,8 +179,8 @@ export async function findOrCreateContact(
     .insert({
       account_id: accountId,
       user_id: auditUserId,
-      phone: sanitized,
-      name: input.name ?? sanitized,
+      phone,
+      name: input.name ?? phone,
       email: input.email ?? null,
       company: input.company ?? null,
       source: input.source ?? 'api',
@@ -151,7 +192,7 @@ export async function findOrCreateContact(
     // Lost a race against a concurrent create — the unique index
     // rejected the duplicate. Re-resolve to the winner.
     if (isUniqueViolation(error)) {
-      const raced = await findExistingContact(db, accountId, sanitized);
+      const raced = await findExistingContact(db, accountId, phone);
       if (raced) return { id: raced.id, created: false };
     }
     console.error('[api/v1/contacts] create error:', error);
