@@ -7,10 +7,10 @@ ln -s ../web/.env.local apps/api/.env.local          # both apps read one file
 npm run dev
 ```
 
-`npm run dev` starts both apps — the UI on 3000 and the API on 3001 —
+`npm run dev` starts both apps — the UI on 4310 and the API on 4311 —
 and the UI forwards `/api/*` to the API via `API_ORIGIN` in
-`.env.local`. Open <http://localhost:3000>; you should never need to
-talk to 3001 directly.
+`.env.local`. Open <http://localhost:4310>; you should never need to
+talk to 4311 directly.
 
 ## If pages 404 and the log fills with `Watchpack Error … EMFILE`
 
@@ -63,8 +63,8 @@ machine.
 1. **Run one app at a time.** Usually you are only changing one side:
 
    ```bash
-   npm run dev:web    # UI on 3000 — /api/* needs dev:api in another shell
-   npm run dev:api    # API on 3001
+   npm run dev:web    # UI on 4310 — /api/* needs dev:api in another shell
+   npm run dev:api    # API on 4311
    ```
 
    Working on the UI against an already-running API is the common case,
@@ -106,10 +106,40 @@ the machine is quieter rather than trying to debug the routes.
 
 | Port | What |
 | --- | --- |
-| 3000 | UI (`apps/web`). Proxies `/api/*` to 3001 in development. |
-| 3001 | API (`apps/api`). |
+| 4310 | UI (`apps/web`). Proxies `/api/*` to 4311 in development. |
+| 4311 | API (`apps/api`). |
+
+Both are off Next's 3000/3001 on purpose. Those two are taken on most
+machines that run more than one Node project, and losing the race is
+quiet rather than loud: Next picks the next free port and carries on,
+while `API_ORIGIN` still points at the old one — so the UI comes up fine
+and every `/api/*` call 404s.
+
+### Changing them
+
+Set `WEB_PORT` (and `API_ORIGIN`) in `apps/web/.env.local`:
+
+```bash
+WEB_PORT=5310
+API_ORIGIN=http://localhost:5311
+```
+
+`API_PORT` is derived from `API_ORIGIN` unless you set it explicitly, so
+the port the UI forwards to and the port the API listens on cannot drift
+apart. For a one-off, export instead of editing:
+
+```bash
+WEB_PORT=5000 npm run dev:web
+```
+
+Next cannot read `PORT` from `.env.local` — its HTTP server binds before
+any env file is loaded. `scripts/port.sh` reads these values and the npm
+scripts pass the answer to Next as `--port`.
 
 `API_ORIGIN` is read when the dev server boots, and Next bakes rewrites
 into the build output — so changing it needs a restart, and setting it on
 an already-built production container does nothing. In production a
 reverse proxy routes `/api/*` instead; see [docker.md](./docker.md).
+Container ports are unaffected by any of the above: the images listen on
+3000/3001 internally and `docker-compose.yml` maps the host port through
+`HOST_PORT`.

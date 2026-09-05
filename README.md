@@ -88,10 +88,11 @@ ln -s ../web/.env.local apps/api/.env.local          # both apps read one file
 npm run dev
 ```
 
-Open <http://localhost:3000>. You'll be redirected to `/login` (or
+Open <http://localhost:4310>. You'll be redirected to `/login` (or
 `/dashboard` if already signed in). `npm run dev` starts two servers —
-the UI on 3000 and the API on 3001 — and the UI forwards `/api/*` to the
-API via `API_ORIGIN` in `.env.local`.
+the UI on 4310 and the API on 4311 — and the UI forwards `/api/*` to the
+API via `API_ORIGIN` in `.env.local`. Both ports are configurable; see
+[docs/local-development.md](docs/local-development.md#ports).
 
 ### Layout
 

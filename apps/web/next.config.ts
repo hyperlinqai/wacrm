@@ -167,9 +167,10 @@ const nextConfig: NextConfig = {
    * lead-form widgets are already embedded on customer pages pointing at
    * it. Splitting the hostname would break all three.
    *
-   * `next dev` has no such proxy, so API_ORIGIN (http://localhost:3001,
+   * `next dev` has no such proxy, so API_ORIGIN (http://localhost:4311,
    * set in .env.local) makes it forward instead — `npm run dev` starts
-   * both apps.
+   * both apps. The port there is the API's; see scripts/port.sh for how
+   * the dev scripts keep the two in step.
    *
    * Note this is read at BUILD time, not run time: Next evaluates
    * rewrites() during `next build` and bakes the result into

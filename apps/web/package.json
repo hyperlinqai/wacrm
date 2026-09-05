@@ -30,9 +30,9 @@
   },
   "packageManager": "npm@10.9.9",
   "scripts": {
-    "dev": "ulimit -n 65536 2>/dev/null || true; next dev",
+    "dev": "ulimit -n 65536 2>/dev/null || true; next dev --port $(sh ../../scripts/port.sh web)",
     "build": "next build",
-    "start": "next start",
+    "start": "next start --port $(sh ../../scripts/port.sh web)",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",

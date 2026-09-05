@@ -116,7 +116,7 @@ in your fork:
 
 | Command | What it does |
 | --- | --- |
-| `npm run dev` | Turbopack dev server on port 3000. |
+| `npm run dev` | Turbopack dev server on port 4310 (API on 4311). |
 | `npm run build` | Production build. Next also runs its own typecheck here. |
 | `npm run typecheck` | `tsc --noEmit`. Fast TS-only pass. |
 | `npm run lint` | ESLint. |

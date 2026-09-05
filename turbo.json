@@ -3,7 +3,12 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
+      // next.config.ts bakes API_ORIGIN into routes-manifest.json via
+      // rewrites(), so it belongs in the cache key: without it, changing
+      // the dev API port replays a build that still rewrites /api/* to
+      // the old port.
+      "env": ["API_ORIGIN"]
     },
     "dev": {
       "cache": false,

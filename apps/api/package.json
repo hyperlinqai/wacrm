@@ -6,9 +6,9 @@
   "license": "MIT",
   "engines": { "node": ">=20.0.0" },
   "scripts": {
-    "dev": "ulimit -n 65536 2>/dev/null || true; next dev --port 3001",
+    "dev": "ulimit -n 65536 2>/dev/null || true; next dev --port $(sh ../../scripts/port.sh api)",
     "build": "next build",
-    "start": "next start --port 3001",
+    "start": "next start --port $(sh ../../scripts/port.sh api)",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
