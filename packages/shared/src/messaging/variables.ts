@@ -28,7 +28,7 @@ export interface ContactVariables {
   phone?: string | null
   email?: string | null
   company?: string | null
-  /** contacts.source — manual | whatsapp | web_form | import | api | meta_ads */
+  /** contacts.source — see CONTACT_SOURCES in ../types */
   source?: string | null
   /** Custom field values keyed by the field's display name. */
   custom?: Record<string, string | null | undefined>
@@ -54,6 +54,11 @@ export const CONTACT_SOURCE_LABELS: Record<string, string> = {
   import: 'our records',
   api: 'our app',
   meta_ads: 'Facebook / Instagram',
+  google: 'Google',
+  app_organisation: 'the SportsGenX app',
+  app_tournament_created: 'the SportsGenX app',
+  referral: 'a referral',
+  instagram: 'Instagram',
 }
 
 export function contactSourceLabel(source: string | null | undefined): string {

@@ -411,7 +411,17 @@
         "web_form": "Web form",
         "import": "CSV import",
         "api": "API",
-        "meta_ads": "Meta Lead Ads"
+        "meta_ads": "Meta Lead Ads",
+
+        "google": "Google",
+
+        "app_organisation": "App · Organisation",
+
+        "app_tournament_created": "App · Tournament created",
+
+        "referral": "Referral",
+
+        "instagram": "Instagram"
       },
       "bulkStatus": "Status",
       "markActive": "Mark active",
@@ -666,7 +676,17 @@
         "web_form": "Web form",
         "import": "CSV import",
         "api": "API",
-        "meta_ads": "Meta Lead Ads"
+        "meta_ads": "Meta Lead Ads",
+
+        "google": "Google",
+
+        "app_organisation": "App · Organisation",
+
+        "app_tournament_created": "App · Tournament created",
+
+        "referral": "Referral",
+
+        "instagram": "Instagram"
       },
       "tags": "Tags",
       "tagsTitle": "Filter by tags",

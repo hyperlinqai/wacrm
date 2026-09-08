@@ -1,21 +1,21 @@
 #!/usr/bin/env node
-// Build the SportsGenX "New Lead -> Won" flow for one account:
-// ensure the stage tags exist, submit the 25 stage templates to Meta
-// for approval, and create the automation graph that drives them.
+// Build the SportsGenX source → first-WhatsApp-sequence flow for one
+// account: ensure the tags and custom fields exist, submit the
+// templates to Meta for approval, and create the automation graph.
 //
 //   node scripts/spx-flow/create.mjs --account <uuid> [--phase ...] [--dry-run]
 //
 //   --phase templates | automations | all   (default: all)
 //   --dry-run                               print the plan, write nothing
 //
-// This script only ADDS. Retiring the previous generation of templates
-// and automations is a separate, explicitly-approved step - see
-// README.md in this directory.
+// This script only ADDS. Retiring the previous generation is
+// retire.mjs; polling Meta approval and switching the graph on is
+// status.mjs.
 //
 // Automations are created PAUSED (is_active = false): templates sit in
 // PENDING at Meta for a while, and an automation firing against an
-// unapproved template only logs failures. Turn them on from the
-// Automations page once Meta approves.
+// unapproved template only logs failures. `status.mjs --activate`
+// turns them on once every template is APPROVED.
 
 import {
   buildMetaPayload,
@@ -31,7 +31,7 @@ import {
   validateWiring,
 } from './lib.mjs'
 import { TEMPLATES, LANGUAGE } from './templates.mjs'
-import { buildAutomations, REQUIRED_TAGS } from './automations.mjs'
+import { buildAutomations, REQUIRED_TAGS, REQUIRED_FIELDS } from './automations.mjs'
 
 const { opt, dryRun, accountId } = parseArgs()
 const phase = opt('phase', 'all')
@@ -57,7 +57,7 @@ async function submitTemplates(ctx) {
 
   for (const t of TEMPLATES) {
     if (dryRun) {
-      console.log(`  [dry-run] ${t.name.padEnd(36)} ${t.category.padEnd(9)} ${t.buttons?.length ?? 0} buttons`)
+      console.log(`  [dry-run] ${t.name.padEnd(24)} ${t.category.padEnd(9)} ${t.buttons?.length ?? 0} buttons`)
       continue
     }
     const res = await metaFetch(`${META_API}/${ctx.wabaId}/message_templates`, {
@@ -113,8 +113,10 @@ async function submitTemplates(ctx) {
 }
 
 // ------------------------------------------------------------
-// Tags, ids, automations
+// Tags, fields, ids, automations
 // ------------------------------------------------------------
+const PLACEHOLDER = '00000000-0000-4000-8000-000000000000'
+
 async function ensureTags(ctx) {
   const ids = {}
   for (const t of REQUIRED_TAGS) {
@@ -128,7 +130,7 @@ async function ensureTags(ctx) {
     }
     if (dryRun) {
       console.log(`  [dry-run] + tag "${t.name}"`)
-      ids[t.key] = '00000000-0000-4000-8000-000000000000'
+      ids[t.key] = PLACEHOLDER
       continue
     }
     const { rows: created } = await q(
@@ -142,43 +144,36 @@ async function ensureTags(ctx) {
   return ids
 }
 
-async function resolveIds(ctx) {
-  const tags = await ensureTags(ctx)
-
-  const fieldByName = async (name) => {
+async function ensureFields(ctx) {
+  const ids = {}
+  for (const f of REQUIRED_FIELDS) {
     const { rows } = await q(
       'SELECT id FROM custom_fields WHERE account_id = $1 AND field_name = $2 LIMIT 1',
-      [accountId, name],
+      [accountId, f.name],
     )
-    if (!rows[0]) throw new Error(`Custom field "${name}" not found on this account`)
-    return rows[0].id
+    if (rows[0]) {
+      ids[f.key] = rows[0].id
+      continue
+    }
+    if (dryRun) {
+      console.log(`  [dry-run] + custom field "${f.name}"`)
+      ids[f.key] = PLACEHOLDER
+      continue
+    }
+    const { rows: created } = await q(
+      `INSERT INTO custom_fields (account_id, organization_id, user_id, field_name, field_type)
+       VALUES ($1,$2,$3,$4,'text') RETURNING id`,
+      [accountId, ctx.organizationId, ctx.userId, f.name],
+    )
+    ids[f.key] = created[0].id
+    console.log(`  + custom field "${f.name}"`)
   }
-
-  const { rows: pipes } = await q(
-    'SELECT id FROM pipelines WHERE account_id = $1 ORDER BY created_at LIMIT 1',
-    [accountId],
-  )
-  if (!pipes[0]) throw new Error('No pipeline found on this account')
-  const { rows: stages } = await q(
-    'SELECT id, name FROM pipeline_stages WHERE pipeline_id = $1 ORDER BY position',
-    [pipes[0].id],
-  )
-  if (!stages.length) throw new Error('Pipeline has no stages')
-  const won = stages.find((s) => /won/i.test(s.name)) ?? stages[stages.length - 1]
-
-  return {
-    tags,
-    fields: {
-      companyType: await fieldByName('Company Type'),
-      tournamentType: await fieldByName('Tournament Type interested in'),
-    },
-    pipeline: { id: pipes[0].id, wonStageId: won.id },
-  }
+  return ids
 }
 
 async function createAutomations(ctx) {
-  console.log('\n=== TAGS ===')
-  const ids = await resolveIds(ctx)
+  console.log('\n=== TAGS + FIELDS ===')
+  const ids = { tags: await ensureTags(ctx), fields: await ensureFields(ctx) }
   const automations = buildAutomations(ids)
 
   const problems = validateWiring(automations)
@@ -194,6 +189,14 @@ async function createAutomations(ctx) {
     if (dryRun) {
       console.log(`  [dry-run] ${a.name}`)
       console.log(`            ${a.trigger_type} - ${stepCount} steps`)
+      continue
+    }
+    const { rows: dup } = await q(
+      'SELECT id FROM automations WHERE account_id = $1 AND name = $2 LIMIT 1',
+      [accountId, a.name],
+    )
+    if (dup[0]) {
+      console.log(`  skip ${a.name} (already exists)`)
       continue
     }
     const { rows } = await q(

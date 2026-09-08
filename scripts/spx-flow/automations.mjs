@@ -1,30 +1,40 @@
-// SportsGenX "New Lead → Won" automation graph.
+// SportsGenX source → first-WhatsApp-sequence automation graph.
 //
-// Two kinds of automation make up the flow:
+// Three layers, joined by tags:
 //
-//   DRIP  (one per stage) — fires on `tag_added` for that stage's tag,
-//         sends the stage message, waits, and on NO REPLY sends a
-//         reminder and finally parks the lead in the nurture campaign.
-//         `stop_on_reply` + `stop_tag_ids` on trigger_config kill a
-//         parked run the moment the lead answers or moves on, so a
-//         reminder can never chase someone who already replied.
+//   ROUTER   (new_contact_created) — one per acquisition source. Reads
+//            contacts.source and adds that source's tag. The public API
+//            stamps `source` on create (see docs/public-api.md); the
+//            Meta Lead Ads webhook stamps `meta_ads`; web forms stamp
+//            `web_form`. Adding the source tag is what starts the
+//            sequence, so an agent (or the SportsGenX app via PATCH
+//            tags) can also start one by hand — that is how "Tournament
+//            Created" is entered for a contact who already exists.
 //
-//   REPLY (interactive_reply) — fires on the button LABEL the lead
-//         tapped, records what they said, and adds the NEXT stage's
-//         tag. Adding that tag is what starts the next drip, so the
-//         eight stages chain themselves.
+//   SEQUENCE (tag_added on a source tag) — records the sequence name in
+//            the "WhatsApp Sequence" custom field, sends the welcome
+//            template and, while the lead has not engaged, two
+//            reminders (day 1, day 3) before parking them in nurture.
+//            The `condition` fork checks the "Engaged" tag, which every
+//            button handler below adds; `stop_tag_ids` re-checks it the
+//            moment a parked run comes due. `stop_on_reply` covers a
+//            typed reply (button taps do not count as replies — see
+//            sequenceStopReason in the engine — hence the tag).
 //
-// The `condition` step in every drip is the diagram's "Wait for Reply →
-// Reply / No Reply" fork, expressed as a yes/no branch on whether the
-// next stage's tag is already present.
+//   HANDLER  (interactive_reply) — fires on the exact button label
+//            (template quick replies) or button/row id (interactive
+//            messages) the lead tapped. Records the answer, and asks the
+//            next question as an INTERACTIVE message — the tap opened
+//            Meta's 24-hour window, so these need no template. The
+//            discovery chain (format → sport → timing → assistance →
+//            organiser type) is shared by every sequence.
 //
-// Stage 08 is deliberately NOT entered automatically — an agent adds
-// the "Stage 08 · Won & Payment" tag by hand once payment lands, and
-// that tag_added starts the win/onboarding sequence.
+// Reply ids must be unique across handlers: the engine runs EVERY
+// automation whose reply_ids contain the id. validateWiring() enforces
+// that, and that every id exists on some template button or interactive
+// message.
 
 const days = (amount) => ({ step_type: 'wait', step_config: { amount, unit: 'days' } })
-const minutes = (amount) => ({ step_type: 'wait', step_config: { amount, unit: 'minutes' } })
-const hours = (amount) => ({ step_type: 'wait', step_config: { amount, unit: 'hours' } })
 
 const tag = (id) => ({ step_type: 'add_tag', step_config: { tag_id: id } })
 const assign = () => ({
@@ -32,6 +42,10 @@ const assign = () => ({
   step_config: { mode: 'round_robin' },
 })
 const text = (t) => ({ step_type: 'send_message', step_config: { text: t } })
+const setField = (fieldId, value) => ({
+  step_type: 'update_contact_field',
+  step_config: { field: `custom:${fieldId}`, value },
+})
 
 const tpl = (template_name) => ({
   step_type: 'send_template',
@@ -42,473 +56,550 @@ const tpl = (template_name) => ({
   },
 })
 
-/** The diagram's "Wait for Reply" fork: has the lead moved on yet? */
-const replyFork = (nextStageTagId, { onReply = [], onNoReply = [] }) => ({
-  step_type: 'condition',
-  step_config: { subject: 'tag_presence', operand: nextStageTagId },
-  branches: { yes: onReply, no: onNoReply },
+/** Interactive reply buttons (≤ 3, titles ≤ 20 chars). Not interpolated. */
+const buttons = (body, list, footer) => ({
+  step_type: 'send_buttons',
+  step_config: {
+    kind: 'buttons',
+    body,
+    ...(footer ? { footer } : {}),
+    buttons: list.map(([id, title]) => ({ id, title })),
+  },
 })
+
+/** Interactive list (≤ 10 rows, titles ≤ 24 chars). Not interpolated. */
+const list = (body, button_label, rows, footer) => ({
+  step_type: 'send_list',
+  step_config: {
+    kind: 'list',
+    body,
+    ...(footer ? { footer } : {}),
+    button_label,
+    sections: [{ rows: rows.map(([id, title, description]) => ({ id, title, ...(description ? { description } : {}) })) }],
+  },
+})
+
+const has = (tagId, { yes = [], no = [] }) => ({
+  step_type: 'condition',
+  step_config: { subject: 'tag_presence', operand: tagId },
+  branches: { yes, no },
+})
+
+const sourceIs = (value, steps) => ({
+  step_type: 'condition',
+  step_config: { subject: 'contact_field', operand: 'source', value },
+  branches: { yes: steps, no: [] },
+})
+
+export const SITE_URL = 'https://web.sportsgenx.com'
+
+// ------------------------------------------------------------
+// Interactive messages — the questions asked inside the 24h window.
+// Row/button ids are the reply_ids the handlers below listen for.
+// ------------------------------------------------------------
+const Q = {
+  format: list(
+    'Great! What would you like to organise? 🏆\n\nPick the format closest to your plan — you can change it later.',
+    'Choose format',
+    [
+      ['lw_q1_knockout', 'Knockout Tournament', 'Single or double elimination'],
+      ['lw_q1_league', 'League / Points Table', 'Every team plays, table decides'],
+      ['lw_q1_rr', 'Round Robin', 'Groups, then knockouts'],
+      ['lw_q1_auction', 'Auction League', 'IPL-style player auction'],
+      ['lw_q1_multi', 'Multi-sport Event', 'Sports day, meet or festival'],
+      ['lw_q1_unsure', 'Not sure yet', 'We will help you decide'],
+    ],
+  ),
+  sport: list(
+    'Which sport is it? 🏏⚽🏸',
+    'Choose sport',
+    [
+      ['lw_q2_cricket', 'Cricket'],
+      ['lw_q2_football', 'Football'],
+      ['lw_q2_badminton', 'Badminton'],
+      ['lw_q2_pickleball', 'Pickleball'],
+      ['lw_q2_tennis', 'Tennis'],
+      ['lw_q2_tt', 'Table Tennis'],
+      ['lw_q2_volleyball', 'Volleyball'],
+      ['lw_q2_kabaddi', 'Kabaddi'],
+      ['lw_q2_chess', 'Chess'],
+      ['lw_q2_other', 'Other sport'],
+    ],
+  ),
+  timing: buttons('When is your next tournament? 📅', [
+    ['lw_q3_2w', 'Within 2 weeks'],
+    ['lw_q3_3m', 'In 1–3 months'],
+    ['lw_q3_tbd', 'Not decided yet'],
+  ]),
+  assistance: buttons(
+    'Would you like to manage it yourself on SportsGenX, or have our team help with the setup and running?',
+    [
+      ['lw_q4_self', 'I will manage myself'],
+      ['lw_q4_setup', 'Need setup help'],
+      ['lw_q4_full', 'Full management'],
+    ],
+  ),
+  organiser: list(
+    'Last one — which of these describes you best?',
+    'Choose one',
+    [
+      ['lw_q5_individual', 'Individual Organiser'],
+      ['lw_q5_academy', 'Academy'],
+      ['lw_q5_club', 'Club'],
+      ['lw_q5_association', 'Association'],
+      ['lw_q5_school', 'School / College'],
+      ['lw_q5_corporate', 'Corporate'],
+      ['lw_q5_society', 'Society / Community'],
+      ['lw_q5_other', 'Other'],
+    ],
+  ),
+  orgNeeds: list(
+    'What would you like to manage for your academy or organisation?',
+    'Choose one',
+    [
+      ['org_need_registrations', 'Player registrations', 'Online sign-ups and profiles'],
+      ['org_need_fees', 'Fees & payments', 'Collect fees online'],
+      ['org_need_batches', 'Batches & attendance', 'Training groups and attendance'],
+      ['org_need_coaches', 'Coaches & staff', 'Roles and schedules'],
+      ['org_need_internal', 'Internal tournaments', 'In-house leagues and events'],
+      ['org_need_all', 'All of the above'],
+    ],
+  ),
+  tcUtilities: list(
+    'Here is what your tournament can use on SportsGenX. Which one would you like to explore first?',
+    'Choose utility',
+    [
+      ['tc_util_registrations', 'Online registrations', 'Shareable sign-up link'],
+      ['tc_util_fees', 'Fee collection', 'Entry fees paid online'],
+      ['tc_util_fixtures', 'Fixtures & scheduling', 'Auto-generated for any format'],
+      ['tc_util_scoring', 'Live scoring', 'Ball-by-ball / point-by-point'],
+      ['tc_util_standings', 'Standings & results', 'Auto-updated tables'],
+      ['tc_util_players', 'Player profiles & stats', 'Career stats for every player'],
+      ['tc_util_certificates', 'Certificates', 'Digital certificates and awards'],
+    ],
+  ),
+  refNeed: list(
+    'Sure! What are you looking to do?',
+    'Choose one',
+    [
+      ['need_tournament', 'Organise a tournament'],
+      ['need_org', 'Manage academy / org'],
+      ['need_digitise', 'Digitise a tournament', 'Take an existing event online'],
+      ['need_explore', 'Just exploring'],
+      ['need_other', 'Something else'],
+    ],
+  ),
+  cta: (body) =>
+    buttons(body, [
+      ['cta_demo', 'Book a demo'],
+      ['cta_talk', 'Talk to our team'],
+      ['cta_done', 'All set for now'],
+    ]),
+  exploreNext: buttons('What would you like to do next?', [
+    ['lw_explore_start', 'Start a tournament'],
+    ['cta_demo', 'Book a demo'],
+    ['cta_talk', 'Talk to our team'],
+  ]),
+  igNext: buttons('Ready to take your tournament online?', [
+    ['ig_digitise', 'Digitise now'],
+    ['cta_demo', 'Book a demo'],
+    ['cta_talk', 'Talk to our team'],
+  ]),
+}
+
+/** contacts.source value → sequence. Keys are the REQUIRED_TAGS keys. */
+export const SOURCES = [
+  { key: 'srcMeta', source: 'meta_ads', label: 'Meta', sequence: 'Meta → Lead Welcome', templates: 'lw' },
+  { key: 'srcGoogle', source: 'google', label: 'Google', sequence: 'Google → Lead Welcome', templates: 'lw' },
+  { key: 'srcWebsite', source: 'web_form', label: 'Website', sequence: 'Website → Lead Welcome', templates: 'lw' },
+  { key: 'srcOrg', source: 'app_organisation', label: 'App · Organisation', sequence: 'Organisation → Onboarding', templates: 'org' },
+  { key: 'srcTournament', source: 'app_tournament_created', label: 'App · Tournament Created', sequence: 'Tournament Created → Setup Assistance', templates: 'tc' },
+  { key: 'srcReferral', source: 'referral', label: 'Referral', sequence: 'Referral → Qualification', templates: 'ref' },
+  { key: 'srcInstagram', source: 'instagram', label: 'Instagram', sequence: 'Instagram → Tournament Digitisation', templates: 'ig' },
+]
 
 /**
  * Build every automation. `ids` carries the runtime-resolved uuids —
- * see resolveIds() in apply.mjs.
+ * see resolveIds() in create.mjs.
  */
 export function buildAutomations(ids) {
-  const { tags: T, fields: F, pipeline } = ids
+  const { tags: T, fields: F } = ids
 
-  /** Tags that mean "this lead is no longer waiting at this stage". */
-  const terminal = [T.unresponsive, T.notInterested, T.nurture, T.lost]
+  /** Tags that mean "stop chasing this lead". */
+  const stopTags = [T.engaged, T.interested, T.notInterested, T.nurture]
 
-  /** A stage drip: message → wait → (replied? stop : remind → give up). */
-  const stageDrip = ({
-    name,
-    description,
-    triggerTagId,
-    nextStageTagId,
-    firstTemplate,
-    reminderTemplate,
-    waitAmount = 1,
-    waitUnit = 'days',
-    giveUpTags,
-    extraNoReply = [],
-  }) => ({
-    name,
-    description,
+  const sequence = ({ key, label, sequence: name, templates: p }) => ({
+    name: `${name}`,
+    description:
+      `Starts when the "Source · ${label}" tag is added (the ${label} router adds it for new contacts). ` +
+      'Welcome message now, reminders on day 1 and day 3 while the lead has not tapped a button, then nurture.',
     trigger_type: 'tag_added',
     trigger_config: {
-      tag_id: triggerTagId,
+      tag_id: T[key],
       stop_on_reply: true,
-      stop_tag_ids: [nextStageTagId, ...terminal].filter(Boolean),
+      stop_tag_ids: stopTags,
     },
     steps: [
-      tpl(firstTemplate),
-      { step_type: 'wait', step_config: { amount: waitAmount, unit: waitUnit } },
-      replyFork(nextStageTagId, {
-        onReply: [],
-        onNoReply: [
-          tpl(reminderTemplate),
-          days(1),
-          ...extraNoReply,
-          ...giveUpTags.map(tag),
+      setField(F.sequence, name),
+      tpl(`${p}_welcome_instant`),
+      days(1),
+      has(T.engaged, {
+        no: [
+          tpl(`${p}_reminder1_d1`),
+          days(2),
+          has(T.engaged, {
+            no: [tpl(`${p}_reminder2_d3`), days(2), tag(T.unresponsive), tag(T.nurture)],
+          }),
         ],
       }),
     ],
   })
 
+  const router = ({ key, source, label }) => ({
+    name: `Entry · ${label} → Source tag`,
+    description:
+      `New contact with source = "${source}" gets the "Source · ${label}" tag, which starts its sequence. ` +
+      'Imports and other sources do not match and are left alone.',
+    trigger_type: 'new_contact_created',
+    trigger_config: {},
+    steps: [sourceIs(source, [tag(T[key])])],
+  })
+
+  const handler = (name, description, replyIds, steps) => ({
+    name,
+    description,
+    trigger_type: 'interactive_reply',
+    trigger_config: { reply_ids: replyIds },
+    steps,
+  })
+
+  /** "Not engaged in 2 days after a self-serve link" follow-up. */
+  const selfExploreFollowUp = [
+    days(2),
+    has(T.interested, { no: [tpl('fu_check_in_d2')] }),
+  ]
+
   return [
     // ========================================================
-    // 01 — NEW LEAD  (the only entry point: a contact is created)
+    // ROUTERS + SEQUENCES — one pair per source
+    // ========================================================
+    ...SOURCES.map(router),
+    ...SOURCES.map(sequence),
+
+    // ========================================================
+    // NURTURE — where an unresponsive lead lands
     // ========================================================
     {
-      name: 'Stage 01 · New Lead — Welcome & Reminders',
+      name: 'Nurture → Day 3 / Day 10 loop',
       description:
-        'Entry point. Welcomes every new lead instantly, then chases twice (+2h, +24h) before parking them in the nurture campaign. Skips bulk imports.',
-      trigger_type: 'new_contact_created',
-      trigger_config: {
-        stop_on_reply: true,
-        stop_tag_ids: [T.stage02, ...terminal].filter(Boolean),
-      },
-      steps: [
-        // Bulk CSV/Excel imports also insert contacts — without this
-        // guard a 900-row import would WhatsApp every one of them.
-        {
-          step_type: 'condition',
-          step_config: { subject: 'contact_field', operand: 'source', value: 'import' },
-          branches: {
-            yes: [],
-            no: [
-              tag(T.stage01),
-              tpl('s01_new_lead_welcome_instant'),
-              minutes(30),
-              replyFork(T.stage02, {
-                onReply: [],
-                onNoReply: [
-                  hours(2),
-                  tpl('s01_new_lead_reminder1_2h'),
-                  hours(22),
-                  tpl('s01_new_lead_reminder2_24h'),
-                  days(1),
-                  tag(T.unresponsive),
-                  tag(T.nurture),
-                ],
-              }),
-            ],
-          },
-        },
-      ],
-    },
-
-    // ========================================================
-    // 02 — CONTACT ATTEMPT
-    // ========================================================
-    stageDrip({
-      name: 'Stage 02 · Contact Attempt — Message & Reminder',
-      description:
-        'Asks the lead how they want to be contacted. No reply after 2 days → hands the conversation to an agent for a call/email attempt, then marks unresponsive.',
-      triggerTagId: T.stage02,
-      nextStageTagId: T.stage03,
-      firstTemplate: 's02_contact_attempt_message_d0',
-      reminderTemplate: 's02_contact_attempt_reminder_d1',
-      // Diagram's "Try Another Channel (Call / Email)" — a human step.
-      extraNoReply: [assign()],
-      giveUpTags: [T.unresponsive, T.nurture],
-    }),
-
-    // ========================================================
-    // 03 — QUALIFICATION
-    // ========================================================
-    stageDrip({
-      name: 'Stage 03 · Qualification — Customer Type',
-      description:
-        'Asks whether the lead is an organizer, academy, association or club. The answer is written to the "Company Type" custom field by the reply handler.',
-      triggerTagId: T.stage03,
-      nextStageTagId: T.stage04,
-      firstTemplate: 's03_qualification_customer_type_d0',
-      reminderTemplate: 's03_qualification_reminder_d1',
-      giveUpTags: [T.unresponsive, T.nurture],
-    }),
-
-    // ========================================================
-    // 04 — DISCOVERY
-    // ========================================================
-    stageDrip({
-      name: 'Stage 04 · Discovery — Tournament Type',
-      description:
-        'Asks which tournament format they are planning (KO, league, auction …). The answer lands in the "Tournament Type interested in" custom field.',
-      triggerTagId: T.stage04,
-      nextStageTagId: T.stage05,
-      firstTemplate: 's04_discovery_tournament_type_d0',
-      reminderTemplate: 's04_discovery_reminder_d1',
-      giveUpTags: [T.unresponsive, T.nurture],
-    }),
-
-    // ========================================================
-    // 05 — DEMO / SELF-EXPLORE
-    // ========================================================
-    stageDrip({
-      name: 'Stage 05 · Demo — Invitation & Reminder',
-      description:
-        'Offers a live demo or self-serve access. The three replies (demo / explore / not now) are each handled by their own reply automation.',
-      triggerTagId: T.stage05,
-      nextStageTagId: T.stage06,
-      firstTemplate: 's05_demo_invitation_d0',
-      reminderTemplate: 's05_demo_reminder_d1',
-      giveUpTags: [T.unresponsive, T.nurture],
-    }),
-
-    // ========================================================
-    // 06 — POST-DEMO DECISION
-    // ========================================================
-    stageDrip({
-      name: 'Stage 06 · Post-Demo — Outcome Follow-up',
-      description:
-        'Asks how the demo went. Fires two days after the demo/self-explore handover so it lands after the demo actually happened.',
-      triggerTagId: T.stage06,
-      nextStageTagId: T.stage07,
-      firstTemplate: 's06_post_demo_followup_d0',
-      reminderTemplate: 's06_post_demo_reminder_d1',
-      giveUpTags: [T.unresponsive, T.nurture],
-    }),
-
-    // ========================================================
-    // 07 — OFFER & NEGOTIATION
-    // ========================================================
-    stageDrip({
-      name: 'Stage 07 · Offer & Negotiation — Proposal',
-      description:
-        'Sends the proposal message and chases once. No reply → marked Lost and dropped into nurture rather than left in limbo.',
-      triggerTagId: T.stage07,
-      nextStageTagId: T.stage08,
-      firstTemplate: 's07_offer_proposal_d0',
-      reminderTemplate: 's07_offer_reminder_d1',
-      giveUpTags: [T.lost, T.nurture],
-    }),
-
-    // ========================================================
-    // 08 — WON & PAYMENT  (entered by hand: agent adds the tag)
-    // ========================================================
-    {
-      name: 'Stage 08 · Won & Payment — Confirmation & Onboarding',
-      description:
-        'MANUAL ENTRY: an agent adds the "Stage 08 · Won & Payment" tag once payment is received. Confirms the payment, opens a Won deal, then sends the onboarding welcome a day later.',
-      trigger_type: 'tag_added',
-      trigger_config: { tag_id: T.stage08 },
-      steps: [
-        tpl('s08_won_payment_received_d0'),
-        tag(T.paid),
-        {
-          step_type: 'create_deal',
-          step_config: {
-            pipeline_id: pipeline.id,
-            stage_id: pipeline.wonStageId,
-            title: '{{contact.name|New customer}} — SportsGenX',
-            value: 0,
-          },
-        },
-        days(1),
-        tpl('s08_won_onboarding_welcome_d1'),
-        tag(T.onboarding),
-        assign(),
-      ],
-    },
-
-    // ========================================================
-    // 09 — NURTURE CAMPAIGN (the diagram's "loop back to nurture")
-    // ========================================================
-    {
-      name: 'Stage 09 · Nurture Campaign — Day 3 / 7 / 14 Drip',
-      description:
-        'Where every unresponsive, "not now" and lost lead lands. Three value touches over two weeks; any reply or a move back into the pipeline ends the run immediately.',
+        'Two value touches for leads who never engaged. Any button tap (Engaged), a typed reply, or a Not Interested tag ends it.',
       trigger_type: 'tag_added',
       trigger_config: {
         tag_id: T.nurture,
         stop_on_reply: true,
-        stop_tag_ids: [
-          T.interested,
-          T.stage02,
-          T.stage03,
-          T.stage04,
-          T.stage05,
-          T.stage06,
-          T.stage07,
-          T.stage08,
-          T.notInterested,
-        ].filter(Boolean),
+        stop_tag_ids: [T.engaged, T.interested, T.notInterested],
       },
-      steps: [
-        days(3),
-        tpl('s09_nurture_value_d03'),
-        days(4),
-        tpl('s09_nurture_social_proof_d07'),
-        days(7),
-        tpl('s09_nurture_reengage_d14'),
-        tag(T.sequenceCompleted),
-      ],
+      steps: [days(3), tpl('nur_value_d03'), days(7), tpl('nur_reengage_d10'), tag(T.sequenceCompleted)],
     },
 
     // ========================================================
-    // REPLY HANDLERS — one per meaningful button answer.
-    // reply_ids are the exact QUICK_REPLY labels from templates.mjs.
+    // WELCOME-BUTTON HANDLERS
     // ========================================================
-    {
-      name: 'Reply · Interested → Stage 02',
-      description:
-        'Positive reply to any Stage 01 or nurture message. Tags the lead Interested and moves them to Stage 02, which starts the contact-attempt drip.',
-      trigger_type: 'interactive_reply',
-      trigger_config: {
-        reply_ids: [
-          'Yes, tell me more',
-          'Yes, show me',
-          'I am interested',
-          'I am planning one now',
-        ],
-      },
-      steps: [tag(T.interested), tag(T.stage02)],
-    },
-    {
-      name: 'Reply · Not right now → Nurture',
-      description:
-        'Soft decline on any stage. Marks the lead as deferred and hands them to the nurture campaign instead of dropping them.',
-      trigger_type: 'interactive_reply',
-      trigger_config: { reply_ids: ['Not right now', 'Not now'] },
-      steps: [tpl('s05_demo_not_now_nurture_d0'), tag(T.deferred), tag(T.nurture)],
-    },
-    {
-      name: 'Reply · Continue on WhatsApp → Stage 03',
-      description: 'Lead chose to keep talking here. Moves them into qualification.',
-      trigger_type: 'interactive_reply',
-      trigger_config: { reply_ids: ['Continue on WhatsApp', 'Yes, continue'] },
-      steps: [tag(T.stage03)],
-    },
-    {
-      name: 'Reply · Request a call back → Agent',
-      description:
-        'Lead asked to be called. Tags them, assigns the conversation to an agent and acknowledges immediately.',
-      trigger_type: 'interactive_reply',
-      trigger_config: { reply_ids: ['Request a call back'] },
-      steps: [
+    handler(
+      'Reply · Organise a Tournament → Discovery',
+      'Lead wants to run a tournament (from any welcome, nurture, explore or referral menu). Starts the discovery chain: format → sport → timing → assistance → organiser type.',
+      ['Organise a Tournament', 'Manage Tournaments', 'need_tournament', 'lw_explore_start'],
+      [tag(T.engaged), tag(T.intentTournament), Q.format],
+    ),
+    handler(
+      'Reply · Explore SportsGenX → Overview & link',
+      'Lead prefers to look around first. Sends the overview and self-serve link, offers next steps, and checks in after two days if they have not moved.',
+      ['Explore SportsGenX', 'need_explore'],
+      [
+        tag(T.engaged),
+        tag(T.intentExplore),
+        tag(T.selfExplore),
+        text(
+          'Here is a quick look at SportsGenX, {{contact.first_name|there}} 👇\n\n' +
+            '🏆 Tournaments in any format — knockout, league, round robin, auction\n' +
+            '📝 Online registrations and fee collection\n' +
+            '📊 Auto fixtures, live scoring and standings\n' +
+            '👥 Teams, players, academies and associations in one place\n\n' +
+            `It is free to start: ${SITE_URL}`,
+        ),
+        Q.exploreNext,
+        ...selfExploreFollowUp,
+      ],
+    ),
+    handler(
+      'Reply · Talk to team / Call back → Agent',
+      'Lead asked for a human. Tags the callback, assigns the conversation round-robin and acknowledges.',
+      ['Talk to Our Team', 'Request Call Back', 'Talk to Expert', 'cta_talk', 'need_other'],
+      [
+        tag(T.engaged),
+        tag(T.interested),
         tag(T.callback),
         assign(),
         text(
-          'Sure, {{contact.first_name|there}} 👍 Our team will call you shortly. If you have a preferred time, just tell me here.',
-        ),
-        tag(T.stage03),
-      ],
-    },
-    {
-      name: 'Reply · Not interested → Closed',
-      description:
-        'Hard decline on any stage. Stops every running sequence via the Not Interested stop tag and sends a graceful sign-off.',
-      trigger_type: 'interactive_reply',
-      trigger_config: { reply_ids: ['Not interested'] },
-      steps: [
-        tag(T.notInterested),
-        text(
-          'Understood, {{contact.first_name|there}} — thanks for letting me know 🙏 If anything changes, just message here and I will pick it right up.',
+          'Sure, {{contact.first_name|there}} 👍 One of our team members will reach out to you shortly on this chat or by call.\n\n' +
+            'Meanwhile, tell me briefly what you are planning so we come prepared.',
         ),
       ],
-    },
-    {
-      name: 'Reply · Customer type captured → Stage 04',
-      description:
-        'Stage 03 answer. Writes the tapped option into the "Company Type" custom field, then moves the lead to discovery.',
-      trigger_type: 'interactive_reply',
-      trigger_config: {
-        reply_ids: ['Organizer', 'Academy', 'Association', 'Community / Club', 'Other'],
-      },
-      steps: [
-        {
-          step_type: 'update_contact_field',
-          step_config: { field: `custom:${F.companyType}`, value: '{{message.text}}' },
-        },
-        tag(T.stage04),
-      ],
-    },
-    {
-      name: 'Reply · Tournament type captured → Stage 05',
-      description:
-        'Stage 04 answer. Writes the tapped format into "Tournament Type interested in", then moves the lead to the demo stage.',
-      trigger_type: 'interactive_reply',
-      trigger_config: {
-        reply_ids: [
-          'Knockout (KO)',
-          'Points League (PL)',
-          'Auction',
-          'Draw',
-          'League',
-          'Round Robin (RR)',
-          'KO + League',
-          'Mixed / Other',
-        ],
-      },
-      steps: [
-        {
-          step_type: 'update_contact_field',
-          step_config: { field: `custom:${F.tournamentType}`, value: '{{message.text}}' },
-        },
-        tag(T.stage05),
-      ],
-    },
-    {
-      name: 'Reply · Demo requested → Book slot',
-      description:
-        'Lead wants a live demo. Confirms, assigns an agent to book the slot, and queues the post-demo follow-up two days out.',
-      trigger_type: 'interactive_reply',
-      trigger_config: {
-        reply_ids: ['Yes, show me a demo', 'Actually, show me a demo'],
-      },
-      steps: [
-        tag(T.demoRequested),
-        tag(T.demoScheduled),
-        tpl('s05_demo_scheduled_confirm_d0'),
-        assign(),
-        days(2),
-        tag(T.stage06),
-      ],
-    },
-    {
-      name: 'Reply · Self-explore → Send access',
-      description:
-        'Lead prefers to explore alone. Sends access and still follows up two days later to hear how it went.',
-      trigger_type: 'interactive_reply',
-      trigger_config: { reply_ids: ['I will explore on my own'] },
-      steps: [
-        tag(T.selfExplore),
-        tpl('s05_demo_self_explore_access_d0'),
-        days(2),
-        tag(T.stage06),
-      ],
-    },
-    {
-      name: 'Reply · Post-demo outcome → Stage 07',
-      description:
-        'Stage 06 answer. A reply mentioning concerns is routed to a human as an objection; everything else is tagged Interested. Both move on to the offer stage.',
-      trigger_type: 'interactive_reply',
-      trigger_config: {
-        reply_ids: ['Interested', 'Need more information', 'I have some concerns'],
-      },
-      steps: [
-        {
-          step_type: 'condition',
-          step_config: { subject: 'message_content', operand: 'concerns', value: 'concerns' },
-          branches: {
-            yes: [tag(T.objection), assign()],
-            no: [tag(T.interested)],
-          },
-        },
-        tag(T.stage07),
-      ],
-    },
-    {
-      name: 'Reply · Ready to proceed → Agent closes',
-      description:
-        'Lead wants the proposal or is ready to buy. Hands over to a human — Stage 08 is entered by hand once payment actually lands.',
-      trigger_type: 'interactive_reply',
-      trigger_config: { reply_ids: ['Send me the proposal', 'I am ready to proceed'] },
-      steps: [
+    ),
+    handler(
+      'Reply · Request Demo → Book slot',
+      'Lead wants a demo. Tags Demo Requested, assigns an agent to book the slot and asks for a preferred time.',
+      ['Request Demo', 'Book a Demo', 'cta_demo'],
+      [
+        tag(T.engaged),
         tag(T.interested),
+        tag(T.demoRequested),
         assign(),
         text(
-          'Brilliant, {{contact.first_name|there}} 🎉 Our team is preparing your proposal and will share it right here shortly.',
+          'Great choice, {{contact.first_name|there}} 🎉 Our team will confirm your demo slot on this chat shortly.\n\n' +
+            'Which day and time suit you best?',
         ),
       ],
-    },
-    {
-      name: 'Reply · Question or pricing → Agent',
-      description:
-        'Any "I have a question" / "Discuss pricing" tap. Tags the objection and puts a human on the conversation straight away.',
-      trigger_type: 'interactive_reply',
-      trigger_config: {
-        reply_ids: ['I have a question', 'Discuss pricing', 'Ask me a question'],
-      },
-      steps: [
+    ),
+
+    // ========================================================
+    // DISCOVERY CHAIN — shared by every sequence
+    // ========================================================
+    handler(
+      'Discovery 1 · Format → ask sport',
+      'Stores the tournament format in "Tournament Type interested in" and asks the sport.',
+      ['lw_q1_knockout', 'lw_q1_league', 'lw_q1_rr', 'lw_q1_auction', 'lw_q1_multi', 'lw_q1_unsure'],
+      [setField(F.tournamentType, '{{message.text}}'), Q.sport],
+    ),
+    handler(
+      'Discovery 2 · Sport → ask timing',
+      'Stores the sport in "Sports interested in" and asks when the tournament is.',
+      [
+        'lw_q2_cricket', 'lw_q2_football', 'lw_q2_badminton', 'lw_q2_pickleball', 'lw_q2_tennis',
+        'lw_q2_tt', 'lw_q2_volleyball', 'lw_q2_kabaddi', 'lw_q2_chess', 'lw_q2_other',
+      ],
+      [setField(F.sports, '{{message.text}}'), Q.timing],
+    ),
+    handler(
+      'Discovery 3 · Timing → ask assistance',
+      'Stores the date plan in "Next tournament plan" and asks self-managed vs assisted.',
+      ['lw_q3_2w', 'lw_q3_3m', 'lw_q3_tbd'],
+      [setField(F.nextPlan, '{{message.text}}'), Q.assistance],
+    ),
+    handler(
+      'Discovery 4 · Assistance → ask organiser type',
+      'Stores the answer in "Tournament management service needed" and asks the organiser type.',
+      ['lw_q4_self', 'lw_q4_setup', 'lw_q4_full'],
+      [setField(F.serviceNeeded, '{{message.text}}'), Q.organiser],
+    ),
+    handler(
+      'Discovery 5 · Organiser type → Agent',
+      'Stores the organiser type in "Company Type", marks discovery complete and Interested, assigns an agent and wraps up.',
+      [
+        'lw_q5_individual', 'lw_q5_academy', 'lw_q5_club', 'lw_q5_association',
+        'lw_q5_school', 'lw_q5_corporate', 'lw_q5_society', 'lw_q5_other',
+      ],
+      [
+        setField(F.companyType, '{{message.text}}'),
+        tag(T.interested),
+        tag(T.discoveryComplete),
+        assign(),
+        text(
+          'Thanks, {{contact.first_name|there}}! 🙌 I have everything I need.\n\n' +
+            'Our team will reach out on this chat shortly to get you set up. If you would like to start right away, it is free:\n' +
+            SITE_URL,
+        ),
+      ],
+    ),
+
+    // ========================================================
+    // ORGANISATION & ACADEMY
+    // ========================================================
+    handler(
+      'Reply · Manage Academy / Org → Needs',
+      'Organisation wants academy / club management. Asks what they need to manage.',
+      ['Manage Academy / Org', 'need_org'],
+      [tag(T.engaged), tag(T.intentAcademy), Q.orgNeeds],
+    ),
+    handler(
+      'Org · Need captured → Offer demo',
+      'Stores the need in "Features interested in" and offers a demo of those utilities.',
+      ['org_need_registrations', 'org_need_fees', 'org_need_batches', 'org_need_coaches', 'org_need_internal', 'org_need_all'],
+      [
+        setField(F.features, '{{message.text}}'),
+        Q.cta('Noted 👍 SportsGenX handles that for academies and organisations of every size. Would you like a quick demo of these utilities?'),
+      ],
+    ),
+
+    // ========================================================
+    // TOURNAMENT CREATED
+    // ========================================================
+    handler(
+      'Reply · Add Players → How-to',
+      'Sends the add-players steps and the app link, then offers help.',
+      ['Add Players'],
+      [
+        tag(T.engaged),
+        tag(T.intentAddPlayers),
+        text(
+          'Adding players takes two minutes, {{contact.first_name|there}} 👇\n\n' +
+            '1. Open your tournament → Teams / Players\n' +
+            '2. Add them one by one, or import from a sheet\n' +
+            '3. Or share your registration link and let participants sign up themselves\n\n' +
+            SITE_URL,
+        ),
+        Q.cta('Need a hand with any of this?'),
+      ],
+    ),
+    handler(
+      'Reply · Explore Utilities → List',
+      'Shows the tournament utilities list.',
+      ['Explore Utilities'],
+      [tag(T.engaged), Q.tcUtilities],
+    ),
+    handler(
+      'Tournament · Utility captured → Offer help',
+      'Stores the utility in "Features interested in" and offers a demo or setup help.',
+      [
+        'tc_util_registrations', 'tc_util_fees', 'tc_util_fixtures', 'tc_util_scoring',
+        'tc_util_standings', 'tc_util_players', 'tc_util_certificates',
+      ],
+      [
+        setField(F.features, '{{message.text}}'),
+        Q.cta('Good pick 👍 It is already available inside your tournament. Want us to walk you through it?'),
+      ],
+    ),
+    handler(
+      'Reply · Get Setup Help → Agent',
+      'High-intent: the lead has a tournament and wants help finishing it. Tags, assigns and acknowledges.',
+      ['Get Setup Help'],
+      [
+        tag(T.engaged),
+        tag(T.interested),
+        tag(T.setupHelp),
+        assign(),
+        text(
+          'On it, {{contact.first_name|there}} 🙌 A SportsGenX specialist will help you complete the setup on this chat shortly.\n\n' +
+            'Tell me which part you are stuck on — players, fixtures, scoring or registrations.',
+        ),
+      ],
+    ),
+
+    // ========================================================
+    // REFERRAL
+    // ========================================================
+    handler(
+      'Reply · Reply Here → Need menu',
+      'Referral lead chose to talk here. Shows the need menu, which routes into the right chain.',
+      ['Reply Here'],
+      [tag(T.engaged), Q.refNeed],
+    ),
+
+    // ========================================================
+    // INSTAGRAM
+    // ========================================================
+    handler(
+      'Reply · Digitise My Tournament → Sport',
+      'Existing tournament to take online. Skips the format question and starts the chain at the sport.',
+      ['Digitise My Tournament', 'need_digitise', 'ig_digitise'],
+      [tag(T.engaged), tag(T.intentDigitise), Q.sport],
+    ),
+    handler(
+      'Reply · Explore Features → Benefits & link',
+      'Sends the digitisation benefits and link, offers next steps, and checks in after two days.',
+      ['Explore Features'],
+      [
+        tag(T.engaged),
+        tag(T.intentExplore),
+        tag(T.selfExplore),
+        text(
+          'Here is what digitising your tournament with SportsGenX looks like 👇\n\n' +
+            '📝 Online registrations and entry fees\n' +
+            '📅 Fixtures generated in seconds, any format\n' +
+            '📊 Live scoring, standings and player stats\n' +
+            '📣 A shareable live page for players and fans\n\n' +
+            `Free to start: ${SITE_URL}`,
+        ),
+        Q.igNext,
+        ...selfExploreFollowUp,
+      ],
+    ),
+
+    // ========================================================
+    // SHARED SMALL HANDLERS
+    // ========================================================
+    handler(
+      'Reply · All set → Close loop',
+      'Lead is done for now. Acknowledges and leaves the door open.',
+      ['cta_done', 'All Good'],
+      [
+        tag(T.engaged),
+        text('Perfect 👍 All the best with your tournament, {{contact.first_name|there}}! I am here on WhatsApp whenever you need anything.'),
+      ],
+    ),
+    handler(
+      'Reply · I have a question → Agent',
+      'Question from the self-explore check-in. Tags the objection and puts a human on the chat.',
+      ['I Have a Question'],
+      [
+        tag(T.engaged),
         tag(T.objection),
         assign(),
-        text(
-          'Of course, {{contact.first_name|there}} — ask away 🙂 Our team is on this chat and will answer shortly.',
-        ),
+        text('Of course, {{contact.first_name|there}} — ask away 🙂 Our team is on this chat and will answer shortly.'),
       ],
-    },
-    {
-      name: 'Reply · Onboarding / support → Agent',
-      description:
-        'Post-payment taps from the onboarding welcome. Assigns the conversation so onboarding starts without delay.',
-      trigger_type: 'interactive_reply',
-      trigger_config: { reply_ids: ['Start onboarding', 'Talk to support'] },
-      steps: [
-        tag(T.onboarding),
-        assign(),
-        text(
-          'Welcome aboard, {{contact.first_name|there}} 🎉 Our onboarding team is on it and will guide you step by step.',
-        ),
+    ),
+    handler(
+      'Reply · Not right now → Deferred',
+      'Soft decline from nurture. Marks the lead deferred and signs off gracefully.',
+      ['Not Right Now'],
+      [
+        tag(T.engaged),
+        tag(T.deferred),
+        text('No problem at all, {{contact.first_name|there}} 🙂 Whenever you plan your next tournament, just message here and I will pick it right up. Wishing you a great season! 🏆'),
       ],
-    },
+    ),
   ]
 }
 
 /** Tags the flow needs. Existing tags are reused by name; the rest are created. */
 export const REQUIRED_TAGS = [
-  { key: 'stage01', name: 'Stage 01 · New Lead', color: '#ef4444' },
-  { key: 'stage02', name: 'Stage 02 · Contact Attempt', color: '#f97316' },
-  { key: 'stage03', name: 'Stage 03 · Qualification', color: '#eab308' },
-  { key: 'stage04', name: 'Stage 04 · Discovery', color: '#22c55e' },
-  { key: 'stage05', name: 'Stage 05 · Demo / Self-Explore', color: '#06b6d4' },
-  { key: 'stage06', name: 'Stage 06 · Post-Demo Decision', color: '#3b82f6' },
-  { key: 'stage07', name: 'Stage 07 · Offer & Negotiation', color: '#8b5cf6' },
-  { key: 'stage08', name: 'Stage 08 · Won & Payment', color: '#ec4899' },
+  // Source tags — the routers add these; adding one starts its sequence.
+  { key: 'srcMeta', name: 'Source · Meta', color: '#1877f2' },
+  { key: 'srcGoogle', name: 'Source · Google', color: '#ea4335' },
+  { key: 'srcWebsite', name: 'Source · Website', color: '#0ea5e9' },
+  { key: 'srcOrg', name: 'Source · App Organisation', color: '#8b5cf6' },
+  { key: 'srcTournament', name: 'Source · Tournament Created', color: '#f97316' },
+  { key: 'srcReferral', name: 'Source · Referral', color: '#22c55e' },
+  { key: 'srcInstagram', name: 'Source · Instagram', color: '#e1306c' },
+  // Sequence state
+  { key: 'engaged', name: 'Engaged', color: '#14b8a6' },
+  { key: 'discoveryComplete', name: 'Discovery Complete', color: '#16a34a' },
+  { key: 'intentTournament', name: 'Intent · Organise Tournament', color: '#f59e0b' },
+  { key: 'intentExplore', name: 'Intent · Explore', color: '#a3a3a3' },
+  { key: 'intentAcademy', name: 'Intent · Manage Academy', color: '#7c3aed' },
+  { key: 'intentAddPlayers', name: 'Intent · Add Players', color: '#fb923c' },
+  { key: 'intentDigitise', name: 'Intent · Digitise Tournament', color: '#db2777' },
+  { key: 'setupHelp', name: 'Setup Help Requested', color: '#ef4444' },
+  // Reused from the existing tag set — matched by exact name.
   { key: 'unresponsive', name: 'Unresponsive', color: '#64748b' },
   { key: 'nurture', name: 'Nurture Campaign', color: '#94a3b8' },
   { key: 'notInterested', name: 'Not Interested', color: '#dc2626' },
-  { key: 'lost', name: 'Lost', color: '#71717a' },
   { key: 'callback', name: 'Callback Requested', color: '#f59e0b' },
   { key: 'selfExplore', name: 'Self Explore', color: '#0ea5e9' },
-  { key: 'demoScheduled', name: 'Demo Scheduled', color: '#14b8a6' },
   { key: 'objection', name: 'Objection / Question', color: '#fb923c' },
-  // Reused from the existing tag set — matched by exact name.
   { key: 'interested', name: 'Interested', color: '#3b82f6' },
   { key: 'demoRequested', name: 'Demo Requested', color: '#3b82f6' },
   { key: 'deferred', name: 'Deferred : Future Interested', color: '#3b82f6' },
-  { key: 'onboarding', name: 'Onboarding', color: '#22c55e' },
-  { key: 'paid', name: 'Paid', color: '#22c55e' },
   { key: 'sequenceCompleted', name: 'Sequence Completed', color: '#64748b' },
+]
+
+/** Custom fields the handlers write. Existing ones are reused by name; missing ones are created (text). */
+export const REQUIRED_FIELDS = [
+  { key: 'sequence', name: 'WhatsApp Sequence' },
+  { key: 'companyType', name: 'Company Type' },
+  { key: 'tournamentType', name: 'Tournament Type interested in' },
+  { key: 'sports', name: 'Sports interested in' },
+  { key: 'nextPlan', name: 'Next tournament plan' },
+  { key: 'serviceNeeded', name: 'Tournament management service needed' },
+  { key: 'features', name: 'Features interested in' },
 ]

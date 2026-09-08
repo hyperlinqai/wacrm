@@ -187,11 +187,34 @@ or phone) and `?tag=<tagId>`.
 ### `POST /api/v1/contacts`
 
 Create a contact. Scope: `contacts:write`. `phone` (E.164) is required;
-`name`, `email`, `company`, and `tags` (an array of tag names, created
-if missing) are optional. **Find-or-create by phone:** an existing
-match returns `200` with the existing contact; a new contact returns
-`201`. The response body is the serialized contact (same shape as the
-list rows above).
+`name`, `email`, `company`, `source`, and `tags` (an array of tag names,
+created if missing) are optional. **Find-or-create by phone:** an
+existing match returns `200` with the existing contact; a new contact
+returns `201`. The response body is the serialized contact (same shape
+as the list rows above).
+
+`source` says where the lead came from and is stamped only on a newly
+created row (an existing contact is never re-attributed). It must be
+one of `manual`, `whatsapp`, `web_form`, `import`, `api`, `meta_ads`,
+`google`, `app_organisation`, `app_tournament_created`, `referral`,
+`instagram`; omit it to default to `api`. Each acquisition source routes
+the new contact into its own WhatsApp welcome sequence:
+
+| `source`                 | Sequence                              |
+| ------------------------ | ------------------------------------- |
+| `meta_ads`               | Meta → Lead Welcome                   |
+| `google`                 | Google → Lead Welcome                 |
+| `web_form`               | Website → Lead Welcome                |
+| `app_organisation`       | Organisation → Onboarding             |
+| `app_tournament_created` | Tournament Created → Setup Assistance |
+| `referral`               | Referral → Qualification              |
+| `instagram`              | Instagram → Tournament Digitisation   |
+
+An existing contact who later creates a tournament is not a new row, so
+`source` cannot start that sequence — add the tag
+`Source · Tournament Created` instead (via `PATCH … {"tags": [...]}`,
+including the contact's current tags, since `tags` replaces the set).
+Adding that tag is what starts the sequence.
 
 ### `GET` / `PATCH /api/v1/contacts/{id}`
 

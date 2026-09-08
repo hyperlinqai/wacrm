@@ -110,8 +110,12 @@ export interface Contact {
   avatar_url?: string;
   created_at: string;
   updated_at: string;
-  /** Where the contact came from (migration 046, 'meta_ads' added in 052):
-   *  manual | whatsapp | web_form | import | api | meta_ads. */
+  /** Where the contact came from (migration 046; 'meta_ads' added in 052).
+   *  The column is free text, so no migration gates new values — the
+   *  vocabulary lives in CONTACT_SOURCES below. Lead-acquisition sources
+   *  (google, app_organisation, app_tournament_created, referral,
+   *  instagram) are stamped by the public API caller and route each new
+   *  contact into its WhatsApp welcome sequence — see scripts/spx-flow. */
   source?: ContactSource;
   source_form_id?: string | null;
   /** Derived "counts as active" flag (migration 049). Maintained by DB
@@ -126,8 +130,34 @@ export interface Contact {
   tags?: Tag[];
 }
 
-export type ContactSource = 'manual' | 'whatsapp' | 'web_form' | 'import' | 'api' | 'meta_ads';
-export const CONTACT_SOURCES: ContactSource[] = ['manual', 'whatsapp', 'web_form', 'import', 'api', 'meta_ads'];
+export type ContactSource =
+  | 'manual'
+  | 'whatsapp'
+  | 'web_form'
+  | 'import'
+  | 'api'
+  | 'meta_ads'
+  | 'google'
+  | 'app_organisation'
+  | 'app_tournament_created'
+  | 'referral'
+  | 'instagram';
+export const CONTACT_SOURCES: ContactSource[] = [
+  'manual',
+  'whatsapp',
+  'web_form',
+  'import',
+  'api',
+  'meta_ads',
+  'google',
+  'app_organisation',
+  'app_tournament_created',
+  'referral',
+  'instagram',
+];
+export function isContactSource(value: unknown): value is ContactSource {
+  return typeof value === 'string' && (CONTACT_SOURCES as string[]).includes(value);
+}
 
 export type ContactActivationOverride = 'active' | 'inactive';
 

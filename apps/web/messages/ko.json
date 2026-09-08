@@ -411,7 +411,17 @@
         "web_form": "웹 폼",
         "import": "CSV 가져오기",
         "api": "API",
-        "meta_ads": "Meta 리드 광고"
+        "meta_ads": "Meta 리드 광고",
+
+        "google": "Google",
+
+        "app_organisation": "앱 · 조직 등록",
+
+        "app_tournament_created": "앱 · 토너먼트 생성",
+
+        "referral": "추천",
+
+        "instagram": "Instagram"
       },
       "bulkStatus": "상태",
       "markActive": "활성으로 표시",
@@ -666,7 +676,17 @@
         "web_form": "웹 폼",
         "import": "CSV 가져오기",
         "api": "API",
-        "meta_ads": "Meta 리드 광고"
+        "meta_ads": "Meta 리드 광고",
+
+        "google": "Google",
+
+        "app_organisation": "앱 · 조직 등록",
+
+        "app_tournament_created": "앱 · 토너먼트 생성",
+
+        "referral": "추천",
+
+        "instagram": "Instagram"
       },
       "tags": "태그",
       "tagsTitle": "태그로 필터링",

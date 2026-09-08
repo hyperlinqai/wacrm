@@ -1,107 +1,119 @@
-# SportsGenX — New Lead → Won WhatsApp flow
+# SportsGenX — source → first WhatsApp sequence
 
-Definitions and a build script for the eight-stage lead journey
-(New Lead → Contact Attempt → Qualification → Discovery → Demo →
-Post-Demo → Offer → Won), plus the nurture loop every dead end feeds
-into.
+Definitions and build scripts for the seven entry-source sequences
+(Meta, Google, Website, App Organisation, App Tournament Created,
+Referral, Instagram), the shared requirement-discovery chain, and the
+nurture loop every unresponsive lead lands in.
 
 ```
-templates.mjs    23 WhatsApp templates — copy, buttons, Meta category
-automations.mjs  22 automations — the stage drips and the reply handlers
+templates.mjs    18 WhatsApp templates — welcome + 2 reminders per sequence, follow-up, nurture
+automations.mjs  36 automations — routers, sequences, discovery chain, reply handlers
 lib.mjs          env, token decryption, Meta client, pre-flight validation
-create.mjs       the runner (only ever ADDS; see "Retiring" below)
+create.mjs       the builder (only ever ADDS)
+status.mjs       pull Meta approval status; --activate switches the graph on
+retire.mjs       delete the previous "Stage 01–09" generation (needs --yes)
 ```
 
 ## Run it
 
 ```bash
 node scripts/spx-flow/create.mjs --account <uuid> --dry-run
-node scripts/spx-flow/create.mjs --account <uuid> --phase automations
 node scripts/spx-flow/create.mjs --account <uuid> --phase templates
+node scripts/spx-flow/create.mjs --account <uuid> --phase automations
+node scripts/spx-flow/retire.mjs --account <uuid> --dry-run      # then --yes
+node scripts/spx-flow/status.mjs --account <uuid> --wait 30 --activate
 ```
 
 `DATABASE_URL` and `ENCRYPTION_KEY` are read from `apps/api/.env.local`
 when not already exported. Automations are created **paused** — a
 template sits in `PENDING` at Meta for a while, and an automation firing
-against an unapproved template only logs failures.
+against an unapproved template only logs failures. `status.mjs
+--activate` turns the graph on once every template is `APPROVED`.
 
-There is no unique constraint on `automations.name`: running the
-automations phase twice creates a second copy of all 22. Templates are
-safe to re-run — they upsert on `(user_id, name, language)`.
+Re-running `create.mjs` is safe: templates upsert on
+`(user_id, name, language)` and automations are skipped by name.
 
-## Naming
+## Source → sequence
 
-Meta only allows `[a-z0-9_]` in a template name, so the stage, purpose
-and timing are encoded into the slug:
+| # | `contacts.source`        | Source tag                    | Sequence                              | Templates |
+|---|--------------------------|-------------------------------|---------------------------------------|-----------|
+| 1 | `meta_ads`               | Source · Meta                 | Meta → Lead Welcome                   | `lw_*`    |
+| 2 | `google`                 | Source · Google               | Google → Lead Welcome                 | `lw_*`    |
+| 3 | `web_form`               | Source · Website              | Website → Lead Welcome                | `lw_*`    |
+| 4 | `app_organisation`       | Source · App Organisation     | Organisation → Onboarding             | `org_*`   |
+| 5 | `app_tournament_created` | Source · Tournament Created   | Tournament Created → Setup Assistance | `tc_*`    |
+| 6 | `referral`               | Source · Referral             | Referral → Qualification              | `ref_*`   |
+| 7 | `instagram`              | Source · Instagram            | Instagram → Tournament Digitisation   | `ig_*`    |
 
-```
-s<NN>_<stage>_<purpose>_<timing>
-s01_new_lead_reminder1_2h   →  Stage 01 · New Lead · Reminder 1 · +2h
-s09_nurture_reengage_d14    →  Stage 09 · Nurture · Re-engage · Day 14
-```
+The Source field is `contacts.source` (the CRM's existing column; the
+Meta Lead Ads webhook already stamps `meta_ads`, web forms stamp
+`web_form`, and the public API accepts the rest — see
+`docs/public-api.md`). The sequence a contact went through is written to
+the **WhatsApp Sequence** custom field by the sequence's first step.
 
-`templates.mjs` carries a human `label` next to each one; it is
-documentation only and never reaches Meta.
+Meta, Google and Website share one set of templates: the lead's intent
+is the same, only the acquisition channel differs, and the channel is
+already recorded on the contact.
 
-## How the stages chain
+## How the layers chain
 
-Two kinds of automation, and one tag per stage joining them:
+**Router** (`new_contact_created`, one per source) — a single
+`contact_field source == <value>` condition whose *yes* branch adds the
+source tag. Imports and unknown sources match nothing.
 
-**Stage drip** (`tag_added` on that stage's tag) — sends the stage
-message, waits, and on no reply sends a reminder before parking the lead
-in the nurture campaign. The `condition` step is the diagram's
-"Wait for Reply → Reply / No Reply" fork, expressed as a yes/no branch on
-whether the *next* stage's tag has appeared yet.
+**Sequence** (`tag_added` on the source tag) — writes the sequence name,
+sends the welcome template, and while the lead has not engaged sends a
+reminder on day 1 and day 3 before tagging Unresponsive + Nurture
+Campaign. Because the trigger is a tag, a sequence can also be started
+by hand (agent adds the tag) or by the SportsGenX app (`PATCH
+/api/v1/contacts/{id}` with `tags`). That is how **Tournament Created**
+is entered for a contact who already exists.
 
-**Reply handler** (`interactive_reply`) — fires on the exact button
-label the lead tapped, records the answer, and adds the next stage's tag.
-Adding that tag is what starts the next drip, so the stages chain
-themselves.
+**Reply handler** (`interactive_reply`) — fires on the button the lead
+tapped, adds the **Engaged** tag, records the answer, and asks the next
+question as an *interactive* message (buttons or list). The tap opened
+Meta's 24-hour service window, so those need no template and no review.
+The discovery chain — format → sport → timing → assistance → organiser
+type → agent — is shared by every sequence.
 
 Two safety nets stop a reminder ever chasing someone who already
-answered, both on `trigger_config`:
+engaged, both on the sequence's `trigger_config`:
 
-- `stop_on_reply: true` — any typed reply ends the parked run.
-- `stop_tag_ids` — the next stage's tag plus every terminal tag
-  (Unresponsive, Not Interested, Nurture, Lost) ends it too.
+- `stop_on_reply: true` — any *typed* reply ends the parked run.
+- `stop_tag_ids` — Engaged, Interested, Not Interested, Nurture.
 
-They are re-checked at the moment a parked run comes due, so they also
-cover replies that arrived while the API was down and tags an agent
-added by hand.
+Button taps are not "replies" to the engine (see `sequenceStopReason`),
+which is why every handler adds Engaged and why the reminder fork is a
+`tag_presence` check on that tag.
 
-### Why button labels are the routing key
+### Why button labels and ids are the routing key
 
 Meta mirrors a template QUICK_REPLY button's **label** into
-`button.payload` on the inbound webhook, and the webhook stores that as
-`interactive_reply_id`. So the label in `templates.mjs` *is* the
-`reply_ids` value in `automations.mjs`. `validateWiring()` fails the run
-if the two ever drift apart — change a label and the matching
-`reply_ids` entry must change with it.
+`button.payload` on the inbound webhook, and a reply-button / list-row
+**id** into `button_reply.id` / `list_reply.id`; the webhook stores
+either as `interactive_reply_id`. So a template label in `templates.mjs`
+and an interactive id in `automations.mjs` are both `reply_ids` values.
+`validateWiring()` fails the run if a `reply_id` matches nothing, if two
+handlers claim the same id (the engine would run both), or if a button
+has no handler at all.
 
 ### Where answers are stored
 
-- Stage 03 customer type → `Company Type` custom field
-- Stage 04 tournament format → `Tournament Type interested in` custom field
+| Question                     | Custom field                           |
+|------------------------------|----------------------------------------|
+| What to organise (format)    | Tournament Type interested in          |
+| Which sport                  | Sports interested in                   |
+| When is the next tournament  | Next tournament plan                   |
+| Self-managed / assistance    | Tournament management service needed   |
+| Organiser type               | Company Type                           |
+| Academy / tournament utility | Features interested in                 |
 
-Both are written with `{{message.text}}`, which resolves to the tapped
-button's label.
-
-## Two things that are deliberately manual
-
-**Stage 08 is not entered automatically.** An agent adds the
-`Stage 08 · Won & Payment` tag once payment actually lands; that
-`tag_added` is what sends the payment confirmation, opens a Won deal and
-starts onboarding. Nothing in the flow can decide payment arrived.
-
-**Bulk imports are skipped.** Stage 01 triggers on `new_contact_created`,
-which fires for CSV/Excel imports too. Its first step is a
-`contact_field source == import` condition whose *yes* branch is empty —
-without it, a 900-row import would WhatsApp every single row.
+All are written with `{{message.text}}`, which resolves to the tapped
+button's title.
 
 ## Retiring the previous generation
 
-`create.mjs` only adds. Removing the old `spx_*` templates from Meta and
-the old automations from the CRM is a separate, deliberate step —
-deleting an approved template on Meta is irreversible and it would need
-fresh review to come back. Do it from the UI (Settings → Templates,
-and the Automations list) or with an explicitly-approved one-off.
+`retire.mjs` deletes the Stage 01–09 automations (cascading their
+parked runs) and then the `s0N_*` templates on Meta and locally. It
+refuses to run without `--yes`; deleting an approved template on Meta is
+irreversible and the name is blocked for 30 days.

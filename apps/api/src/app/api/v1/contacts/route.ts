@@ -8,6 +8,8 @@
 // `created: false`; a new row returns 201 with `created: true`.
 // ============================================================
 
+import { CONTACT_SOURCES, isContactSource } from '@wacrm/shared/types';
+
 import { requireApiKey } from '@/lib/auth/api-context';
 import { ok, okList, fail, toApiErrorResponse } from '@/lib/api/v1/respond';
 import {
@@ -110,6 +112,22 @@ export async function POST(request: Request) {
       return fail('bad_request', "'phone' is required", 400);
     }
 
+    // Optional acquisition source. It is only stamped on a NEWLY created
+    // row (find-or-create never re-attributes an existing contact) and it
+    // is what routes the contact into its WhatsApp welcome sequence, so an
+    // unknown value is a 400 rather than a silent fallback to 'api'.
+    let source: (typeof CONTACT_SOURCES)[number] | undefined;
+    if ('source' in body && body.source !== undefined && body.source !== null) {
+      if (!isContactSource(body.source)) {
+        return fail(
+          'bad_request',
+          `'source' must be one of: ${CONTACT_SOURCES.join(', ')}`,
+          400
+        );
+      }
+      source = body.source;
+    }
+
     const auditUserId = await resolveAuditUserId(
       ctx.supabase,
       ctx.organizationId,
@@ -125,6 +143,7 @@ export async function POST(request: Request) {
         name: typeof body.name === 'string' ? body.name : undefined,
         email: typeof body.email === 'string' ? body.email : undefined,
         company: typeof body.company === 'string' ? body.company : undefined,
+        source,
       }
     );
 

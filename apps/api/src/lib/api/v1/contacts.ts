@@ -8,6 +8,7 @@
 // ============================================================
 
 import type { SupabaseClient } from '@wacrm/shared/db';
+import type { ContactSource } from '@wacrm/shared/types';
 
 import { findExistingContact, isUniqueViolation } from '@wacrm/shared/contacts/dedupe';
 import { resolveImportTagIds } from '@wacrm/shared/contacts/resolve-import-tags';
@@ -107,7 +108,7 @@ export interface ContactInput {
   company?: string | null;
   /** contacts.source to stamp on a *newly created* row (migration 046).
    *  Defaults to 'api'; existing contacts are never re-attributed here. */
-  source?: 'manual' | 'whatsapp' | 'web_form' | 'import' | 'api' | 'meta_ads';
+  source?: ContactSource;
   /**
    * ISO 3166-1 alpha-2 country to assume for a number with no country
    * code. Callers that already hold the account row (the broadcast
