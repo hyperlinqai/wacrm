@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SportsGenX WhatsApp Templates</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f6f7f4;--surface:#ffffff;--ink:#1c2420;--muted:#5e6b64;--line:#dfe5e0;
+  --accent:#0b7a5c;--accent-ink:#ffffff;--bubble:#e7f6ec;--bubble-ink:#12261c;--bubble-foot:#4f6a5a;
+  --chat:#ece6db;--btn:#ffffff;--btn-ink:#0b7a5c;--ok:#158a52;--ok-bg:#dff5e7;--var:#fff0b8;--var-ink:#5a4300;
+  --display:"Bricolage Grotesque","IBM Plex Sans",system-ui,sans-serif;--body:"IBM Plex Sans",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121816;--surface:#1a221e;--ink:#e6ece8;--muted:#9aa8a0;--line:#2b3631;
+  --accent:#4cc394;--accent-ink:#0d1a14;--bubble:#1f3a2c;--bubble-ink:#e9f5ec;--bubble-foot:#a9c4b3;
+  --chat:#0f1512;--btn:#1a2a22;--btn-ink:#7fd9b2;--ok:#4cc394;--ok-bg:#173a2a;--var:#4a3d10;--var-ink:#ffe08a;
+}}
+:root[data-theme="dark"]{
+  --bg:#121816;--surface:#1a221e;--ink:#e6ece8;--muted:#9aa8a0;--line:#2b3631;
+  --accent:#4cc394;--accent-ink:#0d1a14;--bubble:#1f3a2c;--bubble-ink:#e9f5ec;--bubble-foot:#a9c4b3;
+  --chat:#0f1512;--btn:#1a2a22;--btn-ink:#7fd9b2;--ok:#4cc394;--ok-bg:#173a2a;--var:#4a3d10;--var-ink:#ffe08a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--body);-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+code{font:0.92em var(--mono)}
+.wrap{max-width:1080px;margin:0 auto;padding:40px 24px 80px}
+.masthead{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:end;border-bottom:2px solid var(--ink);padding-bottom:20px}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+h1{font:700 clamp(30px,4.5vw,44px)/1.05 var(--display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+.sub{margin:10px 0 0;color:var(--muted);max-width:60ch}
+.stats{display:flex;gap:28px;font-variant-numeric:tabular-nums}
+.stats div{display:flex;flex-direction:column;gap:2px}
+.stats b{font:700 28px/1 var(--display)}
+.stats span{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.toc{margin:22px 0 0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}
+.toc a{display:flex;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);text-decoration:none;font-weight:500}
+.toc a:hover,.toc a:focus-visible{border-color:var(--accent);outline:none}
+.toc .cnt{font:500 12px var(--mono);color:var(--muted);align-self:center}
+.note{margin:22px 0 0;padding:14px 16px;border-left:3px solid var(--accent);background:var(--surface);color:var(--muted);max-width:70ch}
+.note code{color:var(--ink)}
+.group{margin-top:56px}
+.ghead{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:18px}
+.ghead h2{font:700 24px/1.15 var(--display);margin:0;text-wrap:balance}
+.ghead dl{margin:0;display:flex;flex-wrap:wrap;gap:6px 28px}
+.ghead dl div{display:flex;gap:8px;align-items:baseline}
+dt{font:500 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+dd{margin:0}
+.tpl{display:grid;grid-template-columns:minmax(280px,380px) 1fr;gap:28px;padding:22px 0;border-top:1px solid var(--line)}
+.tpl:last-child{border-bottom:1px solid var(--line)}
+.phone{background:var(--chat);padding:16px 14px;border-radius:6px;align-self:start}
+.bubble{position:relative;background:var(--bubble);color:var(--bubble-ink);border-radius:8px 8px 8px 0;padding:8px 10px 18px;box-shadow:0 1px 0 rgba(0,0,0,.08);max-width:100%}
+.bubble .body{margin:0;font-size:14px;line-height:1.45;white-space:normal;overflow-wrap:anywhere}
+.bubble .foot{margin:6px 0 0;font-size:12px;color:var(--bubble-foot)}
+.bubble .time{position:absolute;right:8px;bottom:4px;font-size:11px;color:var(--bubble-foot)}
+.var{background:var(--var);color:var(--var-ink);font:500 .92em var(--mono);padding:0 3px;border-radius:3px}
+.btns{display:flex;flex-direction:column;gap:4px;margin-top:4px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--btn);color:var(--btn-ink);font:500 14px var(--body);padding:9px 12px;border-radius:8px;text-decoration:none;box-shadow:0 1px 0 rgba(0,0,0,.08)}
+.btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.meta h3{margin:0;font:500 16px var(--mono)}
+.meta .label{margin:4px 0 0;font-weight:600}
+.meta .when{margin:2px 0 14px;color:var(--muted)}
+.meta dl{margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px}
+.meta dl div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.meta dd{overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font:500 11px/1 var(--mono);letter-spacing:.06em;padding:5px 8px;border-radius:999px}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.routes{margin:14px 0 0;padding-top:12px;border-top:1px dashed var(--line);color:var(--muted);line-height:2}
+.routes .k{font:500 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-right:6px}
+.routes code{background:var(--surface);border:1px solid var(--line);padding:2px 6px;border-radius:4px;color:var(--ink)}
+footer.colophon{margin-top:56px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+@media (max-width:720px){.masthead{grid-template-columns:1fr}.tpl{grid-template-columns:1fr}.meta dl{grid-template-columns:1fr}}
+@media print{.toc,.note{display:none}.tpl{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">SportsGenX · WhatsApp Business · WABA 1448696040427726</p>
+      <h1>Active WhatsApp templates</h1>
+      <p class="sub">Every message template approved on the SportsGenX WhatsApp number, shown as it renders on the phone, with the sequence that sends it and the Meta record behind it. Snapshot as of 09 Sept 2026.</p>
+    </div>
+    <div class="stats">
+      <div><b>18</b><span>templates</span></div>
+      <div><b>18</b><span>approved</span></div>
+      <div><b>7</b><span>groups</span></div>
+    </div>
+  </header>
+  <ul class="toc"><li><a href="#lw"><span>Lead Welcome &amp; Requirement Discovery</span><span class="cnt">3</span></a></li><li><a href="#org"><span>Organisation &amp; Academy Onboarding</span><span class="cnt">3</span></a></li><li><a href="#tc"><span>Tournament Setup Assistance</span><span class="cnt">3</span></a></li><li><a href="#ref"><span>Referral Qualification</span><span class="cnt">3</span></a></li><li><a href="#ig"><span>Instagram Tournament Digitisation</span><span class="cnt">3</span></a></li><li><a href="#fu"><span>Self-explore follow-up</span><span class="cnt">1</span></a></li><li><a href="#nur"><span>Nurture loop</span><span class="cnt">2</span></a></li></ul>
+  <p class="note"><code>{{1}}</code> is the only variable: the contact's first name, falling back to "there". Quick-reply buttons are routing keys — the label a lead taps starts the matching reply automation, so a label change must be mirrored in the automation. Language is English for all templates.</p>
+  <section class="group" id="lw"><header class="ghead"><h2>Lead Welcome &amp; Requirement Discovery</h2><dl><div><dt>Used by</dt><dd>Meta → Lead Welcome · Google → Lead Welcome · Website → Lead Welcome</dd></div><div><dt>Source</dt><dd><code>meta_ads, google, web_form</code></dd></div></dl></header>
+<article class="tpl" id="lw_welcome_instant">
+  <div class="phone">
+    <div class="bubble">
+      <p class="body">Hi <mark class="var" title="Body variable 1 — the contact’s first name, or “there” when blank">{{1}}</mark> 👋<br><br>Thank you for your interest in SportsGenX.<br><br>We help organisers, academies, clubs and associations organise and manage tournaments digitally — from registrations and fixtures to scoring, payments and player management.<br><br>What would you like to explore?</p>
+      <p class="foot">SportsGenX · Tournaments, made simple</p>
+      <span class="time">10:31</span>
+    </div>
+    <div class="btns"><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Organise a Tournament</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Explore SportsGenX</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Talk to Our Team</span></div>
+  </div>
+  <div class="meta">
+    <h3><code>lw_welcome_instant</code></h3>
+    <p class="label">Lead Welcome · Welcome · Instant</p>
+    <p class="when">Sent immediately</p>
+    <dl>
+      <div><dt>Status</dt><dd><span class="pill ok">APPROVED</span></dd></div>
+      <div><dt>Category</dt><dd>Marketing</dd></div>
+      <div><dt>Language</dt><dd>en</dd></div>
+      <div><dt>Meta template ID</dt><dd><code>1021089044225117</code></dd></div>
+      <div><dt>Approved</dt><dd>09 Sept 2026</dd></div>
+      <div><dt>Variables</dt><dd>{{1}} = first name</dd></div>
+      <div><dt>Buttons</dt><dd>3 quick replyies</dd></div>
+    </dl>
+    <p class="routes"><span class="k">Replies route to</span> <code>Organise a Tournament</code> <code>Explore SportsGenX</code> <code>Talk to Our Team</code></p>
+  </div>
+</article>
+<article class="tpl" id="lw_reminder1_d1">
+  <div class="phone">
+    <div class="bubble">
+      <p class="body">Hi <mark class="var" title="Body variable 1 — the contact’s first name, or “there” when blank">{{1}}</mark>, just checking in 🙂<br><br>Are you planning a tournament, or looking to manage your academy, club or association digitally?<br><br>Tap below and I will point you in the right direction.</p>
+      <p class="foot">SportsGenX · Tournaments, made simple</p>
+      <span class="time">10:31</span>
+    </div>
+    <div class="btns"><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Organise a Tournament</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Explore SportsGenX</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Talk to Our Team</span></div>
+  </div>
+  <div class="meta">
+    <h3><code>lw_reminder1_d1</code></h3>
+    <p class="label">Lead Welcome · Reminder 1 · Day 1</p>
+    <p class="when">Day 1, if no button tapped</p>
+    <dl>
+      <div><dt>Status</dt><dd><span class="pill ok">APPROVED</span></dd></div>
+      <div><dt>Category</dt><dd>Marketing</dd></div>
+      <div><dt>Language</dt><dd>en</dd></div>
+      <div><dt>Meta template ID</dt><dd><code>1520120140161859</code></dd></div>
+      <div><dt>Approved</dt><dd>09 Sept 2026</dd></div>
+      <div><dt>Variables</dt><dd>{{1}} = first name</dd></div>
+      <div><dt>Buttons</dt><dd>3 quick replyies</dd></div>
+    </dl>
+    <p class="routes"><span class="k">Replies route to</span> <code>Organise a Tournament</code> <code>Explore SportsGenX</code> <code>Talk to Our Team</code></p>
+  </div>
+</article>
+<article class="tpl" id="lw_reminder2_d3">
+  <div class="phone">
+    <div class="bubble">
+      <p class="body">Hi <mark class="var" title="Body variable 1 — the contact’s first name, or “there” when blank">{{1}}</mark>, one last note from me for now 🏆<br><br>Whenever you plan your next tournament, SportsGenX is free to start — registrations, fixtures, live scoring, standings and payments in one place.<br><br>I am right here on WhatsApp when you need me.</p>
+      <p class="foot">SportsGenX · Tournaments, made simple</p>
+      <span class="time">10:31</span>
+    </div>
+    <div class="btns"><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Organise a Tournament</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Talk to Our Team</span><a class="btn url" href="https://web.sportsgenx.com" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg>Visit SportsGenX</a></div>
+  </div>
+  <div class="meta">
+    <h3><code>lw_reminder2_d3</code></h3>
+    <p class="label">Lead Welcome · Reminder 2 · Day 3</p>
+    <p class="when">Day 3, if still no button tapped</p>
+    <dl>
+      <div><dt>Status</dt><dd><span class="pill ok">APPROVED</span></dd></div>
+      <div><dt>Category</dt><dd>Marketing</dd></div>
+      <div><dt>Language</dt><dd>en</dd></div>
+      <div><dt>Meta template ID</dt><dd><code>1525432502720419</code></dd></div>
+      <div><dt>Approved</dt><dd>09 Sept 2026</dd></div>
+      <div><dt>Variables</dt><dd>{{1}} = first name</dd></div>
+      <div><dt>Buttons</dt><dd>2 quick replyies · 1 link</dd></div>
+    </dl>
+    <p class="routes"><span class="k">Replies route to</span> <code>Organise a Tournament</code> <code>Talk to Our Team</code></p>
+  </div>
+</article></section><section class="group" id="org"><header class="ghead"><h2>Organisation &amp; Academy Onboarding</h2><dl><div><dt>Used by</dt><dd>Organisation → Onboarding</dd></div><div><dt>Source</dt><dd><code>app_organisation</code></dd></div></dl></header>
+<article class="tpl" id="org_welcome_instant">
+  <div class="phone">
+    <div class="bubble">
+      <p class="body">Hi <mark class="var" title="Body variable 1 — the contact’s first name, or “there” when blank">{{1}}</mark> 👋<br><br>Welcome to SportsGenX! Your organisation account is ready.<br><br>You can now manage tournaments, teams, players, registrations and payments — all from one place.<br><br>What would you like to set up first?</p>
+      <p class="foot">SportsGenX · Tournaments, made simple</p>
+      <span class="time">10:31</span>
+    </div>
+    <div class="btns"><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Manage Tournaments</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Manage Academy / Org</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Request Demo</span></div>
+  </div>
+  <div class="meta">
+    <h3><code>org_welcome_instant</code></h3>
+    <p class="label">Organisation · Welcome · Instant</p>
+    <p class="when">Sent immediately</p>
+    <dl>
+      <div><dt>Status</dt><dd><span class="pill ok">APPROVED</span></dd></div>
+      <div><dt>Category</dt><dd>Marketing</dd></div>
+      <div><dt>Language</dt><dd>en</dd></div>
+      <div><dt>Meta template ID</dt><dd><code>2836927386689888</code></dd></div>
+      <div><dt>Approved</dt><dd>09 Sept 2026</dd></div>
+      <div><dt>Variables</dt><dd>{{1}} = first name</dd></div>
+      <div><dt>Buttons</dt><dd>3 quick replyies</dd></div>
+    </dl>
+    <p class="routes"><span class="k">Replies route to</span> <code>Manage Tournaments</code> <code>Manage Academy / Org</code> <code>Request Demo</code></p>
+  </div>
+</article>
+<article class="tpl" id="org_reminder1_d1">
+  <div class="phone">
+    <div class="bubble">
+      <p class="body">Hi <mark class="var" title="Body variable 1 — the contact’s first name, or “there” when blank">{{1}}</mark>, your SportsGenX organisation account is waiting for you 🏆<br><br>Most organisations start by creating their first tournament or adding their teams and players.<br><br>Want a hand getting set up?</p>
+      <p class="foot">SportsGenX · Tournaments, made simple</p>
+      <span class="time">10:31</span>
+    </div>
+    <div class="btns"><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Manage Tournaments</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Manage Academy / Org</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Request Demo</span></div>
+  </div>
+  <div class="meta">
+    <h3><code>org_reminder1_d1</code></h3>
+    <p class="label">Organisation · Reminder 1 · Day 1</p>
+    <p class="when">Day 1, if no button tapped</p>
+    <dl>
+      <div><dt>Status</dt><dd><span class="pill ok">APPROVED</span></dd></div>
+      <div><dt>Category</dt><dd>Marketing</dd></div>
+      <div><dt>Language</dt><dd>en</dd></div>
+      <div><dt>Meta template ID</dt><dd><code>1038339739023190</code></dd></div>
+      <div><dt>Approved</dt><dd>09 Sept 2026</dd></div>
+      <div><dt>Variables</dt><dd>{{1}} = first name</dd></div>
+      <div><dt>Buttons</dt><dd>3 quick replyies</dd></div>
+    </dl>
+    <p class="routes"><span class="k">Replies route to</span> <code>Manage Tournaments</code> <code>Manage Academy / Org</code> <code>Request Demo</code></p>
+  </div>
+</article>
+<article class="tpl" id="org_reminder2_d3">
+  <div class="phone">
+    <div class="bubble">
+      <p class="body">Hi <mark class="var" title="Body variable 1 — the contact’s first name, or “there” when blank">{{1}}</mark>, quick one 🙂<br><br>If you would like a guided walkthrough of SportsGenX for your organisation, our team can do it in 15 minutes — tournaments, academy management and payments included.<br><br>Shall we set one up?</p>
+      <p class="foot">SportsGenX · Tournaments, made simple</p>
+      <span class="time">10:31</span>
+    </div>
+    <div class="btns"><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Request Demo</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Talk to Our Team</span><a class="btn url" href="https://web.sportsgenx.com" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg>Open SportsGenX</a></div>
+  </div>
+  <div class="meta">
+    <h3><code>org_reminder2_d3</code></h3>
+    <p class="label">Organisation · Reminder 2 · Day 3</p>
+    <p class="when">Day 3, if still no button tapped</p>
+    <dl>
+      <div><dt>Status</dt><dd><span class="pill ok">APPROVED</span></dd></div>
+      <div><dt>Category</dt><dd>Marketing</dd></div>
+      <div><dt>Language</dt><dd>en</dd></div>
+      <div><dt>Meta template ID</dt><dd><code>2885213531871548</code></dd></div>
+      <div><dt>Approved</dt><dd>09 Sept 2026</dd></div>
+      <div><dt>Variables</dt><dd>{{1}} = first name</dd></div>
+      <div><dt>Buttons</dt><dd>2 quick replyies · 1 link</dd></div>
+    </dl>
+    <p class="routes"><span class="k">Replies route to</span> <code>Request Demo</code> <code>Talk to Our Team</code></p>
+  </div>
+</article></section><section class="group" id="tc"><header class="ghead"><h2>Tournament Setup Assistance</h2><dl><div><dt>Used by</dt><dd>Tournament Created → Setup Assistance</dd></div><div><dt>Source</dt><dd><code>app_tournament_created</code></dd></div></dl></header>
+<article class="tpl" id="tc_welcome_instant">
+  <div class="phone">
+    <div class="bubble">
+      <p class="body">Hi <mark class="var" title="Body variable 1 — the contact’s first name, or “there” when blank">{{1}}</mark> 🎉<br><br>Your tournament is created on SportsGenX! Here is how to get it live:<br><br>1. Add your players or teams<br>2. Configure the format, fixtures and scoring<br>3. Share the registration link and go live<br><br>Where would you like to start?</p>
+      <p class="foot">SportsGenX · Tournaments, made simple</p>
+      <span class="time">10:31</span>
+    </div>
+    <div class="btns"><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Add Players</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Explore Utilities</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Get Setup Help</span></div>
+  </div>
+  <div class="meta">
+    <h3><code>tc_welcome_instant</code></h3>
+    <p class="label">Tournament Created · Welcome · Instant</p>
+    <p class="when">Sent immediately</p>
+    <dl>
+      <div><dt>Status</dt><dd><span class="pill ok">APPROVED</span></dd></div>
+      <div><dt>Category</dt><dd>Marketing</dd></div>
+      <div><dt>Language</dt><dd>en</dd></div>
+      <div><dt>Meta template ID</dt><dd><code>1093156549781583</code></dd></div>
+      <div><dt>Approved</dt><dd>09 Sept 2026</dd></div>
+      <div><dt>Variables</dt><dd>{{1}} = first name</dd></div>
+      <div><dt>Buttons</dt><dd>3 quick replyies</dd></div>
+    </dl>
+    <p class="routes"><span class="k">Replies route to</span> <code>Add Players</code> <code>Explore Utilities</code> <code>Get Setup Help</code></p>
+  </div>
+</article>
+<article class="tpl" id="tc_reminder1_d1">
+  <div class="phone">
+    <div class="bubble">
+      <p class="body">Hi <mark class="var" title="Body variable 1 — the contact’s first name, or “there” when blank">{{1}}</mark>, your tournament is set up but has no players or teams yet 🏏<br><br>Adding them takes about two minutes — or share your registration link and let participants sign up themselves.<br><br>Need a hand?</p>
+      <p class="foot">SportsGenX · Tournaments, made simple</p>
+      <span class="time">10:31</span>
+    </div>
+    <div class="btns"><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Add Players</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Get Setup Help</span><a class="btn url" href="https://web.sportsgenx.com" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg>Open SportsGenX</a></div>
+  </div>
+  <div class="meta">
+    <h3><code>tc_reminder1_d1</code></h3>
+    <p class="label">Tournament Created · Reminder 1 · Day 1</p>
+    <p class="when">Day 1, if no button tapped</p>
+    <dl>
+      <div><dt>Status</dt><dd><span class="pill ok">APPROVED</span></dd></div>
+      <div><dt>Category</dt><dd>Marketing</dd></div>
+      <div><dt>Language</dt><dd>en</dd></div>
+      <div><dt>Meta template ID</dt><dd><code>940264415806696</code></dd></div>
+      <div><dt>Approved</dt><dd>09 Sept 2026</dd></div>
+      <div><dt>Variables</dt><dd>{{1}} = first name</dd></div>
+      <div><dt>Buttons</dt><dd>2 quick replyies · 1 link</dd></div>
+    </dl>
+    <p class="routes"><span class="k">Replies route to</span> <code>Add Players</code> <code>Get Setup Help</code></p>
+  </div>
+</article>
+<article class="tpl" id="tc_reminder2_d3">
+  <div class="phone">
+    <div class="bubble">
+      <p class="body">Hi <mark class="var" title="Body variable 1 — the contact’s first name, or “there” when blank">{{1}}</mark>, we would love to see your tournament go live 🏆<br><br>If anything is holding you back — fixtures, scoring, registrations or payments — tell us. Setup help is free.</p>
+      <p class="foot">SportsGenX · Tournaments, made simple</p>
+      <span class="time">10:31</span>
+    </div>
+    <div class="btns"><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Get Setup Help</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Explore Utilities</span></div>
+  </div>
+  <div class="meta">
+    <h3><code>tc_reminder2_d3</code></h3>
+    <p class="label">Tournament Created · Reminder 2 · Day 3</p>
+    <p class="when">Day 3, if still no button tapped</p>
+    <dl>
+      <div><dt>Status</dt><dd><span class="pill ok">APPROVED</span></dd></div>
+      <div><dt>Category</dt><dd>Marketing</dd></div>
+      <div><dt>Language</dt><dd>en</dd></div>
+      <div><dt>Meta template ID</dt><dd><code>2143425703271865</code></dd></div>
+      <div><dt>Approved</dt><dd>09 Sept 2026</dd></div>
+      <div><dt>Variables</dt><dd>{{1}} = first name</dd></div>
+      <div><dt>Buttons</dt><dd>2 quick replyies</dd></div>
+    </dl>
+    <p class="routes"><span class="k">Replies route to</span> <code>Get Setup Help</code> <code>Explore Utilities</code></p>
+  </div>
+</article></section><section class="group" id="ref"><header class="ghead"><h2>Referral Qualification</h2><dl><div><dt>Used by</dt><dd>Referral → Qualification</dd></div><div><dt>Source</dt><dd><code>referral</code></dd></div></dl></header>
+<article class="tpl" id="ref_welcome_instant">
+  <div class="phone">
+    <div class="bubble">
+      <p class="body">Hi <mark class="var" title="Body variable 1 — the contact’s first name, or “there” when blank">{{1}}</mark> 👋<br><br>You were referred to SportsGenX — thank you for connecting with us!<br><br>We help organisers, academies, clubs and associations manage tournaments digitally: registrations, fixtures, live scoring, payments and player management.<br><br>How can we help you?</p>
+      <p class="foot">SportsGenX · Tournaments, made simple</p>
+      <span class="time">10:31</span>
+    </div>
+    <div class="btns"><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Reply Here</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Request Call Back</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Request Demo</span></div>
+  </div>
+  <div class="meta">
+    <h3><code>ref_welcome_instant</code></h3>
+    <p class="label">Referral · Welcome · Instant</p>
+    <p class="when">Sent immediately</p>
+    <dl>
+      <div><dt>Status</dt><dd><span class="pill ok">APPROVED</span></dd></div>
+      <div><dt>Category</dt><dd>Marketing</dd></div>
+      <div><dt>Language</dt><dd>en</dd></div>
+      <div><dt>Meta template ID</dt><dd><code>1769337761158417</code></dd></div>
+      <div><dt>Approved</dt><dd>09 Sept 2026</dd></div>
+      <div><dt>Variables</dt><dd>{{1}} = first name</dd></div>
+      <div><dt>Buttons</dt><dd>3 quick replyies</dd></div>
+    </dl>
+    <p class="routes"><span class="k">Replies route to</span> <code>Reply Here</code> <code>Request Call Back</code> <code>Request Demo</code></p>
+  </div>
+</article>
+<article class="tpl" id="ref_reminder1_d1">
+  <div class="phone">
+    <div class="bubble">
+      <p class="body">Hi <mark class="var" title="Body variable 1 — the contact’s first name, or “there” when blank">{{1}}</mark>, following up on my note 🙂<br><br>Tell me what you are planning — a tournament, a league, an academy or an association — and I will match you with the right SportsGenX setup.</p>
+      <p class="foot">SportsGenX · Tournaments, made simple</p>
+      <span class="time">10:31</span>
+    </div>
+    <div class="btns"><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Reply Here</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Request Call Back</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Request Demo</span></div>
+  </div>
+  <div class="meta">
+    <h3><code>ref_reminder1_d1</code></h3>
+    <p class="label">Referral · Reminder 1 · Day 1</p>
+    <p class="when">Day 1, if no button tapped</p>
+    <dl>
+      <div><dt>Status</dt><dd><span class="pill ok">APPROVED</span></dd></div>
+      <div><dt>Category</dt><dd>Marketing</dd></div>
+      <div><dt>Language</dt><dd>en</dd></div>
+      <div><dt>Meta template ID</dt><dd><code>1118857657471549</code></dd></div>
+      <div><dt>Approved</dt><dd>09 Sept 2026</dd></div>
+      <div><dt>Variables</dt><dd>{{1}} = first name</dd></div>
+      <div><dt>Buttons</dt><dd>3 quick replyies</dd></div>
+    </dl>
+    <p class="routes"><span class="k">Replies route to</span> <code>Reply Here</code> <code>Request Call Back</code> <code>Request Demo</code></p>
+  </div>
+</article>
+<article class="tpl" id="ref_reminder2_d3">
+  <div class="phone">
+    <div class="bubble">
+      <p class="body">Hi <mark class="var" title="Body variable 1 — the contact’s first name, or “there” when blank">{{1}}</mark>, one last check-in 🏆<br><br>If you have an upcoming tournament or manage an academy, SportsGenX can help you run it smoothly.<br><br>Reply anytime and I will take it from there.</p>
+      <p class="foot">SportsGenX · Tournaments, made simple</p>
+      <span class="time">10:31</span>
+    </div>
+    <div class="btns"><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Request Call Back</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Request Demo</span><a class="btn url" href="https://web.sportsgenx.com" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg>Visit SportsGenX</a></div>
+  </div>
+  <div class="meta">
+    <h3><code>ref_reminder2_d3</code></h3>
+    <p class="label">Referral · Reminder 2 · Day 3</p>
+    <p class="when">Day 3, if still no button tapped</p>
+    <dl>
+      <div><dt>Status</dt><dd><span class="pill ok">APPROVED</span></dd></div>
+      <div><dt>Category</dt><dd>Marketing</dd></div>
+      <div><dt>Language</dt><dd>en</dd></div>
+      <div><dt>Meta template ID</dt><dd><code>1946322522713154</code></dd></div>
+      <div><dt>Approved</dt><dd>09 Sept 2026</dd></div>
+      <div><dt>Variables</dt><dd>{{1}} = first name</dd></div>
+      <div><dt>Buttons</dt><dd>2 quick replyies · 1 link</dd></div>
+    </dl>
+    <p class="routes"><span class="k">Replies route to</span> <code>Request Call Back</code> <code>Request Demo</code></p>
+  </div>
+</article></section><section class="group" id="ig"><header class="ghead"><h2>Instagram Tournament Digitisation</h2><dl><div><dt>Used by</dt><dd>Instagram → Tournament Digitisation</dd></div><div><dt>Source</dt><dd><code>instagram</code></dd></div></dl></header>
+<article class="tpl" id="ig_welcome_instant">
+  <div class="phone">
+    <div class="bubble">
+      <p class="body">Hi <mark class="var" title="Body variable 1 — the contact’s first name, or “there” when blank">{{1}}</mark> 👋<br><br>Thanks for reaching out from Instagram!<br><br>Running a tournament? SportsGenX lets you digitise it end to end — online registrations, fixtures, live scores, standings and payments — so your participants follow everything on their phones.<br><br>What would you like to do?</p>
+      <p class="foot">SportsGenX · Tournaments, made simple</p>
+      <span class="time">10:31</span>
+    </div>
+    <div class="btns"><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Digitise My Tournament</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Explore Features</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Talk to Expert</span></div>
+  </div>
+  <div class="meta">
+    <h3><code>ig_welcome_instant</code></h3>
+    <p class="label">Instagram · Welcome · Instant</p>
+    <p class="when">Sent immediately</p>
+    <dl>
+      <div><dt>Status</dt><dd><span class="pill ok">APPROVED</span></dd></div>
+      <div><dt>Category</dt><dd>Marketing</dd></div>
+      <div><dt>Language</dt><dd>en</dd></div>
+      <div><dt>Meta template ID</dt><dd><code>1393089849579921</code></dd></div>
+      <div><dt>Approved</dt><dd>09 Sept 2026</dd></div>
+      <div><dt>Variables</dt><dd>{{1}} = first name</dd></div>
+      <div><dt>Buttons</dt><dd>3 quick replyies</dd></div>
+    </dl>
+    <p class="routes"><span class="k">Replies route to</span> <code>Digitise My Tournament</code> <code>Explore Features</code> <code>Talk to Expert</code></p>
+  </div>
+</article>
+<article class="tpl" id="ig_reminder1_d1">
+  <div class="phone">
+    <div class="bubble">
+      <p class="body">Hi <mark class="var" title="Body variable 1 — the contact’s first name, or “there” when blank">{{1}}</mark>, do you have an upcoming tournament? 🏏<br><br>Tell me the sport and when it is happening, and I will show you how it would look live on SportsGenX.</p>
+      <p class="foot">SportsGenX · Tournaments, made simple</p>
+      <span class="time">10:31</span>
+    </div>
+    <div class="btns"><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Digitise My Tournament</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Explore Features</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Talk to Expert</span></div>
+  </div>
+  <div class="meta">
+    <h3><code>ig_reminder1_d1</code></h3>
+    <p class="label">Instagram · Reminder 1 · Day 1</p>
+    <p class="when">Day 1, if no button tapped</p>
+    <dl>
+      <div><dt>Status</dt><dd><span class="pill ok">APPROVED</span></dd></div>
+      <div><dt>Category</dt><dd>Marketing</dd></div>
+      <div><dt>Language</dt><dd>en</dd></div>
+      <div><dt>Meta template ID</dt><dd><code>1583785443477006</code></dd></div>
+      <div><dt>Approved</dt><dd>09 Sept 2026</dd></div>
+      <div><dt>Variables</dt><dd>{{1}} = first name</dd></div>
+      <div><dt>Buttons</dt><dd>3 quick replyies</dd></div>
+    </dl>
+    <p class="routes"><span class="k">Replies route to</span> <code>Digitise My Tournament</code> <code>Explore Features</code> <code>Talk to Expert</code></p>
+  </div>
+</article>
+<article class="tpl" id="ig_reminder2_d3">
+  <div class="phone">
+    <div class="bubble">
+      <p class="body">Hi <mark class="var" title="Body variable 1 — the contact’s first name, or “there” when blank">{{1}}</mark>, last note from me 🏆<br><br>Digitising your tournament means no manual score sheets, automatic fixtures and standings, and a shareable live page for players and fans. Free to start.</p>
+      <p class="foot">SportsGenX · Tournaments, made simple</p>
+      <span class="time">10:31</span>
+    </div>
+    <div class="btns"><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Digitise My Tournament</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Talk to Expert</span><a class="btn url" href="https://web.sportsgenx.com" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg>See Features</a></div>
+  </div>
+  <div class="meta">
+    <h3><code>ig_reminder2_d3</code></h3>
+    <p class="label">Instagram · Reminder 2 · Day 3</p>
+    <p class="when">Day 3, if still no button tapped</p>
+    <dl>
+      <div><dt>Status</dt><dd><span class="pill ok">APPROVED</span></dd></div>
+      <div><dt>Category</dt><dd>Marketing</dd></div>
+      <div><dt>Language</dt><dd>en</dd></div>
+      <div><dt>Meta template ID</dt><dd><code>1090386326788057</code></dd></div>
+      <div><dt>Approved</dt><dd>09 Sept 2026</dd></div>
+      <div><dt>Variables</dt><dd>{{1}} = first name</dd></div>
+      <div><dt>Buttons</dt><dd>2 quick replyies · 1 link</dd></div>
+    </dl>
+    <p class="routes"><span class="k">Replies route to</span> <code>Digitise My Tournament</code> <code>Talk to Expert</code></p>
+  </div>
+</article></section><section class="group" id="fu"><header class="ghead"><h2>Self-explore follow-up</h2><dl><div><dt>Used by</dt><dd>Reply · Explore SportsGenX · Reply · Explore Features (two days after the link, if not yet Interested)</dd></div><div><dt>Source</dt><dd><code>any sequence</code></dd></div></dl></header>
+<article class="tpl" id="fu_check_in_d2">
+  <div class="phone">
+    <div class="bubble">
+      <p class="body">Hi <mark class="var" title="Body variable 1 — the contact’s first name, or “there” when blank">{{1}}</mark>, how has exploring SportsGenX been going? 🙂<br><br>If you would like a quick walkthrough or have a question, I am right here.</p>
+      <p class="foot">SportsGenX · Tournaments, made simple</p>
+      <span class="time">10:31</span>
+    </div>
+    <div class="btns"><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Book a Demo</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>I Have a Question</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>All Good</span></div>
+  </div>
+  <div class="meta">
+    <h3><code>fu_check_in_d2</code></h3>
+    <p class="label">Follow-up · Self-explore check-in · Day 2</p>
+    <p class="when">Day 2 after the self-serve link</p>
+    <dl>
+      <div><dt>Status</dt><dd><span class="pill ok">APPROVED</span></dd></div>
+      <div><dt>Category</dt><dd>Marketing</dd></div>
+      <div><dt>Language</dt><dd>en</dd></div>
+      <div><dt>Meta template ID</dt><dd><code>895717806731520</code></dd></div>
+      <div><dt>Approved</dt><dd>09 Sept 2026</dd></div>
+      <div><dt>Variables</dt><dd>{{1}} = first name</dd></div>
+      <div><dt>Buttons</dt><dd>3 quick replyies</dd></div>
+    </dl>
+    <p class="routes"><span class="k">Replies route to</span> <code>Book a Demo</code> <code>I Have a Question</code> <code>All Good</code></p>
+  </div>
+</article></section><section class="group" id="nur"><header class="ghead"><h2>Nurture loop</h2><dl><div><dt>Used by</dt><dd>Nurture → Day 3 / Day 10 loop</dd></div><div><dt>Source</dt><dd><code>unresponsive leads from every sequence</code></dd></div></dl></header>
+<article class="tpl" id="nur_value_d03">
+  <div class="phone">
+    <div class="bubble">
+      <p class="body">Hi <mark class="var" title="Body variable 1 — the contact’s first name, or “there” when blank">{{1}}</mark> 🏆<br><br>A quick tip: most organisers lose hours on fixtures and score sheets. SportsGenX generates fixtures for knockout, league and round-robin formats in seconds, and scores update live for everyone.<br><br>Planning a tournament soon?</p>
+      <p class="foot">SportsGenX · Tournaments, made simple</p>
+      <span class="time">10:31</span>
+    </div>
+    <div class="btns"><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Organise a Tournament</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Not Right Now</span></div>
+  </div>
+  <div class="meta">
+    <h3><code>nur_value_d03</code></h3>
+    <p class="label">Nurture · Value tip · Day 3</p>
+    <p class="when">Day 3 in nurture</p>
+    <dl>
+      <div><dt>Status</dt><dd><span class="pill ok">APPROVED</span></dd></div>
+      <div><dt>Category</dt><dd>Marketing</dd></div>
+      <div><dt>Language</dt><dd>en</dd></div>
+      <div><dt>Meta template ID</dt><dd><code>1374890474808124</code></dd></div>
+      <div><dt>Approved</dt><dd>09 Sept 2026</dd></div>
+      <div><dt>Variables</dt><dd>{{1}} = first name</dd></div>
+      <div><dt>Buttons</dt><dd>2 quick replyies</dd></div>
+    </dl>
+    <p class="routes"><span class="k">Replies route to</span> <code>Organise a Tournament</code> <code>Not Right Now</code></p>
+  </div>
+</article>
+<article class="tpl" id="nur_reengage_d10">
+  <div class="phone">
+    <div class="bubble">
+      <p class="body">Hi <mark class="var" title="Body variable 1 — the contact’s first name, or “there” when blank">{{1}}</mark>, last note from me for now 🙂<br><br>Academies and associations run their full seasons on SportsGenX — registrations, live scores, standings and player stats their participants follow on their phones.<br><br>Whenever your next tournament comes up, it is free to start.</p>
+      <p class="foot">SportsGenX · Tournaments, made simple</p>
+      <span class="time">10:31</span>
+    </div>
+    <div class="btns"><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Organise a Tournament</span><span class="btn qr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5M4 9h11a5 5 0 0 1 0 10h-3"/></svg>Not Right Now</span><a class="btn url" href="https://web.sportsgenx.com" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg>Start Free</a></div>
+  </div>
+  <div class="meta">
+    <h3><code>nur_reengage_d10</code></h3>
+    <p class="label">Nurture · Re-engage · Day 10</p>
+    <p class="when">Day 10 in nurture</p>
+    <dl>
+      <div><dt>Status</dt><dd><span class="pill ok">APPROVED</span></dd></div>
+      <div><dt>Category</dt><dd>Marketing</dd></div>
+      <div><dt>Language</dt><dd>en</dd></div>
+      <div><dt>Meta template ID</dt><dd><code>3813962245424722</code></dd></div>
+      <div><dt>Approved</dt><dd>09 Sept 2026</dd></div>
+      <div><dt>Variables</dt><dd>{{1}} = first name</dd></div>
+      <div><dt>Buttons</dt><dd>2 quick replyies · 1 link</dd></div>
+    </dl>
+    <p class="routes"><span class="k">Replies route to</span> <code>Organise a Tournament</code> <code>Not Right Now</code></p>
+  </div>
+</article></section>
+  <footer class="colophon">Generated from the CRM template catalog and Meta's template review status. Source of truth for copy and buttons: <code>scripts/spx-flow/templates.mjs</code> in the wacrm repository.</footer>
+</div>
+</body>
+</html>
