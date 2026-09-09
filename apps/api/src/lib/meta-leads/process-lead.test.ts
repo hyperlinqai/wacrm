@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { isSameLeadArrivingTwice } from './process-lead'
+import { isEarlier, isSameLeadArrivingTwice, leadCreatedAt } from './process-lead'
 
 const T0 = Date.parse('2026-09-04T05:22:20.331Z')
 
@@ -28,5 +28,35 @@ describe('isSameLeadArrivingTwice', () => {
     for (const source of ['import', 'web_form', 'whatsapp', 'meta_ads']) {
       expect(isSameLeadArrivingTwice({ source, created_at: new Date(T0).toISOString() }, null, T0)).toBe(false)
     }
+  })
+})
+
+describe('leadCreatedAt', () => {
+  it("normalises Graph's +0000 offset form to ISO", () => {
+    expect(leadCreatedAt('2026-06-04T18:30:00+0000')).toBe('2026-06-04T18:30:00.000Z')
+  })
+
+  it('passes a plain ISO timestamp through', () => {
+    expect(leadCreatedAt('2026-09-08T15:24:17Z')).toBe('2026-09-08T15:24:17.000Z')
+  })
+
+  it('returns null for a missing or unparseable created_time (insert default applies)', () => {
+    expect(leadCreatedAt(undefined)).toBeNull()
+    expect(leadCreatedAt(null)).toBeNull()
+    expect(leadCreatedAt('')).toBeNull()
+    expect(leadCreatedAt('not a date')).toBeNull()
+  })
+})
+
+describe('isEarlier', () => {
+  it('is true only when the candidate strictly precedes the reference', () => {
+    expect(isEarlier('2026-06-04T18:30:00.000Z', '2026-09-02T04:10:00Z')).toBe(true)
+    expect(isEarlier('2026-09-02T04:10:00.000Z', '2026-09-02T04:10:00Z')).toBe(false)
+    expect(isEarlier('2026-09-03T00:00:00.000Z', '2026-09-02T04:10:00Z')).toBe(false)
+  })
+
+  it('is false when the reference is missing or unparseable', () => {
+    expect(isEarlier('2026-06-04T18:30:00.000Z', null)).toBe(false)
+    expect(isEarlier('2026-06-04T18:30:00.000Z', 'garbage')).toBe(false)
   })
 })

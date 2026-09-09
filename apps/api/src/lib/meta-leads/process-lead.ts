@@ -128,6 +128,10 @@ export async function processMetaLead(input: ProcessLeadInput): Promise<ProcessL
       email: fields.email,
       company: fields.company,
       source: 'meta_ads',
+      // The person became a lead when they submitted the form, not when
+      // the webhook or a later Sync got round to creating the row —
+      // a June lead pulled in by a September Sync is a June contact.
+      createdAt: leadCreatedAt(lead.created_time),
     })
 
     // Enrich a matched contact only where it's blank — never overwrite
@@ -144,7 +148,11 @@ export async function processMetaLead(input: ProcessLeadInput): Promise<ProcessL
         if (fields.name && nameIsPlaceholder) patch.name = fields.name
         if (fields.email && !existing.email) patch.email = fields.email
         if (fields.company && !existing.company) patch.company = fields.company
-        if (isSameLeadArrivingTwice(existing, lead.created_time)) patch.source = 'meta_ads'
+        if (isSameLeadArrivingTwice(existing, lead.created_time)) {
+          patch.source = 'meta_ads'
+          const leadAt = leadCreatedAt(lead.created_time)
+          if (leadAt && isEarlier(leadAt, existing.created_at)) patch.created_at = leadAt
+        }
         if (Object.keys(patch).length > 0) {
           await admin.from('contacts').update(patch).eq('id', contactId)
         }
@@ -239,6 +247,25 @@ export function isSameLeadArrivingTwice(
   const leadAt = leadCreatedTime ? Date.parse(leadCreatedTime) : NaN
   const reference = Number.isNaN(leadAt) ? now : leadAt
   return Math.abs(reference - createdAt) <= SAME_LEAD_WINDOW_MS
+}
+
+/**
+ * Meta's `created_time` as an ISO timestamp for `contacts.created_at`,
+ * or null when it is absent or unparseable (Graph returns
+ * "2026-06-04T18:30:00+0000"; Date.parse handles that form).
+ */
+export function leadCreatedAt(createdTime: string | null | undefined): string | null {
+  if (!createdTime) return null
+  const ms = Date.parse(createdTime)
+  return Number.isNaN(ms) ? null : new Date(ms).toISOString()
+}
+
+/** True when `candidate` parses and is strictly before `reference`. */
+export function isEarlier(candidate: string, reference: string | null | undefined): boolean {
+  if (!reference) return false
+  const a = Date.parse(candidate)
+  const b = Date.parse(reference)
+  return !Number.isNaN(a) && !Number.isNaN(b) && a < b
 }
 
 /** "Lead source" custom-field value for a Meta lead, by platform. */

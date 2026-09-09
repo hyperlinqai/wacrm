@@ -110,6 +110,13 @@ export interface ContactInput {
    *  Defaults to 'api'; existing contacts are never re-attributed here. */
   source?: ContactSource;
   /**
+   * `contacts.created_at` for a *newly created* row, when the contact
+   * really came into existence earlier than this insert — a Meta lead
+   * submitted weeks before the Sync that pulled it in. Defaults to now.
+   * Ignored for an existing contact.
+   */
+  createdAt?: string | null;
+  /**
    * ISO 3166-1 alpha-2 country to assume for a number with no country
    * code. Callers that already hold the account row (the broadcast
    * resolver, the Meta Lead Ads processor) pass it so a batch does not
@@ -185,6 +192,7 @@ export async function findOrCreateContact(
       email: input.email ?? null,
       company: input.company ?? null,
       source: input.source ?? 'api',
+      ...(input.createdAt ? { created_at: input.createdAt } : {}),
     })
     .select('id')
     .single();
