@@ -210,7 +210,7 @@ export async function POST(request: Request) {
               ? 'Meta rate limit hit (100 template creates per hour). Try again later.'
               : message,
           },
-          { status: isRateLimit ? 429 : 502 },
+          { status: isRateLimit ? 429 : 400 },
         )
       }
     }

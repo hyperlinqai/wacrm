@@ -44,14 +44,33 @@ export interface MetaPhoneInfo {
 }
 
 interface MetaErrorResponse {
-  error?: { message?: string; code?: number; type?: string }
+  error?: {
+    message?: string
+    code?: number
+    type?: string
+    error_subcode?: number
+    error_user_title?: string
+    error_user_msg?: string
+    error_data?: { details?: string }
+  }
 }
 
 async function throwMetaError(response: Response, fallback: string): Promise<never> {
   let message = fallback
   try {
     const data = (await response.json()) as MetaErrorResponse
-    if (data.error?.message) message = data.error.message
+    if (data.error) {
+      const err = data.error
+      if (err.error_user_msg) {
+        message = err.error_user_title
+          ? `${err.error_user_title}: ${err.error_user_msg}`
+          : err.error_user_msg
+      } else if (err.error_data?.details) {
+        message = `${err.message ? `${err.message} — ` : ''}${err.error_data.details}`
+      } else if (err.message) {
+        message = err.message
+      }
+    }
   } catch {
     // response body wasn't JSON — keep the fallback
   }
