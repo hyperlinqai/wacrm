@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   extractVariableIndices,
+  groupTemplateButtons,
   TEMPLATE_LIMITS,
   validateBody,
   validateButtons,
@@ -172,6 +173,38 @@ describe('validateButtons', () => {
       ]),
     ).not.toThrow();
   });
+});
+
+describe('groupTemplateButtons', () => {
+  it('groups QUICK_REPLY buttons at the start and preserves relative ordering', () => {
+    const mixed = [
+      { type: 'URL' as const, text: 'Visit', url: 'https://example.com' },
+      { type: 'QUICK_REPLY' as const, text: 'Yes' },
+      { type: 'PHONE_NUMBER' as const, text: 'Call', phone_number: '+15551234567' },
+      { type: 'QUICK_REPLY' as const, text: 'No' },
+    ];
+    const grouped = groupTemplateButtons(mixed);
+    expect(grouped).toEqual([
+      { type: 'QUICK_REPLY', text: 'Yes' },
+      { type: 'QUICK_REPLY', text: 'No' },
+      { type: 'URL', text: 'Visit', url: 'https://example.com' },
+      { type: 'PHONE_NUMBER', text: 'Call', phone_number: '+15551234567' },
+    ]);
+    // The grouped result passes validateButtons without throwing
+    expect(() => validateButtons(grouped)).not.toThrow();
+  });
+
+  it('handles empty arrays and already-ordered arrays cleanly', () => {
+    expect(groupTemplateButtons([])).toEqual([]);
+    const alreadyOrdered = [
+      { type: 'QUICK_REPLY' as const, text: 'QR1' },
+      { type: 'URL' as const, text: 'URL1', url: 'https://example.com' },
+    ];
+    expect(groupTemplateButtons(alreadyOrdered)).toEqual(alreadyOrdered);
+  });
+});
+
+describe('validateButtons — per-button rules', () => {
   it('rejects empty button text', () => {
     expect(() =>
       validateButtons([{ type: 'QUICK_REPLY', text: '' }]),

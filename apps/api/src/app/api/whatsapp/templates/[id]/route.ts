@@ -6,6 +6,7 @@ import {
   editMessageTemplate,
 } from '@wacrm/shared/whatsapp/meta-api'
 import {
+  groupTemplateButtons,
   validateTemplatePayload,
   type TemplatePayload,
 } from '@wacrm/shared/whatsapp/template-validators'
@@ -126,6 +127,10 @@ export async function PATCH(
         },
         { status: 400 },
       )
+    }
+
+    if (payload.buttons && Array.isArray(payload.buttons)) {
+      payload.buttons = groupTemplateButtons(payload.buttons)
     }
 
     try {

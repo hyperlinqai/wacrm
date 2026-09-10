@@ -9,6 +9,7 @@ import {
 import { decrypt } from '@/lib/whatsapp/encryption'
 import { submitMessageTemplate } from '@wacrm/shared/whatsapp/meta-api'
 import {
+  groupTemplateButtons,
   validateTemplatePayload,
   type TemplatePayload,
 } from '@wacrm/shared/whatsapp/template-validators'
@@ -116,6 +117,10 @@ export async function POST(request: Request) {
         },
         { status: 400 },
       )
+    }
+
+    if (payload.buttons && Array.isArray(payload.buttons)) {
+      payload.buttons = groupTemplateButtons(payload.buttons)
     }
 
     try {

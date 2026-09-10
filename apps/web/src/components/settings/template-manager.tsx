@@ -10,6 +10,8 @@ import {
   AlertCircle,
   X,
   Upload,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import {
@@ -48,6 +50,7 @@ import type {
 } from '@wacrm/shared/types';
 import {
   extractVariableIndices,
+  groupTemplateButtons,
   TEMPLATE_LIMITS,
 } from '@wacrm/shared/whatsapp/template-validators';
 import type { StarterTemplate } from '@/lib/whatsapp/starter-templates';
@@ -241,7 +244,10 @@ export function TemplateManager() {
           : undefined,
       body_text: form.body_text.trim(),
       footer_text: form.footer_text.trim() || undefined,
-      buttons: form.buttons.length > 0 ? form.buttons : undefined,
+      buttons:
+        form.buttons.length > 0
+          ? groupTemplateButtons(form.buttons)
+          : undefined,
       sample_values:
         Object.keys(sample_values).length > 0 ? sample_values : undefined,
     };
@@ -502,13 +508,49 @@ export function TemplateManager() {
     }));
   }
 
-  function addButton() {
-    if (form.buttons.length >= TEMPLATE_LIMITS.maxButtonsTotal) return;
+  function moveButton(index: number, direction: -1 | 1) {
+    setForm((prev) => {
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= prev.buttons.length) return prev;
+      const next = [...prev.buttons];
+      const [moved] = next.splice(index, 1);
+      next.splice(targetIndex, 0, moved);
+      return { ...prev, buttons: next };
+    });
+  }
+
+  function autoGroupButtons() {
     setForm((prev) => ({
       ...prev,
-      buttons: [...prev.buttons, emptyButton('QUICK_REPLY')],
+      buttons: groupTemplateButtons(prev.buttons),
     }));
   }
+
+  function addButton() {
+    if (form.buttons.length >= TEMPLATE_LIMITS.maxButtonsTotal) return;
+    const newBtn = emptyButton('QUICK_REPLY');
+    const firstCtaIndex = form.buttons.findIndex((b) => b.type !== 'QUICK_REPLY');
+    setForm((prev) => {
+      if (firstCtaIndex === -1) {
+        return { ...prev, buttons: [...prev.buttons, newBtn] };
+      }
+      const next = [...prev.buttons];
+      next.splice(firstCtaIndex, 0, newBtn);
+      return { ...prev, buttons: next };
+    });
+  }
+
+  const hasInterleavedButtons = useMemo(() => {
+    let sawNonQR = false;
+    for (const b of form.buttons) {
+      if (b.type === 'QUICK_REPLY') {
+        if (sawNonQR) return true;
+      } else {
+        sawNonQR = true;
+      }
+    }
+    return false;
+  }, [form.buttons]);
 
   if (loading) {
     return (
@@ -923,6 +965,23 @@ export function TemplateManager() {
                   {t('addButton')}
                 </Button>
               </div>
+              {hasInterleavedButtons && (
+                <div className="flex items-center justify-between gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-600 dark:text-amber-400">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <AlertCircle className="size-3.5 shrink-0" />
+                    <span>{t('btnInterleavedWarning')}</span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={autoGroupButtons}
+                    className="h-6 shrink-0 border-amber-500/40 bg-transparent text-[11px] text-amber-700 dark:text-amber-300 hover:bg-amber-500/20"
+                  >
+                    {t('btnGroupQuickReplies')}
+                  </Button>
+                </div>
+              )}
               {form.buttons.length === 0 ? (
                 <p className="text-[11px] text-muted-foreground">
                   {t('buttonsLimit', { max: TEMPLATE_LIMITS.maxButtonsTotal })}
@@ -984,15 +1043,39 @@ export function TemplateManager() {
                           }
                           className="flex-1 bg-muted border-border text-foreground placeholder:text-muted-foreground h-8 text-xs"
                         />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeButton(i)}
-                          className="text-muted-foreground hover:text-red-400 hover:bg-red-950/30 size-7"
-                        >
-                          <X className="size-3.5" />
-                        </Button>
+                        <div className="flex items-center gap-0.5">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => moveButton(i, -1)}
+                            disabled={i === 0}
+                            title={t('btnMoveUp')}
+                            className="text-muted-foreground hover:text-foreground size-7 disabled:opacity-25"
+                          >
+                            <ArrowUp className="size-3.5" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => moveButton(i, 1)}
+                            disabled={i === form.buttons.length - 1}
+                            title={t('btnMoveDown')}
+                            className="text-muted-foreground hover:text-foreground size-7 disabled:opacity-25"
+                          >
+                            <ArrowDown className="size-3.5" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeButton(i)}
+                            className="text-muted-foreground hover:text-red-400 hover:bg-red-950/30 size-7"
+                          >
+                            <X className="size-3.5" />
+                          </Button>
+                        </div>
                       </div>
                       {btn.type === 'URL' && (
                         <div className="space-y-1 pl-1">

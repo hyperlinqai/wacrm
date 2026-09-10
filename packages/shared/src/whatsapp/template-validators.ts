@@ -179,6 +179,23 @@ function countButtonsByType(
   return counts;
 }
 
+/**
+ * Normalizes button ordering so all QUICK_REPLY buttons appear at the start,
+ * as required by Meta, while preserving the relative ordering within each group.
+ */
+export function groupTemplateButtons(buttons: TemplateButton[]): TemplateButton[] {
+  const quickReplies: TemplateButton[] = [];
+  const otherButtons: TemplateButton[] = [];
+  for (const b of buttons) {
+    if (b.type === 'QUICK_REPLY') {
+      quickReplies.push(b);
+    } else {
+      otherButtons.push(b);
+    }
+  }
+  return [...quickReplies, ...otherButtons];
+}
+
 export function validateButtons(buttons: TemplateButton[] | undefined): void {
   if (!buttons || buttons.length === 0) return;
   if (buttons.length > TEMPLATE_LIMITS.maxButtonsTotal) {
