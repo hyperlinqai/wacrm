@@ -1,4 +1,6 @@
 // ============================================================
+// GET  /api/v1/broadcasts — list broadcasts, newest first, keyset-
+//                           paginated (scope: broadcasts:send).
 // POST /api/v1/broadcasts — launch a template broadcast
 // (scope: broadcasts:send).
 //
@@ -35,13 +37,48 @@ import { requireApiKey } from '@/lib/auth/api-context';
 // still exceed 60s, so very large sends should be split across
 // requests. A durable queue/cron drain is the complete fix (follow-up).
 export const maxDuration = 60;
-import { ok, fail, toApiErrorResponse } from '@/lib/api/v1/respond';
+import { ok, okList, fail, toApiErrorResponse } from '@/lib/api/v1/respond';
+import { parseListParams, keysetFilter, buildPage } from '@/lib/api/v1/pagination';
 import { resolveAuditUserId, ContactError } from '@/lib/api/v1/contacts';
 import {
   createBroadcast,
   deliverBroadcast,
   BroadcastError,
 } from '@/lib/whatsapp/broadcast-core';
+
+const BROADCAST_SELECT =
+  'id, name, template_name, template_language, status, total_recipients, sent_count, delivered_count, read_count, replied_count, failed_count, created_at, updated_at';
+
+export async function GET(request: Request) {
+  try {
+    const ctx = await requireApiKey(request, 'broadcasts:send');
+    const { limit, cursor } = parseListParams(request);
+
+    let query = ctx.supabase
+      .from('broadcasts')
+      .select(BROADCAST_SELECT)
+      .eq('organization_id', ctx.organizationId)
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(limit + 1);
+
+    const kf = keysetFilter(cursor);
+    if (kf) query = query.or(kf);
+
+    const { data, error } = await query;
+    if (error) {
+      console.error('[api/v1/broadcasts] list error:', error);
+      return fail('internal', 'Failed to list broadcasts', 500);
+    }
+    const { items, nextCursor } = buildPage(
+      (data ?? []) as unknown as Array<{ created_at: string; id: string }>,
+      limit
+    );
+    return okList(items, nextCursor);
+  } catch (err) {
+    return toApiErrorResponse(err);
+  }
+}
 
 export async function POST(request: Request) {
   try {

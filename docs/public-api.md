@@ -49,6 +49,8 @@ it. Grant the minimum.
 | `contacts:write`     | Create and update contacts               |
 | `conversations:read` | List and read conversations              |
 | `broadcasts:send`    | Launch broadcast campaigns               |
+| `templates:read`     | List and read message templates          |
+| `templates:manage`   | Create, edit, sync and delete templates  |
 | `webhooks:manage`    | Register and manage outbound webhooks    |
 
 A key with **no scopes** still authenticates and can call
@@ -286,6 +288,44 @@ Broadcast status + counts. Scope: `broadcasts:send`. `status` moves
 `sending` → `sent`; `delivered_count` / `read_count` keep climbing as
 Meta delivery webhooks arrive. `404` for another account's broadcast.
 
+### `GET /api/v1/broadcasts`
+
+Scope: `broadcasts:send`. Lists broadcasts newest first with the same
+counts as `GET /api/v1/broadcasts/{id}`. Keyset-paginated.
+
+### `GET /api/v1/broadcasts/{id}/recipients`
+
+Scope: `broadcasts:send`. Per-recipient delivery status, with the
+contact embedded as `contact: { id, phone, name }`. Optional
+`?status=pending|sent|delivered|read|replied|failed`. Keyset-paginated.
+
+### `GET /api/v1/templates`
+
+Scope: `templates:read`. Lists message templates. Filters:
+`?status=APPROVED` (Meta status), `?category=Marketing|Utility|Authentication`,
+`?search=<name>`. Keyset-paginated.
+
+### `POST /api/v1/templates`
+
+Scope: `templates:manage`. Creates a template and submits it to Meta for
+approval. Body is the same payload the dashboard's template form sends:
+`name`, `category`, `language`, `body_text`, and optionally
+`header_type`, `header_content`, `header_media_url`, `footer_text`,
+`buttons`, `sample_values`. Returns `201 { data: { template, dry_run } }`.
+Meta's limit of 100 creates per hour surfaces as `429 rate_limited`.
+
+### `POST /api/v1/templates/sync`
+
+Scope: `templates:manage`. Pulls every template from Meta into the local
+catalog. Returns `{ data: { total, inserted, updated, errors, truncated } }`.
+
+### `GET` / `PATCH` / `DELETE /api/v1/templates/{id}`
+
+`GET` needs `templates:read`; `PATCH` and `DELETE` need
+`templates:manage`. `PATCH` edits and re-submits a template (allowed for
+`APPROVED`, `REJECTED` and `PAUSED`; status returns to `PENDING`).
+`DELETE` removes it on Meta and locally.
+
 ## Pagination
 
 Every list endpoint pages the same way. Request a page size with
@@ -355,7 +395,7 @@ delivery uuid you can dedupe on, and `data` varies by `event`:
 
 ```jsonc
 // message.received
-{ "conversation_id": "…", "contact_id": "…", "whatsapp_message_id": "wamid.…", "content_type": "text", "text": "Hi 👋" }
+{ "conversation_id": "…", "contact_id": "…", "phone": "+14155550123", "name": "Jane", "whatsapp_message_id": "wamid.…", "content_type": "text", "text": "Hi 👋" }
 // conversation.created
 { "conversation_id": "…", "contact_id": "…" }
 // message.status_updated

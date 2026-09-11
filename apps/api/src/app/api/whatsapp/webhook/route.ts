@@ -917,6 +917,10 @@ async function processMessage(
   await dispatchWebhookEvent(supabaseAdmin(), accountId, 'message.received', {
     conversation_id: conversation.id,
     contact_id: contactRecord.id,
+    // Sender's +E.164 number, so integrators can match the contact to
+    // their own records without a follow-up GET /api/v1/contacts/{id}.
+    phone: senderPhone,
+    name: contactName ?? null,
     whatsapp_message_id: message.id,
     content_type: contentType,
     text: contentText,
