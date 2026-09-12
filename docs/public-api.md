@@ -51,6 +51,8 @@ it. Grant the minimum.
 | `broadcasts:send`    | Launch broadcast campaigns               |
 | `templates:read`     | List and read message templates          |
 | `templates:manage`   | Create, edit, sync and delete templates  |
+| `automations:read`   | List automations and their run history   |
+| `automations:manage` | Create, edit, activate and delete them   |
 | `webhooks:manage`    | Register and manage outbound webhooks    |
 
 A key with **no scopes** still authenticates and can call
@@ -325,6 +327,47 @@ catalog. Returns `{ data: { total, inserted, updated, errors, truncated } }`.
 `templates:manage`. `PATCH` edits and re-submits a template (allowed for
 `APPROVED`, `REJECTED` and `PAUSED`; status returns to `PENDING`).
 `DELETE` removes it on Meta and locally.
+
+### `GET` / `POST /api/v1/tags`
+
+`GET` needs `contacts:read`, `POST` needs `contacts:write`. Tags are addressed
+by id in automation `add_tag` steps and `tag_added` triggers, so resolve names
+to ids here first. Creating a tag whose name already exists returns the
+existing one.
+
+### `GET` / `POST /api/v1/automations`
+
+`GET` needs `automations:read` (keyset-paginated, `?active=true|false`);
+`POST` needs `automations:manage`. An automation is:
+
+```jsonc
+{
+  "name": "Welcome new leads",
+  "trigger_type": "new_contact_created",   // or keyword_match, tag_added, …
+  "trigger_config": {},
+  "is_active": true,
+  "steps": [
+    { "step_type": "send_template", "step_config": { "template_name": "welcome_lead", "language": "en" } },
+    { "step_type": "wait", "step_config": { "amount": 1, "unit": "days" } },
+    { "step_type": "condition", "step_config": { "subject": "tag_presence", "operand": "<tag id>" },
+      "branches": { "yes": [], "no": [{ "step_type": "add_tag", "step_config": { "tag_id": "<tag id>" } }] } }
+  ]
+}
+```
+
+Activating an invalid configuration is refused with a 400 naming each problem;
+drafts (`is_active: false`) may be incomplete.
+
+### `GET` / `PATCH` / `DELETE /api/v1/automations/{id}`
+
+`GET` returns the automation with its `steps` tree. `PATCH` updates any of
+`name`, `description`, `trigger_type`, `trigger_config`, `is_active`, and
+replaces the whole step tree when `steps` is present.
+
+### `GET /api/v1/automations/{id}/logs`
+
+Scope `automations:read`. Run history, newest first, with the contact embedded.
+`?limit=` caps at 100.
 
 ## Pagination
 

@@ -22,6 +22,8 @@ export const API_SCOPES = [
   'broadcasts:send',
   'templates:read',
   'templates:manage',
+  'automations:read',
+  'automations:manage',
   'webhooks:manage',
 ] as const;
 
@@ -37,6 +39,8 @@ export const SCOPE_DESCRIPTIONS: Record<ApiScope, string> = {
   'broadcasts:send': 'Launch broadcast campaigns',
   'templates:read': 'List and read message templates',
   'templates:manage': 'Create, edit, sync and delete message templates',
+  'automations:read': 'List automations and their run history',
+  'automations:manage': 'Create, edit, activate and delete automations',
   'webhooks:manage': 'Register and manage outbound event webhooks',
 };
 
