@@ -9,6 +9,7 @@
 // ============================================================
 
 import type { Conversation, Message } from '@wacrm/shared/types';
+import type { SupabaseClient } from '@wacrm/shared/db';
 
 export interface ApiConversation {
   id: string;
@@ -97,4 +98,80 @@ export function serializeMessage(m: Message): ApiMessage {
     interactive_reply_id: m.interactive_reply_id ?? null,
     created_at: m.created_at,
   };
+}
+
+// ---------- Origin attribution ----------
+//
+// Which outbound channel opened the thread. Automations and flows persist their sends as
+// `bot` messages, agents/API as `agent`, customers as `customer`; broadcast sends are NOT
+// message rows — they live in broadcast_recipients (sent_at per contact). Comparing the
+// earliest of each per conversation gives the channel that started it; the flags say which
+// channels have touched it at all, so an inbox can group threads by route.
+
+export type ConversationOrigin = 'automation' | 'broadcast' | 'inbound' | 'agent';
+
+export interface OriginInfo {
+  origin: ConversationOrigin;
+  origin_flags: { automation: boolean; broadcast: boolean; agent: boolean; inbound: boolean };
+}
+
+export async function attachConversationOrigins<T extends { id: string; contact_id: string; created_at: string }>(
+  db: SupabaseClient,
+  organizationId: string,
+  rows: T[]
+): Promise<Array<T & OriginInfo>> {
+  if (rows.length === 0) return [];
+  const ids = rows.map((r) => r.id);
+  const contactIds = [...new Set(rows.map((r) => r.contact_id))];
+
+  const [{ data: msgs }, { data: sends }] = await Promise.all([
+    db
+      .from('messages')
+      .select('conversation_id, sender_type, created_at')
+      .in('conversation_id', ids)
+      .order('created_at', { ascending: true }),
+    db
+      .from('broadcast_recipients')
+      .select('contact_id, sent_at, broadcast:broadcasts!inner(organization_id)')
+      .in('contact_id', contactIds)
+      .eq('broadcast.organization_id', organizationId)
+      .not('sent_at', 'is', null),
+  ]);
+
+  type First = { bot?: string; agent?: string; customer?: string };
+  const firstByConv = new Map<string, First>();
+  for (const m of (msgs ?? []) as { conversation_id: string; sender_type: keyof First; created_at: string }[]) {
+    const f = firstByConv.get(m.conversation_id) ?? {};
+    if (!f[m.sender_type]) f[m.sender_type] = m.created_at;
+    firstByConv.set(m.conversation_id, f);
+  }
+  const firstSendByContact = new Map<string, string>();
+  for (const s of (sends ?? []) as { contact_id: string; sent_at: string }[]) {
+    const cur = firstSendByContact.get(s.contact_id);
+    if (!cur || s.sent_at < cur) firstSendByContact.set(s.contact_id, s.sent_at);
+  }
+
+  return rows.map((r) => {
+    const f = firstByConv.get(r.id) ?? {};
+    const broadcastAt = firstSendByContact.get(r.contact_id);
+    const candidates: Array<[ConversationOrigin, string | undefined]> = [
+      ['automation', f.bot],
+      ['broadcast', broadcastAt],
+      ['inbound', f.customer],
+      ['agent', f.agent],
+    ];
+    const earliest = candidates
+      .filter((c): c is [ConversationOrigin, string] => Boolean(c[1]))
+      .sort((a, b) => (a[1] < b[1] ? -1 : 1))[0];
+    return {
+      ...r,
+      origin: earliest?.[0] ?? 'inbound',
+      origin_flags: {
+        automation: Boolean(f.bot),
+        broadcast: Boolean(broadcastAt),
+        agent: Boolean(f.agent),
+        inbound: Boolean(f.customer),
+      },
+    };
+  });
 }

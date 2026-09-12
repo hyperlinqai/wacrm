@@ -17,7 +17,7 @@ import {
   CONVERSATION_SELECT,
   normalizeConversation,
 } from '@wacrm/shared/inbox/conversations';
-import { serializeConversation } from '@/lib/api/v1/conversations';
+import { serializeConversation, attachConversationOrigins } from '@/lib/api/v1/conversations';
 import type { Conversation } from '@wacrm/shared/types';
 
 export async function GET(request: Request) {
@@ -54,10 +54,13 @@ export async function GET(request: Request) {
       (data ?? []) as Array<{ created_at: string; id: string }>,
       limit
     );
+    // `origin` / `origin_flags` say which channel opened each thread (automation, broadcast,
+    // inbound, agent) so an external inbox can group conversations by route.
+    const serialized = items.map((r) =>
+      serializeConversation(normalizeConversation(r as Conversation))
+    );
     return okList(
-      items.map((r) =>
-        serializeConversation(normalizeConversation(r as Conversation))
-      ),
+      await attachConversationOrigins(ctx.supabase, ctx.organizationId, serialized),
       nextCursor
     );
   } catch (err) {

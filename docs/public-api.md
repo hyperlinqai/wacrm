@@ -48,6 +48,7 @@ it. Grant the minimum.
 | `contacts:read`      | List and read contacts                   |
 | `contacts:write`     | Create and update contacts               |
 | `conversations:read` | List and read conversations              |
+| `conversations:write`| Close, reopen and mark conversations read |
 | `broadcasts:send`    | Launch broadcast campaigns               |
 | `templates:read`     | List and read message templates          |
 | `templates:manage`   | Create, edit, sync and delete templates  |
@@ -233,7 +234,15 @@ List conversations, newest first. Scope: `conversations:read`.
 Paginated. Optional filters: `?status=` (`open` / `pending` / `closed`)
 and `?contact_id=`. Each conversation embeds its contact + tags.
 
-### `GET /api/v1/conversations/{id}`
+Each conversation also carries `origin` — `automation`, `broadcast`, `inbound` or
+`agent`, whichever channel opened the thread first — and `origin_flags`, booleans for
+every channel that has touched it. Broadcast sends are not message rows, so a broadcast
+thread only appears once the contact replies; automation sends open the thread at once.
+
+### `GET` / `PATCH /api/v1/conversations/{id}`
+
+`PATCH` needs `conversations:write`. Body: `{ "status": "open" | "pending" | "closed" }`
+and/or `{ "mark_read": true }` (resets the unread counter). Returns the conversation.
 
 Read one conversation. Scope: `conversations:read`. `404` if it belongs
 to another account.
