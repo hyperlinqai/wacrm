@@ -314,6 +314,8 @@ export interface Message {
   message_id?: string;
   status: MessageStatus;
   created_at: string;
+  /** Set on the outbound row a broadcast send leaves in the thread (migration 055). */
+  broadcast_id?: string | null;
   reply_to_message_id?: string;
   /**
    * Only set when `content_type === 'interactive'` — the stable id of

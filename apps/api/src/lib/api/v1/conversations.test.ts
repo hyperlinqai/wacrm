@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Conversation, Message } from '@wacrm/shared/types';
-import { serializeConversation, serializeMessage } from './conversations';
+import { serializeConversation, serializeMessage, originFromMessages } from './conversations';
 
 describe('serializeConversation', () => {
   it('projects public fields + nested contact/tags and drops internals', () => {
@@ -50,5 +50,24 @@ describe('serializeMessage', () => {
 
     const agent = { ...inbound, sender_type: 'agent' } as unknown as Message;
     expect(serializeMessage(agent).direction).toBe('outbound');
+  });
+});
+
+describe('originFromMessages', () => {
+  const row = (sender_type: string, created_at: string, broadcast_id: string | null = null) =>
+    ({ conversation_id: 'c1', sender_type, broadcast_id, created_at });
+
+  it('attributes a thread opened by a broadcast send even after the customer replies', () => {
+    const o = originFromMessages([
+      row('customer', '2026-09-12T11:00:00Z'),
+      row('bot', '2026-09-12T10:00:00Z', 'b1'),
+    ]);
+    expect(o.origin).toBe('broadcast');
+    expect(o.origin_flags).toEqual({ automation: false, broadcast: true, agent: false, inbound: true });
+  });
+
+  it('treats untagged bot messages as automation and empty threads as inbound', () => {
+    expect(originFromMessages([row('bot', '2026-09-12T10:00:00Z')]).origin).toBe('automation');
+    expect(originFromMessages([]).origin).toBe('inbound');
   });
 });

@@ -234,7 +234,8 @@ List conversations, newest first. Scope: `conversations:read`.
 Paginated. Optional filters: `?status=` (`open` / `pending` / `closed`)
 and `?contact_id=`. Each conversation embeds its contact + tags.
 
-Each conversation also carries `origin` — `automation`, `broadcast`, `inbound` or
+Each message carries `broadcast_id` when it was sent by a broadcast (the send is recorded
+in the thread as an outbound template message). Each conversation also carries `origin` — `automation`, `broadcast`, `inbound` or
 `agent`, whichever channel opened the thread first — and `origin_flags`, booleans for
 every channel that has touched it. Broadcast sends are not message rows, so a broadcast
 thread only appears once the contact replies; automation sends open the thread at once.
