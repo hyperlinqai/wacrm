@@ -86,6 +86,41 @@ async function loadOwned(db: SupabaseClient, accountId: string, id: string) {
   return data;
 }
 
+/**
+ * Step count + the root step types, so a list row can show the shape of a flow without
+ * shipping every step tree (or N+1 fetching them).
+ */
+export async function attachStepPreviews(
+  db: SupabaseClient,
+  rows: Array<Record<string, unknown>>,
+): Promise<Array<Record<string, unknown>>> {
+  const ids = rows.map(r => r.id as string).filter(Boolean);
+  if (ids.length === 0) return rows;
+  const { data, error } = await db
+    .from('automation_steps')
+    .select('automation_id, step_type, position, parent_step_id')
+    .in('automation_id', ids);
+  if (error) {
+    console.error('[api/v1/automations] step preview error:', error);
+    return rows;
+  }
+  type StepRow = { automation_id: string; step_type: string; position: number; parent_step_id: string | null };
+  const byAutomation = new Map<string, StepRow[]>();
+  for (const row of (data ?? []) as unknown as StepRow[]) {
+    const list = byAutomation.get(row.automation_id) ?? [];
+    list.push(row);
+    byAutomation.set(row.automation_id, list);
+  }
+  return rows.map(r => {
+    const steps = byAutomation.get(r.id as string) ?? [];
+    const roots = steps
+      .filter(s => !s.parent_step_id)
+      .sort((a, b) => a.position - b.position)
+      .map(s => s.step_type);
+    return { ...r, step_count: steps.length, step_preview: roots.slice(0, 8) };
+  });
+}
+
 export async function getAutomation(db: SupabaseClient, accountId: string, id: string) {
   if (!UUID_RE.test(id)) throw new AutomationError('Automation not found', 404);
   const { data, error } = await db

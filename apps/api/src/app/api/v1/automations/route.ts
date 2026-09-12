@@ -15,6 +15,7 @@ import { resolveAuditUserId, ContactError } from '@/lib/api/v1/contacts';
 import {
   AUTOMATION_SELECT,
   AutomationError,
+  attachStepPreviews,
   createAutomation,
 } from '@/lib/api/v1/automations';
 
@@ -51,7 +52,10 @@ export async function GET(request: Request) {
       (data ?? []) as unknown as Array<{ created_at: string; id: string }>,
       limit
     );
-    return okList(items, nextCursor);
+    return okList(
+      await attachStepPreviews(ctx.supabase, items as unknown as Array<Record<string, unknown>>),
+      nextCursor
+    );
   } catch (err) {
     return toApiErrorResponse(err);
   }
