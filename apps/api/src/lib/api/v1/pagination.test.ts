@@ -55,6 +55,24 @@ describe('encode/decodeCursor round-trip', () => {
     });
   });
 
+  it('encodes a Date created_at (as pg returns timestamptz) as ISO-8601', () => {
+    // A Date interpolated into a template literal becomes a locale string full of
+    // commas and parentheses, which broke the `.or()` keyset filter on page 2.
+    const c = decodeCursor(
+      encodeCursor({
+        created_at: new Date('2026-09-08T17:34:44.123Z'),
+        id: 'b8f6c5f0-42ed-4ad6-9c99-112a20ae4591',
+      })
+    );
+    expect(c).toEqual({
+      createdAt: '2026-09-08T17:34:44.123Z',
+      id: 'b8f6c5f0-42ed-4ad6-9c99-112a20ae4591',
+    });
+    expect(keysetFilter(c)).toBe(
+      'created_at.lt.2026-09-08T17:34:44.123Z,and(created_at.eq.2026-09-08T17:34:44.123Z,id.lt.b8f6c5f0-42ed-4ad6-9c99-112a20ae4591)'
+    );
+  });
+
   it('returns null for empty / separator-less input', () => {
     expect(decodeCursor(null)).toBeNull();
     expect(decodeCursor('')).toBeNull();

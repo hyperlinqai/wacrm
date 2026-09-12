@@ -51,10 +51,16 @@ export function parseListParams(request: Request): ListParams {
 }
 
 /** Encode a row's `(created_at, id)` into an opaque cursor string. */
-export function encodeCursor(row: { created_at: string; id: string }): string {
-  return Buffer.from(`${row.created_at}|${row.id}`, 'utf8').toString(
-    'base64url'
-  );
+export function encodeCursor(row: { created_at: string | Date; id: string }): string {
+  // `pg` hands timestamptz columns back as Date objects. Interpolating one directly
+  // yields "Tue Sep 08 2026 23:04:44 GMT+0530 (India Standard Time)", whose commas and
+  // parentheses then corrupt the `.or()` keyset filter on the next page and every list
+  // longer than one page died with a 500. Always encode ISO-8601.
+  const createdAt =
+    typeof row.created_at === 'string'
+      ? row.created_at
+      : new Date(row.created_at).toISOString();
+  return Buffer.from(`${createdAt}|${row.id}`, 'utf8').toString('base64url');
 }
 
 // A cursor is only ever minted by `encodeCursor` from a real row's
@@ -111,7 +117,7 @@ export function keysetFilter(cursor: Cursor | null): string | null {
  * `limit` and derive the `next_cursor`. When fewer than `limit + 1`
  * rows came back, this is the last page and `nextCursor` is null.
  */
-export function buildPage<T extends { created_at: string; id: string }>(
+export function buildPage<T extends { created_at: string | Date; id: string }>(
   rows: T[],
   limit: number
 ): { items: T[]; nextCursor: string | null } {
