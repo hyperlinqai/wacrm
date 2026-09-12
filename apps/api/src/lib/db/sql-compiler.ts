@@ -575,6 +575,14 @@ async function executeRpc(
       if (argType === 'jsonb' || argType === 'json') {
         val = v === null ? null : JSON.stringify(v);
         cast = `::${argType}`;
+      } else if ((argType === '_jsonb' || argType === '_json') && Array.isArray(v)) {
+        // jsonb[] / json[]: node-pg serialises a nested JS array as a
+        // multi-dimensional Postgres array literal, whose elements are then
+        // not valid JSON ("invalid input syntax for type json"). Encode each
+        // element as a JSON string so the wire value is a 1-D text array that
+        // casts element-wise — [["Ravi"],["Amit"]] → {"[\"Ravi\"]","[\"Amit\"]"}.
+        val = v.map((el) => (el === undefined ? null : JSON.stringify(el)));
+        cast = `::${argType.slice(1)}[]`;
       } else if (isPlainObject(v)) {
         val = JSON.stringify(v);
         cast = '::jsonb';

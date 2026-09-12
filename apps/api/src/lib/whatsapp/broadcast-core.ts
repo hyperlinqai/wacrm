@@ -260,7 +260,11 @@ export async function createBroadcast(
   );
   if (createErr || !createdRows || createdRows.length === 0) {
     console.error('[broadcast-core] create broadcast error:', createErr);
-    throw new BroadcastError('internal', 'Failed to create broadcast', 500);
+    // The caller is the account's own integrator, and "Failed to create
+    // broadcast" alone sent one of them chasing template and phone
+    // issues when the cause was a DB-layer error — include the reason.
+    const reason = createErr?.message ? `: ${createErr.message}` : '';
+    throw new BroadcastError('internal', `Failed to create broadcast${reason}`, 500);
   }
 
   const broadcastId = createdRows[0].broadcast_id as string;
